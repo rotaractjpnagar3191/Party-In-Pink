@@ -37,7 +37,8 @@ exports.handler = async (event) => {
       headers: {
         'Content-Type':'application/json',
         'x-client-id': process.env.CASHFREE_APP_ID,
-        'x-client-secret': process.env.CASHFREE_SECRET_KEY
+        'x-client-secret': process.env.CASHFREE_SECRET_KEY,
+        'x-api-version': process.env.CASHFREE_API_VERSION || '2025-01-01'
       },
       body: JSON.stringify({
         link_id: ref,

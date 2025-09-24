@@ -1,13 +1,13 @@
 <!doctype html>
 <html lang="en">
-
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Party in Pink 4.0 — Rotaract JP Nagar</title>
-  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/styles.css"/>
+  <!-- Cashfree Hosted Checkout SDK -->
+  <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
 </head>
-
 <body>
   <header class="hero">
     <div class="wrap">
@@ -26,32 +26,67 @@
         <select name="tier" id="tier" required></select>
         <input type="number" name="qty" min="1" max="10" value="1">
       </div>
-      <button class="btn" type="submit">Register now</button>
+      <button class="btn" type="submit" id="submitBtn">Register now</button>
       <p id="msg" class="err"></p>
     </form>
   </main>
 
   <script>
-    (async function loadTickets() {
-      const r = await fetch('/api/config'); const j = await r.json();
-      const sel = document.getElementById('tier');
-      (j.tickets || []).forEach(t => {
-        const o = document.createElement('option');
-        o.value = t.id; o.textContent = `${t.name} — ₹${t.price} (${t.available} left)`;
-        o.disabled = !t.onSale || t.available <= 0;
-        sel.appendChild(o);
-      });
+    let CF_MODE = 'sandbox'; // will be set from /api/config
+
+    // Load tickets + Cashfree mode
+    (async function loadTickets(){
+      try {
+        const r = await fetch('/api/config');
+        const j = await r.json();
+        CF_MODE = j.cashfreeMode || 'sandbox';
+        const sel = document.getElementById('tier');
+        (j.tickets || []).forEach(t => {
+          const o = document.createElement('option');
+          o.value = t.id;
+          o.textContent = `${t.name} — ₹${t.price} (${t.available} left)`;
+          o.disabled = !t.onSale || t.available <= 0;
+          sel.appendChild(o);
+        });
+      } catch (e) {
+        document.getElementById('msg').textContent = 'Could not load tickets. Please refresh.';
+      }
     })();
-    document.getElementById('reg').addEventListener('submit', async (e) => {
-      e.preventDefault(); const msg = document.getElementById('msg'); msg.textContent = '';
-      const data = Object.fromEntries(new FormData(e.target).entries());
-      const res = await fetch('/api/create-payment-link', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-      if (!res.ok) { msg.textContent = await res.text(); return; }
-      const out = await res.json();
-      if (!out.link_url) { msg.textContent = 'Could not get payment link.'; return; }
-      window.location = out.link_url; // redirect to Cashfree hosted page
+
+    document.getElementById('reg').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const msg = document.getElementById('msg');
+      const btn = document.getElementById('submitBtn');
+      msg.textContent = '';
+      btn.disabled = true; btn.textContent = 'Creating order...';
+
+      try {
+        const data = Object.fromEntries(new FormData(e.target).entries());
+        const res = await fetch('/api/cashfree-create-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+
+        const out = await res.json().catch(()=>null);
+        if (!res.ok || !out?.payment_session_id) {
+          msg.textContent = (out && (out.message || out.error)) || 'Could not create order.';
+          btn.disabled = false; btn.textContent = 'Register now';
+          return;
+        }
+
+        // Open Cashfree Hosted Checkout (only payment happens on Cashfree)
+        const cashfree = Cashfree({ mode: CF_MODE }); // 'sandbox' or 'production'
+        cashfree.checkout({
+          paymentSessionId: out.payment_session_id,
+          redirectTarget: "_self" // same tab
+        });
+
+      } catch (err) {
+        msg.textContent = 'Network error. Please try again.';
+        btn.disabled = false; btn.textContent = 'Register now';
+      }
     });
   </script>
 </body>
-
 </html>
