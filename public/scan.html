@@ -1,0 +1,25 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Check‑in — PiP</title><link rel="stylesheet" href="/styles.css" />
+</head><body>
+<main class="wrap narrow">
+  <h1>Check‑in</h1>
+  <p>Paste Order ID or scan QR with your phone’s QR app and open the link.</p>
+  <input id="oid" placeholder="Order ID" />
+  <button class="btn" id="check">Mark Checked‑in</button>
+  <p id="out"></p>
+</main>
+<script>
+function qp(k){ return new URLSearchParams(location.search).get(k) }
+const oid = document.getElementById('oid');
+const fromQR = qp('order_id'); if(fromQR) oid.value = fromQR;
+
+document.getElementById('check').onclick = async () => {
+  const order_id = oid.value.trim();
+  const adminKey = prompt('Admin key?');
+  const r = await fetch(`/api/checkin?order_id=${encodeURIComponent(order_id)}&key=${encodeURIComponent(adminKey)}`, { method:'POST' });
+  const j = await r.json().catch(()=>({ok:false}));
+  document.getElementById('out').textContent = j.ok ? 'Checked‑in ✅' : (j.error || 'Failed');
+}
+</script>
+</body></html>

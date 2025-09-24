@@ -1,0 +1,12 @@
+{
+  "name": "pip-netlify-githubstore",
+  "private": true,
+  "scripts": {
+    "dev": "netlify dev"
+  },
+  "dependencies": {
+    "@sendgrid/mail": "^8.1.0",
+    "pdfkit": "^0.15.0",
+    "qrcode": "^1.5.3"
+  }
+}

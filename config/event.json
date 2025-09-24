@@ -1,0 +1,54 @@
+{
+  "event": {
+    "title": "Party in Pink 4.0",
+    "date": "2025-10-12T07:00:00+05:30",
+    "venue": "BIT, VV Puram, Bengaluru",
+    "currency": "INR"
+  },
+  "tickets": [
+    {
+      "id": "early",
+      "name": "Early Bird",
+      "price": 149,
+      "quantity": 100,
+      "saleStart": "2025-09-20T00:00:00+05:30",
+      "saleEnd": "2025-10-01T23:59:59+05:30",
+      "maxPerOrder": 4
+    },
+    {
+      "id": "regular",
+      "name": "Regular",
+      "price": 199,
+      "quantity": 400,
+      "saleStart": "2025-10-02T00:00:00+05:30",
+      "saleEnd": "2025-10-11T23:59:59+05:30",
+      "maxPerOrder": 6
+    }
+  ],
+  "coupons": [
+    {
+      "code": "PINK10",
+      "type": "percent",
+      "value": 10,
+      "appliesTo": [
+        "regular"
+      ],
+      "maxUses": 100
+    },
+    {
+      "code": "PARTNER50",
+      "type": "flat",
+      "value": 50,
+      "appliesTo": [
+        "regular",
+        "early"
+      ],
+      "maxUses": 20
+    }
+  ],
+  "donation": {
+    "enabled": true,
+    "min": 0,
+    "max": 10000
+  }
+}

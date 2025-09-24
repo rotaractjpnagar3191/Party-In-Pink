@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Register — Party in Pink 4.0</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <script defer src="https://sdk.cashfree.com/js/ui/2.0.0/cashfree.js"></script>
+</head>
+<body>
+  <main class="wrap narrow">
+    <h1>Register</h1>
+    <p>Choose your ticket and complete payment securely.</p>
+
+    <form id="regForm" class="form">
+      <input name="name" placeholder="Full name" required />
+      <input type="email" name="email" placeholder="Email" required />
+      <input name="phone" placeholder="Phone (10 digits)" pattern="[0-9]{10}" required />
+
+      <div class="grid2">
+        <select name="ticket" id="ticket" required></select>
+        <input type="number" name="quantity" min="1" value="1" />
+      </div>
+
+      <div class="grid2">
+        <input name="coupon" placeholder="Coupon code (optional)" />
+        <input type="number" name="donation" min="0" step="1" placeholder="Donation (₹)" />
+      </div>
+
+      <button class="btn" type="submit">Pay & Register</button>
+      <p id="err" class="err"></p>
+    </form>
+  </main>
+
+<script>
+(async function loadTickets(){
+  const r = await fetch('/api/config');
+  const j = await r.json();
+  const sel = document.getElementById('ticket');
+  (j.tickets || []).forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t.id;
+    opt.textContent = `${t.name} — ₹${t.price} (${t.available} left)`;
+    opt.disabled = t.available <= 0 || !t.onSale;
+    sel.appendChild(opt);
+  })
+})();
+
+const form = document.getElementById('regForm');
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  document.getElementById('err').textContent = ''
+  const data = Object.fromEntries(new FormData(form).entries());
+  const res = await fetch('/api/cashfree-create-order', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  if(!res.ok){ document.getElementById('err').textContent = await res.text(); return; }
+  const out = await res.json();
+  const mode = (location.hostname === 'localhost') ? 'sandbox' : (out.mode || 'production');
+  const cashfree = window.Cashfree({ mode });
+  const sid = out.payment_session_id || out.paymentSessionId;
+  const tok = out.order_token || out.orderToken;
+  if(sid) await cashfree.checkout({ paymentSessionId: sid });
+  else if(tok) await cashfree.pay({ orderToken: tok });
+  else document.getElementById('err').textContent = 'Payment session unavailable.'
+});
+</script>
+</body>
+</html>

@@ -1,37 +1,64 @@
-# Party in Pink 4.0 — Landing + Registration (Cashfree)  
-_Static HTML/CSS/JS + Vercel Functions + Cashfree + (optional) email + KonfHub-style features_
+# PiP Tickets — Netlify + GitHub Storage (100% free)
 
-This repo gives you a **minimal, fast** event site like JP Nagar’s (plain HTML/CSS/JS) with just enough backend via **Vercel Functions** to securely handle payments and tickets. No full database needed — we use **Vercel KV (Upstash free)** for inventory, coupons, and order metadata.
+This version **does NOT require Google**. It stores order logs in a **private GitHub repo** as JSON Lines (JSONL) files:
+- `storage/orders.jsonl` — one line per order created
+- `storage/payments.jsonl` — one line per successful payment (webhook)
+- `storage/checkins.jsonl` — one line per check-in
 
----
+The site stays static (HTML/CSS/JS). Serverless functions run on **Netlify Free**. Payments via **Cashfree**.
 
-## ✨ Features 
+## Environment variables (Netlify)
 
-- **Multiple ticket tiers** (e.g., Early Bird / Regular)  
-  — price, sale window, max per order, inventory caps  
-- **Coupons / promo codes**  
-  — flat or % discounts, per-tier applicability, usage limits  
-- **Optional donation** add-on  
-- **Cashfree Checkout** (sandbox or production)  
-- **Webhook-driven** status updates (PAID → issue ticket, decrement inventory/coupon usage)  
-- **PDF ticket with QR** (download link + optional email via SendGrid)  
-- **Check-in page** (manual order-ID entry or open QR link)  
-- **CSV export** (admin-key protected)  
-- **Resend ticket** (admin-key protected)
+Required:
+```
+SITE_URL=https://pip.rotaractjpnagar.org
+CASHFREE_ENV=sandbox               # later 'production'
+CASHFREE_APP_ID=cf_...
+CASHFREE_SECRET_KEY=...
+ADMIN_KEY=<strong random>
 
-> Advanced (later): refunds (Cashfree API), GST invoice, waitlist, camera barcode scanner, speaker schedule, etc.
+# GitHub storage (create a *private* repo for data, e.g. pip-tickets-data)
+GITHUB_TOKEN=<fine-grained PAT with Contents: Read/Write on that repo only>
+GITHUB_OWNER=<your GitHub username or org>
+GITHUB_REPO=pip-tickets-data
+GITHUB_BRANCH=main
+STORE_PATH=storage
+```
 
----
+Optional (for auto-emailing tickets):
+```
+SENDGRID_API_KEY=...
+TICKETS_FROM_EMAIL=PiP <tickets@rotaractjpnagar.org>
+```
 
-## 🧱 Stack
+## Setup
 
-- **Frontend:** Plain HTML/CSS/JS (no framework)  
-- **Serverless:** Vercel Functions (Node 18+)  
-- **Payments:** Cashfree PG (Payment Session / Order Token)  
-- **Storage:** Vercel KV (Upstash free)  
-- **Email (optional):** SendGrid
+1) Create **two GitHub repos**:
+   - App code repo (this one) — public or private
+   - **Data repo** (private), e.g. `pip-tickets-data`
 
----
+2) Make a **Fine-grained Personal Access Token** in GitHub:
+   - Resource owner: your user/org
+   - Repository access: **Only selected repositories** → select `pip-tickets-data`
+   - Permissions → **Repository contents: Read and Write**
+   - Copy the token and add it to Netlify env as `GITHUB_TOKEN`
 
-## 📁 Project Structure
+3) Netlify → New site from Git → import this app repo.
+   - Build command: *(empty)*
+   - Publish dir: `public`
+   - Functions dir: auto via `netlify.toml`
 
+4) Add the **Environment variables** above (including GitHub ones).
+
+5) Cashfree Dashboard → Webhooks:
+   - `https://pip.rotaractjpnagar.org/api/cashfree-webhook`
+
+6) Test sandbox:
+   - `/register.html` → pay → `/success.html?order_id=...` → **Download Ticket (PDF)**
+   - Admin export: `/api/admin-export?key=ADMIN_KEY`
+   - Check-in: `/scan.html` (prompts for admin key)
+
+## Notes
+- Inventory and coupon usage are computed from **paid** orders only.
+- Using a separate private data repo avoids triggering site rebuilds on every order.
+- JSONL is append-only (safe & simple). Exports are generated on the fly.
