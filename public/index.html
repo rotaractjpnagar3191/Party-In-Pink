@@ -1,38 +1,57 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Party in Pink 4.0 — Rotaract JP Nagar</title>
   <link rel="stylesheet" href="/styles.css" />
 </head>
+
 <body>
   <header class="hero">
     <div class="wrap">
       <h1>Party in Pink 4.0</h1>
       <p class="sub">Sun, 12 Oct 2025 • 7:00 AM • BIT, VV Puram, Bengaluru</p>
-      <a class="btn" href="/register.html">Register Now</a>
     </div>
   </header>
 
-  <section class="wrap">
-    <h2>About the Cause</h2>
-    <p>Party in Pink is a Zumba fundraiser for breast cancer awareness and support.</p>
-  </section>
+  <main class="wrap narrow">
+    <h2>Register</h2>
+    <form id="reg" class="form">
+      <input name="name" placeholder="Full name" required>
+      <input type="email" name="email" placeholder="Email" required>
+      <input name="phone" placeholder="Phone (10 digits)" pattern="[0-9]{10}" required>
+      <div class="grid2">
+        <select name="tier" id="tier" required></select>
+        <input type="number" name="qty" min="1" max="10" value="1">
+      </div>
+      <button class="btn" type="submit">Register now</button>
+      <p id="msg" class="err"></p>
+    </form>
+  </main>
 
-  <section class="stats">
-    <div class="wrap grid4">
-      <div><div class="num">120+</div><div class="lbl">Past Attendees</div></div>
-      <div><div class="num">₹2L</div><div class="lbl">Raised</div></div>
-      <div><div class="num">200+</div><div class="lbl">Volunteer Hours</div></div>
-      <div><div class="num">10+</div><div class="lbl">Sponsors</div></div>
-    </div>
-  </section>
-
-  <footer class="wrap foot">
-    <p>Organized by Rotaract Club of Bangalore JP Nagar • Contact: 
-      <a href="mailto:rotaractjpnagar@gmail.com">rotaractjpnagar@gmail.com</a></p>
-    <a class="btn" href="/register.html">Register</a>
-  </footer>
+  <script>
+    (async function loadTickets() {
+      const r = await fetch('/api/config'); const j = await r.json();
+      const sel = document.getElementById('tier');
+      (j.tickets || []).forEach(t => {
+        const o = document.createElement('option');
+        o.value = t.id; o.textContent = `${t.name} — ₹${t.price} (${t.available} left)`;
+        o.disabled = !t.onSale || t.available <= 0;
+        sel.appendChild(o);
+      });
+    })();
+    document.getElementById('reg').addEventListener('submit', async (e) => {
+      e.preventDefault(); const msg = document.getElementById('msg'); msg.textContent = '';
+      const data = Object.fromEntries(new FormData(e.target).entries());
+      const res = await fetch('/api/create-payment-link', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+      if (!res.ok) { msg.textContent = await res.text(); return; }
+      const out = await res.json();
+      if (!out.link_url) { msg.textContent = 'Could not get payment link.'; return; }
+      window.location = out.link_url; // redirect to Cashfree hosted page
+    });
+  </script>
 </body>
+
 </html>

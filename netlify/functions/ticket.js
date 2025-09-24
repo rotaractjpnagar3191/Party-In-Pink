@@ -2,51 +2,39 @@ const PDFDocument = require('pdfkit')
 const QRCode = require('qrcode')
 const { readJSONL } = require('../utils/githubStore')
 
-function pdfToBuffer(doc){
-  return new Promise((resolve, reject) => {
-    const chunks = []
-    doc.on('data', c => chunks.push(c))
-    doc.on('end', () => resolve(Buffer.concat(chunks)))
-    doc.on('error', reject)
-  })
-}
+function toBuf(doc){ return new Promise((res,rej)=>{ const chunks=[]; doc.on('data',c=>chunks.push(c)); doc.on('end',()=>res(Buffer.concat(chunks))); doc.on('error',rej) }) }
 
 exports.handler = async (event) => {
-  const orderId = (event.queryStringParameters || {}).order_id
-  if(!orderId) return { statusCode: 400, body: 'order_id required' }
-  const payments = await readJSONL('payments.jsonl')
-  const paid = payments.some(p => p.order_id === orderId)
-  if(!paid) return { statusCode: 400, body: 'Payment not confirmed' }
+  const ref = (event.queryStringParameters||{}).ref
+  if (!ref) return { statusCode: 400, body: 'ref required' }
+
+  const pays = await readJSONL('payments.jsonl')
+  const paid = pays.some(p => p.ref === ref)
+  if (!paid) return { statusCode: 400, body: 'Payment not confirmed' }
 
   const orders = await readJSONL('orders.jsonl')
-  const r = orders.find(o => o.order_id === orderId)
-  if(!r) return { statusCode: 400, body: 'Order not found' }
+  const ord = orders.find(o => o.ref === ref)
+  if (!ord) return { statusCode: 404, body: 'Order not found' }
 
-  const { name, email, phone, tier, qty } = r
-  const qrData = JSON.stringify({ order_id: orderId, name, email, phone, qty })
-  const qrPng = await QRCode.toBuffer(qrData, { width: 240 })
-
+  const qrPng = await QRCode.toBuffer(JSON.stringify({ ref, name: ord.name, email: ord.email, phone: ord.phone, qty: ord.qty }), { width: 240 })
   const doc = new PDFDocument({ size: 'A5', margin: 36 })
   doc.fillColor('#c42460').fontSize(22).text('Party in Pink 4.0')
-  doc.moveDown(0.4)
-  doc.fillColor('#111').fontSize(12).text('Date: Sun, 12 Oct 2025 • 7:00 AM')
+  doc.moveDown(0.4).fillColor('#111').fontSize(12)
+  doc.text('Date: Sun, 12 Oct 2025 • 7:00 AM')
   doc.text('Venue: BIT, VV Puram, Bengaluru')
-  doc.moveDown(0.8)
-  doc.fontSize(14).text(`Name: ${name}`)
-  doc.text(`Ticket: ${tier} × ${qty}`)
-  doc.text(`Order: ${orderId}`)
+  doc.moveDown(0.8).fontSize(14)
+  doc.text(`Name: ${ord.name}`); doc.text(`Ticket: ${ord.tier} × ${ord.qty}`); doc.text(`Ref: ${ref}`)
   doc.image(qrPng, doc.page.width - 36 - 140, 36 + 40, { width: 140 })
-  doc.moveDown(1.2)
-  doc.fontSize(10).fillColor('#555').text('Show this ticket at entry. Non‑transferable.')
+  doc.moveDown(1.2).fontSize(10).fillColor('#555').text('Show this ticket at entry. Non-transferable.')
 
-  const buffer = await pdfToBuffer(doc)
+  const buf = await toBuf(doc)
   return {
     statusCode: 200,
     headers: {
-      'Content-Type': 'application/pdf',
-      'Content-Disposition': `attachment; filename=PiP4_Ticket_${orderId}.pdf`
+      'Content-Type':'application/pdf',
+      'Content-Disposition': `attachment; filename=PiP_Ticket_${ref}.pdf`
     },
-    body: buffer.toString('base64'),
+    body: buf.toString('base64'),
     isBase64Encoded: true
   }
 }

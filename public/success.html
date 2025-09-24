@@ -1,32 +1,32 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Thank You — Party in Pink 4.0</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Thank you — PiP</title>
   <link rel="stylesheet" href="/styles.css" />
 </head>
+
 <body>
   <main class="wrap narrow">
-    <h1>Payment Received</h1>
-    <p id="msg">Verifying your payment…</p>
-    <a id="dl" class="btn" style="display:none" href="#">Download Ticket (PDF)</a>
+    <h1>Thank you!</h1>
+    <p id="info">Checking payment…</p>
+    <a id="dl" class="btn" style="display:none">Download Ticket (PDF)</a>
   </main>
-<script>
-function qp(k){ return new URLSearchParams(location.search).get(k) }
-const orderId = qp('order_id');
-(async function(){
-  const r = await fetch(`/api/order-status?order_id=${encodeURIComponent(orderId)}`);
-  const j = await r.json();
-  if(j.status === 'PAID'){
-    document.getElementById('msg').textContent = 'Success! You can download your ticket below.'
-    const dl = document.getElementById('dl');
-    dl.href = `/api/ticket?order_id=${encodeURIComponent(orderId)}`;
-    dl.style.display = 'inline-block';
-  } else {
-    document.getElementById('msg').textContent = 'Payment not confirmed yet. Please refresh in a minute.'
-  }
-})();
-</script>
+  <script>
+    const ref = new URLSearchParams(location.search).get('ref');
+    (async function poll() {
+      const r = await fetch(`/api/order-status?ref=${encodeURIComponent(ref)}`);
+      const j = await r.json();
+      if (j.status === 'PAID') {
+        document.getElementById('info').textContent = 'Payment confirmed. Your ticket is ready.';
+        const dl = document.getElementById('dl'); dl.href = `/api/ticket?ref=${encodeURIComponent(ref)}`; dl.style.display = 'inline-block';
+      } else {
+        document.getElementById('info').textContent = 'Waiting for confirmation… (refresh if this takes more than a minute)'
+      }
+    })();
+  </script>
 </body>
+
 </html>

@@ -1,11 +1,8 @@
 const { readJSONL } = require('../utils/githubStore')
-
 exports.handler = async (event) => {
-  const orderId = (event.queryStringParameters || {}).order_id
-  if(!orderId){
-    return { statusCode: 200, body: JSON.stringify({ price: 199 }) }
-  }
-  const payments = await readJSONL('payments.jsonl')
-  const paid = payments.some(p => p.order_id === orderId)
+  const ref = (event.queryStringParameters||{}).ref
+  if (!ref) return { statusCode: 400, body: 'ref required' }
+  const pays = await readJSONL('payments.jsonl')
+  const paid = pays.some(p => p.ref === ref)
   return { statusCode: 200, body: JSON.stringify({ status: paid ? 'PAID' : 'PENDING' }) }
 }
