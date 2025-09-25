@@ -1,92 +1,76 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Party in Pink 4.0 — Rotaract JP Nagar</title>
-  <link rel="stylesheet" href="/styles.css"/>
-  <!-- Cashfree Hosted Checkout SDK -->
-  <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
+  <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
-  <header class="hero">
-    <div class="wrap">
-      <h1>Party in Pink 4.0</h1>
-      <p class="sub">Sun, 12 Oct 2025 • 7:00 AM • BIT, VV Puram, Bengaluru</p>
+  <header class="nav">
+    <div class="wrap row">
+      <div class="brand"><span class="dot"></span> Party in Pink 4.0</div>
+      <nav>
+        <a href="/index.html">Home</a>
+        <a href="/register.html">Register</a>
+        <a href="/donate.html">Donate</a>
+      </nav>
     </div>
   </header>
 
-  <main class="wrap narrow">
-    <h2>Register</h2>
-    <form id="reg" class="form">
-      <input name="name" placeholder="Full name" required>
-      <input type="email" name="email" placeholder="Email" required>
-      <input name="phone" placeholder="Phone (10 digits)" pattern="[0-9]{10}" required>
-      <div class="grid2">
-        <select name="tier" id="tier" required></select>
-        <input type="number" name="qty" min="1" max="10" value="1">
+  <section class="hero">
+    <div class="wrap">
+      <div class="kicker">Zumba fundraiser • Breast cancer awareness</div>
+      <h1>Dance. Donate. Make a Difference.</h1>
+      <p class="sub">Sun, 12 Oct 2025 • 7:00 AM • BIT, VV Puram, Bengaluru</p>
+      <div class="ctas">
+        <a class="btn" href="/register.html">Get The Pink Pass</a>
+        <a class="btn outline" href="/donate.html">Donate for the Cause</a>
       </div>
-      <button class="btn" type="submit" id="submitBtn">Register now</button>
-      <p id="msg" class="err"></p>
-    </form>
+    </div>
+  </section>
+
+  <main class="wrap">
+    <section class="section grid grid-3">
+      <article class="card">
+        <h3>Why “Party in Pink”?</h3>
+        <p class="muted">A high-energy Zumba morning that raises funds and awareness for early detection of breast cancer.</p>
+      </article>
+      <article class="card">
+        <h3>What your pass supports</h3>
+        <p class="muted">Screening camps, awareness drives and support activities led by Rotaract JP Nagar.</p>
+      </article>
+      <article class="card">
+        <h3>Season 4</h3>
+        <p class="muted">Back with bigger energy, expert instructors, and a city-wide community of supporters.</p>
+      </article>
+    </section>
+
+    <section class="section">
+      <div class="card">
+        <h3>Event Highlights</h3>
+        <ul class="muted">
+          <li>90-minute Zumba session with certified trainers</li>
+          <li>Cause wall &amp; pink photo ops</li>
+          <li>Goodie band + digital ticket with QR check-in</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section center">
+      <div class="ctas">
+        <a class="btn" href="/register.html">Register now</a>
+        <a class="btn ghost" href="/donate.html">Donate now</a>
+      </div>
+    </section>
   </main>
 
-  <script>
-    let CF_MODE = 'sandbox'; // will be set from /api/config
-
-    // Load tickets + Cashfree mode
-    (async function loadTickets(){
-      try {
-        const r = await fetch('/api/config');
-        const j = await r.json();
-        CF_MODE = j.cashfreeMode || 'sandbox';
-        const sel = document.getElementById('tier');
-        (j.tickets || []).forEach(t => {
-          const o = document.createElement('option');
-          o.value = t.id;
-          o.textContent = `${t.name} — ₹${t.price} (${t.available} left)`;
-          o.disabled = !t.onSale || t.available <= 0;
-          sel.appendChild(o);
-        });
-      } catch (e) {
-        document.getElementById('msg').textContent = 'Could not load tickets. Please refresh.';
-      }
-    })();
-
-    document.getElementById('reg').addEventListener('submit', async (e)=>{
-      e.preventDefault();
-      const msg = document.getElementById('msg');
-      const btn = document.getElementById('submitBtn');
-      msg.textContent = '';
-      btn.disabled = true; btn.textContent = 'Creating order...';
-
-      try {
-        const data = Object.fromEntries(new FormData(e.target).entries());
-        const res = await fetch('/api/cashfree-create-order', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
-        });
-
-        const out = await res.json().catch(()=>null);
-        if (!res.ok || !out?.payment_session_id) {
-          msg.textContent = (out && (out.message || out.error)) || 'Could not create order.';
-          btn.disabled = false; btn.textContent = 'Register now';
-          return;
-        }
-
-        // Open Cashfree Hosted Checkout (only payment happens on Cashfree)
-        const cashfree = Cashfree({ mode: CF_MODE }); // 'sandbox' or 'production'
-        cashfree.checkout({
-          paymentSessionId: out.payment_session_id,
-          redirectTarget: "_self" // same tab
-        });
-
-      } catch (err) {
-        msg.textContent = 'Network error. Please try again.';
-        btn.disabled = false; btn.textContent = 'Register now';
-      }
-    });
-  </script>
+  <footer class="footer">
+    <div class="wrap">
+      <span>© Rotaract JP Nagar</span> ·
+      <a href="/donate.html">Support the cause</a> ·
+      <a href="/register.html">The Pink Pass</a>
+    </div>
+  </footer>
 </body>
 </html>

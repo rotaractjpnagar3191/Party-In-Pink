@@ -1,18 +1,73 @@
-:root { --pink:#ff4d88; --ink:#1b1b1f; --muted:#6b7280; }
-body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; color: var(--ink); margin:0; }
-.wrap { max-width: 960px; margin: 0 auto; padding: 20px; }
-.wrap.narrow { max-width: 560px; }
-.hero { background:#ffe3ee; }
-.hero .wrap { padding: 64px 20px; text-align:center; }
-.hero h1 { font-size: 40px; margin: 0 0 8px; color:#c42460; }
-.sub { color:#7a2448; margin: 0 0 16px; }
-.btn { background: var(--pink); color:#fff; padding: 10px 16px; border-radius: 12px; text-decoration:none; display:inline-block; }
-.stats { background:#fafafa; }
-.grid4 { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
-.grid2 { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
-.num { font-weight: 800; font-size: 28px; }
-.lbl { color: var(--muted); }
-.form input, .form select { width:100%; padding:12px; border:1px solid #e5e7eb; border-radius:12px; margin: 6px 0; }
-.err { color:#b00020; font-size: 14px; }
-.foot { display:flex; gap:16px; align-items:center; justify-content:space-between; border-top:1px solid #eee; margin-top:40px; padding-top:20px; }
-@media (max-width: 700px){ .grid4 { grid-template-columns:repeat(2,1fr) } }
+/* === Party in Pink — site theme === */
+:root{
+  --pink:#e91e63;
+  --pink-600:#d81b60;
+  --ink:#1e1f24;
+  --muted:#6b7280;
+  --bg:#ffffff;
+  --soft:#fef2f7;
+  --card:#ffffff;
+  --ring:#ffd1e0;
+  --shadow:0 8px 24px rgba(0,0,0,.08);
+  --radius:18px;
+  --radius-sm:12px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, "Hind", Arial, sans-serif;
+  color:var(--ink); background:var(--bg); line-height:1.5;
+}
+
+/* layout */
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+.nav{
+  position:sticky; top:0; z-index:50; background:#fff; border-bottom:1px solid #eee;
+}
+.nav .row{display:flex; align-items:center; justify-content:space-between; height:64px}
+.brand{display:flex; gap:10px; align-items:center; font-weight:800; letter-spacing:.3px}
+.brand .dot{width:28px;height:28px;border-radius:50%; background:var(--pink)}
+nav a{color:var(--ink); text-decoration:none; font-weight:600; margin-left:22px}
+nav a.btn{margin-left:12px}
+
+.hero{
+  background:linear-gradient(180deg, var(--soft), #fff 60%);
+  border-bottom:1px solid #f7d3e1;
+}
+.hero .wrap{padding:56px 20px}
+h1{font-size:clamp(32px,5vw,48px); margin:0 0 8px}
+.sub{color:var(--muted); margin:0 0 18px}
+.ctas{display:flex; gap:12px; flex-wrap:wrap}
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  font-weight:700; padding:12px 18px; border-radius:9999px; border:0; cursor:pointer;
+  background:var(--pink); color:#fff; box-shadow:var(--shadow);
+}
+.btn:hover{background:var(--pink-600)}
+.btn.outline{background:#fff;color:var(--pink); border:2px solid var(--pink)}
+.btn.ghost{background:#fff;color:var(--ink); border:1px solid #eee}
+.kicker{font-size:14px; letter-spacing:.16em; color:var(--muted); text-transform:uppercase}
+
+.section{padding:48px 0}
+.grid{display:grid; gap:18px}
+.grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media (max-width:900px){ .grid-3,.grid-2{grid-template-columns:1fr} }
+
+.card{
+  background:var(--card); border:1px solid #f2e4ea; border-radius:var(--radius);
+  padding:20px; box-shadow:var(--shadow);
+}
+.card h3{margin:6px 0 8px}
+.muted{color:var(--muted)}
+.center{text-align:center}
+
+/* form wrappers used on register & donate */
+.page-head{padding:32px 0 8px; border-bottom:1px solid #f6e0ea; background:#fff}
+.main{padding:26px 0 64px}
+.embed{border-radius:var(--radius); overflow:hidden; border:1px solid #eee; background:#fff; box-shadow:var(--shadow)}
+.note{border-radius:var(--radius-sm); border:1px dashed #f3a9c2; padding:14px 16px; background:#fff7fb}
+.badge{display:inline-block; padding:4px 10px; background:#fff; border:1px solid #f0c2d3; border-radius:999px; font-size:12px; color:var(--muted)}
+
+.footer{border-top:1px solid #eee; padding:28px 0; color:var(--muted); background:#fff}
+.footer a{color:var(--ink); text-decoration:none; font-weight:600}

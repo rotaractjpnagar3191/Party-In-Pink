@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Bulk Registrations — Party in Pink</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    textarea{width:100%;min-height:180px;border:1px solid #eee;border-radius:16px;padding:12px}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    @media (max-width:900px){ .grid2{grid-template-columns:1fr} }
+  </style>
+</head>
+<body>
+  <header class="nav">
+    <div class="wrap row">
+      <div class="brand"><span class="dot"></span> Party in Pink 4.0</div>
+      <nav>
+        <a href="/index.html">Home</a>
+        <a href="/register.html">Register</a>
+        <a href="/donate.html">Donate</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="page-head">
+    <div class="wrap">
+      <h1>Bulk registrations (organisers)</h1>
+      <p class="sub">Upload a CSV and we’ll create complimentary tickets via KonfHub Capture API.</p>
+    </div>
+  </section>
+
+  <main class="wrap main">
+    <div class="card">
+      <div class="grid2">
+        <input id="sponsor" placeholder="Sponsor / Club (optional)">
+        <input id="upi" placeholder="UPI reference / Txn ID (optional)">
+      </div>
+      <p class="muted">Paste CSV with columns: <b>Name, Email, Phone, Rotaractor(Yes/No), Club</b></p>
+      <textarea id="csv" placeholder="Jane Doe,jane@example.com,9876543210,Yes,RC JP Nagar"></textarea>
+      <div class="ctas" style="margin-top:12px">
+        <button class="btn" id="previewBtn">Preview</button>
+        <button class="btn outline" id="sendBtn" disabled>Send to KonfHub</button>
+      </div>
+      <p id="msg" class="muted"></p>
+      <div id="preview"></div>
+    </div>
+  </main>
+
+  <footer class="footer"><div class="wrap">© Rotaract JP Nagar</div></footer>
+
+  <script>
+    const parseCSV = (text) => text.split(/\r?\n/)
+      .map(l=>l.trim()).filter(Boolean)
+      .map(l=>{ const [name='',email='',phone='',rot='',club=''] = l.split(',').map(x=>(x||'').trim());
+                return {name,email,phone,rotaractor:rot,club}; });
+
+    const csvEl = document.getElementById('csv');
+    const msgEl = document.getElementById('msg');
+    const prevEl = document.getElementById('preview');
+    const btnPrev = document.getElementById('previewBtn');
+    const btnSend = document.getElementById('sendBtn');
+
+    let rows = [];
+
+    btnPrev.onclick = () => {
+      rows = parseCSV(csvEl.value);
+      if (!rows.length){ msgEl.textContent='No rows detected.'; btnSend.disabled=true; prevEl.innerHTML=''; return; }
+      msgEl.textContent=''; btnSend.disabled=false;
+      prevEl.innerHTML = '<ul>'+rows.map(r=>`<li>${r.name} — ${r.email} — ${r.phone} — ${r.rotaractor} ${r.club?(' | '+r.club):''}</li>`).join('')+'</ul>';
+    };
+
+    btnSend.onclick = async () => {
+      const admin_key = localStorage.getItem('pip_admin_key') || prompt('Organizer key:');
+      if (admin_key) localStorage.setItem('pip_admin_key', admin_key);
+
+      btnSend.disabled = true; msgEl.textContent = 'Submitting…';
+
+      const payload = {
+        admin_key,
+        sponsor: document.getElementById('sponsor').value.trim(),
+        upi_ref: document.getElementById('upi').value.trim(),
+        attendees: rows
+      };
+
+      const res = await fetch('/api/konfhub-capture-bulk', {
+        method:'POST', headers:{'Content-Type':'application/json','x-admin-key':admin_key},
+        body: JSON.stringify(payload)
+      });
+      const text = await res.text();
+      try{
+        const j = JSON.parse(text);
+        if (res.ok && j.ok) msgEl.innerHTML = `<b>Done!</b> Created ${j.total} registrations in ${j.batches} batch(es).`;
+        else msgEl.innerHTML = `<b>Error:</b> ${text}`;
+      }catch{ msgEl.innerHTML = `<b>Error:</b> ${text}`; }
+      btnSend.disabled = false;
+    };
+  </script>
+</body>
+</html>
