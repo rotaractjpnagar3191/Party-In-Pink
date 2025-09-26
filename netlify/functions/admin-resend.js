@@ -1,15 +1,25 @@
-const sg = require('@sendgrid/mail')
-if(process.env.SENDGRID_API_KEY){ sg.setApiKey(process.env.SENDGRID_API_KEY) }
+const { getConfig } = require('./_config');
+const { getJson, putJson } = require('./_github');
+const { issueComplimentaryPasses } = require('./_konfhub');
 
 exports.handler = async (event) => {
-  const qs = event.queryStringParameters || {}
-  if(qs.key !== process.env.ADMIN_KEY) return { statusCode: 401, body: 'Unauthorized' }
-  if(!process.env.SENDGRID_API_KEY) return { statusCode: 400, body: 'Email not configured' }
-  const orderId = qs.order_id
-  if(!orderId) return { statusCode: 400, body: 'order_id required' }
-  const link = `${process.env.SITE_URL}/api/ticket?order_id=${encodeURIComponent(orderId)}`
-  const to = qs.email
-  if(!to) return { statusCode: 400, body: 'email required' }
-  await sg.send({ to, from: process.env.TICKETS_FROM_EMAIL, subject: 'Your PiP 4.0 Ticket', html: `Download your ticket: <a href="${link}">Ticket (PDF)</a>` })
-  return { statusCode: 200, body: JSON.stringify({ ok:true }) }
-}
+  if (event.httpMethod !== 'POST') return { statusCode: 405, body: 'Method not allowed' };
+  const { private: ENV } = getConfig();
+  if ((event.headers['x-admin-key'] || '') !== (process.env.ADMIN_KEY || '')) {
+    return { statusCode: 401, body: 'Unauthorized' };
+  }
+  const { id } = JSON.parse(event.body || '{}');
+  if (!id) return { statusCode: 400, body: 'Missing id' };
+
+  const path = `${ENV.STORE_PATH}/orders/${id}.json`;
+  const oc = await getJson(ENV, path);
+  if (!oc) return { statusCode: 404, body: 'Not found' };
+
+  const issued = await issueComplimentaryPasses(ENV, oc);
+  oc.konfhub = { ticket_id_used: oc.type==='bulk' ? ENV.KONFHUB_BULK_TICKET_ID || ENV.KONFHUB_FREE_TICKET_ID : ENV.KONFHUB_FREE_TICKET_ID, registrations: issued.created };
+  oc.fulfilled = { at: new Date().toISOString(), status: issued.errors?.length ? 'partial' : 'ok', count: issued.total };
+  if (issued.errors?.length) oc.issuance_errors = issued.errors;
+  await putJson(ENV, path, oc);
+
+  return { statusCode: 200, headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ok: true, issued }) };
+};

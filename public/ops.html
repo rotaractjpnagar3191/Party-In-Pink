@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ops Dashboard — Party in Pink 4.0</title>
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/styles.css" />
+    <p id="ipline" class="help"></p>
+    <script>
+        fetch('/api/whoami').then(r => r.json()).then(d => {
+            const el = document.getElementById('ipline');
+            if (el) el.textContent = 'Your IP: ' + (d.ip || 'unknown');
+        });
+    </script>
+
+</head>
+
+<body class="page-ops">
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header">
+        <div class="navbar container">
+            <a class="brand" href="/"><img src="/assets/logos/PiP_Black.png" alt="Party In Pink 4.0 logo" width="140"
+                    height="36"><span class="title sr-only">Party in Pink 4.0</span></a>
+            <nav class="nav">
+                <a href="/">Home</a>
+                <a href="/register.html">Register</a>
+                <a href="/bulk.html">Bulk</a>
+                <a href="/donate.html">Donate</a>
+                <a href="/ops.html" aria-current="page">Ops</a>
+            </nav>
+        </div>
+    </header>
+
+    <main id="main" class="section">
+        <div class="container">
+            <div class="card" style="max-width:1100px;margin:auto">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+                    <h1 style="margin:0">Ops Dashboard</h1>
+                    <div>
+                        <input id="adminkey" class="input" type="password" placeholder="Admin key" />
+                        <button class="btn" id="saveKey">Save</button>
+                        <button class="btn ghost" id="refresh">Refresh</button>
+                    </div>
+                </div>
+                <p class="help">Aggregates from GitHub ledger: orders (Cashfree + issuance) and KonfHub webhooks (both
+                    events).</p>
+
+                <div class="kpi" id="kpis" style="margin-top:12px">
+                    <!-- skeleton rendered by app.js on DOMContentLoaded -->
+                </div>
+
+                <div class="grid grid-2" style="margin-top:16px">
+                    <div>
+                        <h3>Recent Orders</h3>
+                        <table class="table" id="orders">
+                            <thead>
+                                <tr>
+                                    <th>Created</th>
+                                    <th>Type</th>
+                                    <th>Amount</th>
+                                    <th>Passes</th>
+                                    <th>Email</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div>
+                        <h3>Recent KonfHub Events</h3>
+                        <table class="table" id="kh">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Event ID</th>
+                                    <th>Type</th>
+                                    <th>Email</th>
+                                    <th>Ticket</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <footer class="site-footer">
+        <div class="container footer-grid">
+            <div class="footer-brand">
+                <!-- Dark footer background → use white logo -->
+                <a href="/" class="footer-logo-link" aria-label="Party in Pink 4.0">
+                    <img src="/assets/logos/PiP_WHITE.png" alt="Party in Pink 4.0" class="footer-logo" width="200"
+                        height="44" loading="lazy">
+                </a>
+            </div>
+
+            <div>
+                <a href="mailto:rotaractjpnagar@gmail.com">rotaractjpnagar@gmail.com</a>
+            </div>
+        </div>
+    </footer>
+
+
+
+    <script>
+        const el = sel => document.querySelector(sel);
+        const fmtCur = v => '₹' + (Number(v || 0)).toLocaleString('en-IN');
+        const pill = s => `<span class="pill-badge ${s}">${s}</span>`;
+
+        // bootstrap admin key from URL (?k=)
+        (function bootKeyFromURL() {
+            const u = new URL(location.href);
+            const k = u.searchParams.get('k');
+            if (k) { localStorage.setItem('ops_admin_key', k); }
+        })();
+
+        function loadKey() {
+            const k = localStorage.getItem('ops_admin_key') || '';
+            el('#adminkey').value = k;
+            return k;
+        }
+        function saveKey() {
+            const v = el('#adminkey').value.trim();
+            localStorage.setItem('ops_admin_key', v);
+            return v;
+        }
+
+        function showLoading() {
+            const kpi = el('#kpis');
+            kpi.innerHTML = `
+        <div class="card skeleton h40"></div>
+        <div class="card skeleton h40"></div>
+        <div class="card skeleton h40"></div>
+        <div class="card skeleton h40"></div>
+        <div class="card skeleton h40"></div>
+      `;
+            el('#orders tbody').innerHTML = '<tr><td colspan="6"><div class="skeleton h16"></div></td></tr>';
+            el('#kh tbody').innerHTML = '<tr><td colspan="5"><div class="skeleton h16"></div></td></tr>';
+        }
+        function clearLoading() { /* no-op; render functions overwrite */ }
+
+        async function fetchStats() {
+            const key = loadKey();
+            if (!key) {
+                el('#kpis').innerHTML = `<div class="card">Enter the admin key and click Save.</div>`;
+                el('#orders tbody').innerHTML = '';
+                el('#kh tbody').innerHTML = '';
+                return;
+            }
+            showLoading();
+            let res, url = '/.netlify/functions/admin-stats';
+            try {
+                const q = `?k=${encodeURIComponent(key)}&debug=0`;
+                res = await fetch(url + q, { headers: { 'x-admin-key': key } });
+            } catch (e) {
+                el('#kpis').innerHTML = `<div class="card">Network error: ${e.message}</div>`;
+                return;
+            }
+            const text = await res.text();
+            let j; try { j = JSON.parse(text); } catch { j = { ok: false, error: text }; }
+
+            if (!res.ok || !j.ok) {
+                const msg = (j && j.error) ? j.error : (text || `HTTP ${res.status}`);
+                el('#kpis').innerHTML = `<div class="card">⚠️ ${msg}. Check the admin key.</div>`;
+                el('#orders tbody').innerHTML = '';
+                el('#kh tbody').innerHTML = '';
+                return;
+            }
+            clearLoading();
+            renderKPIs(j);
+            renderOrders(j.recent_orders || []);
+            renderKH(j.recent_konfhub || []);
+        }
+
+        function renderKPIs(j) {
+            const t = j.totals;
+            const khByEvent = t.konfhub_webhooks.by_event || {};
+            const evItems = Object.entries(khByEvent).map(([id, c]) => `<div class="help"><strong>${id}</strong><br>${c} events</div>`).join('');
+            el('#kpis').innerHTML = `
+        <div class="card"><div class="help">Orders</div><div style="font-size:22px;font-weight:700">${t.orders}</div></div>
+        <div class="card"><div class="help">Donations</div><div style="font-size:22px;font-weight:700">${t.donations.count}</div><div class="help">${fmtCur(t.donations.amount)} • ${t.donations.passes} passes</div></div>
+        <div class="card"><div class="help">Bulk</div><div style="font-size:22px;font-weight:700">${t.bulk.count}</div><div class="help">${t.bulk.quantity} passes</div></div>
+        <div class="card"><div class="help">Issuance</div>
+          <div class="help">${pill('ok')} ${t.issuance.ok} &nbsp; ${pill('partial')} ${t.issuance.partial} &nbsp; ${pill('failed')} ${t.issuance.failed} &nbsp; ${pill('pending')} ${t.issuance.pending}</div>
+          <div class="help">${t.issuance.passes_issued} passes issued</div>
+        </div>
+        <div class="card"><div class="help">KonfHub webhooks</div><div style="font-size:22px;font-weight:700">${t.konfhub_webhooks.total}</div><div class="help">${evItems || '—'}</div></div>
+      `;
+        }
+
+        function renderOrders(rows) {
+            const tb = el('#orders tbody');
+            tb.innerHTML = rows.length ? rows.map(r => `
+        <tr>
+          <td class="help">${r.created_at ? new Date(r.created_at).toLocaleString() : '—'}</td>
+          <td>${r.type}</td>
+          <td>${fmtCur(r.amount)}</td>
+          <td>${r.passes}</td>
+          <td class="help">${r.email || '—'}</td>
+          <td>${pill(r.status)}</td>
+        </tr>
+      `).join('') : '<tr><td colspan="6" class="help">No orders yet</td></tr>';
+        }
+
+        function renderKH(rows) {
+            const tb = el('#kh tbody');
+            tb.innerHTML = rows.length ? rows.map(r => `
+        <tr>
+          <td class="help">${r.at ? new Date(r.at).toLocaleString() : '—'}</td>
+          <td class="help">${r.event_id}</td>
+          <td class="help">${r.type}</td>
+          <td class="help">${r.email || '—'}</td>
+          <td class="help">${r.ticket_id || '—'}</td>
+        </tr>
+      `).join('') : '<tr><td colspan="5" class="help">No KonfHub events yet</td></tr>';
+        }
+
+        el('#saveKey').addEventListener('click', () => { saveKey(); fetchStats(); });
+        el('#refresh').addEventListener('click', () => fetchStats());
+
+        loadKey(); fetchStats();
+    </script>
+    <script src="/app.js" defer></script>
+</body>
+
+</html>

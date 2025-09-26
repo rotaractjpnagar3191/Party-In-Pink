@@ -1,134 +1,84 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta charset="utf-8" />
+  <meta http-equiv="x-ua-compatible" content="ie=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Register — Party in Pink 4.0</title>
-  <link rel="stylesheet" href="/styles.css"/>
-  <style>
-    .widget-wrap{background:#fff;border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);padding:16px}
-    .widget-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:12px}
-    .widget-head .note{font-size:.9rem;color:var(--muted)}
-    .iframe-shell{border-radius:14px;overflow:hidden;border:1px solid var(--line)}
-    #konfhub-widget{display:block;width:100%;height:760px;border:0}
-    @media (max-width: 900px){ #konfhub-widget{height:900px} }
-    .embed-card{background:#fff;border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);padding:14px}
-    .embed-shell{border:1px solid var(--line);border-radius:14px;overflow:hidden}
-    .upi-box{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:8px}
-    .upi-id{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;padding:8px 10px;border:1px dashed var(--line);border-radius:10px;background:#fff}
-    .btn.copy{background:#fff;border:1px solid var(--line)}
-  </style>
+  <meta name="description"
+    content="Register for Party in Pink 4.0. Join the Zumba fundraiser for breast cancer awareness." />
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
 </head>
-<body class="bg">
 
-<header class="topbar glass">
-  <div class="wrap nav">
-    <a class="brand" href="/"><span class="logo-dot"></span> Party in Pink 4.0</a>
-    <button class="nav-toggle" id="navToggle" aria-label="Open menu">☰</button>
-    <nav id="navMenu">
-      <a href="/#about">About</a>
-      <a href="/#highlights">Highlights</a>
-      <a href="/#tickets">Tickets</a>
-      <a href="/donate.html">Donate</a>
-      <a href="/#schedule">Schedule</a>
-      <a href="/#venue">Venue</a>
-      <a href="/#faqs">FAQs</a>
-      <a class="btn sm primary" href="/register.html">Register</a>
-    </nav>
-  </div>
-</header>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
 
-<section class="hero-slim">
-  <div class="wrap">
-    <div class="chip-row"><span class="chip">Season 4</span><span class="chip">Zumba Fundraiser</span></div>
-    <h1>Register</h1>
-    <p class="sub">Instant QR ticket via KonfHub • The Pink Pass — ₹199</p>
-  </div>
-</section>
+  <header class="site-header">
+    <div class="navbar">
+      <a class="brand" href="/" aria-label="Party in Pink 4.0">
+        <!-- Light header background → use black logo -->
+        <img src="/assets/logos/PiP_Black.png" alt="Party in Pink 4.0" class="brand-logo" width="180" height="40">
+      </a>
 
-<main class="wrap narrow section">
-  <!-- Standard registrations -->
-  <div class="widget-wrap">
-    <div class="widget-head">
-      <h2 class="tight">The Pink Pass</h2>
-      <span class="note">Secure checkout by KonfHub</span>
+      <button id="navToggle" class="burger" aria-expanded="false" aria-controls="navMenu" aria-label="Menu">
+        ☰
+      </button>
+
+      <nav id="navMenu" class="nav" aria-label="Primary">
+        <a href="/">Home</a>
+        <a href="/register.html">Register</a>
+        <a href="/bulk.html">Bulk</a>
+        <a href="/donate.html">Donate</a>
+        <!-- no Ops link in public nav -->
+      </nav>
     </div>
+  </header>
 
-    <div class="iframe-shell">
-      <!-- KonfHub widget -->
-      <iframe
-        src="https://konfhub.com/widget/partyinpink4?desc=true&secondaryBg=F7F7F7&ticketBg=F7F7F7&borderCl=F7F7F7&bg=FFFFFF&fontColor=1e1f24&ticketCl=1e1f24&btnColor=002E6E&fontFamily=Hind&borderRadius=10&widget_type=standard&tickets=59332&ticketId=59332%7C1"
-        id="konfhub-widget"
-        title="Register for Party In Pink 4.0"
-        loading="eager"
-        allow="payment"
-      ></iframe>
-    </div>
 
-    <p class="hint" style="margin-top:12px">
-      Trouble with the embed? <a target="_blank" rel="noopener" href="https://konfhub.com/partyinpink4">Open full page ↗</a>
-    </p>
-  </div>
+  <main id="main" class="section">
+    <div class="container">
+      <div class="card" style="max-width:960px;margin:auto">
+        <h1>Register</h1>
+        <p class="lead">Get your <strong>Pink Pass — ₹199</strong> for <em>Party in Pink 4.0</em> on <strong>Sun, 12 Oct
+            2025 • 7:00 AM</strong> at <strong>BIT, VV Puram, Bengaluru</strong>.</p>
 
-  <!-- Bulk registrations / Collaboration -->
-  <section id="collab" class="section">
-    <h2>Bulk Registrations / Collaboration</h2>
-    <div class="card" style="margin-bottom:14px">
-      <h3>Eligibility</h3>
-      <ul class="ticklist">
-        <li><strong>Community-based clubs:</strong> 12 registrations</li>
-        <li><strong>University-based clubs:</strong> 20 registrations</li>
-      </ul>
-      <p>Fill the form below to initiate a collaboration. After submitting, please complete the payment directly to the UPI ID shown.</p>
-    </div>
+        <!-- KonfHub public widget (new public event) -->
+        <div class="embed-wrap" style="border-radius:10px;overflow:hidden">
+          <iframe
+            src="https://konfhub.com/widget/partyinpink4?desc=true&secondaryBg=F7F7F7&ticketBg=F7F7F7&borderCl=F7F7F7&bg=FFFFFF&fontColor=1e1f24&ticketCl=1e1f24&btnColor=002E6E&fontFamily=Hind&borderRadius=10&widget_type=quick&screen=2&tickets=59605&ticketId=59605%7C1"
+            id="konfhub-widget" title="Register for Party In Pink 4.0" width="100%" height="500"
+            style="border:0"></iframe>
+        </div>
 
-    <div class="embed-card" style="margin-bottom:14px">
-      <div class="embed-shell">
-        <div formsappId="68d2b590351bf461e17a667f"></div>
-        <script src="https://forms.app/cdn/embed.js" type="text/javascript" async defer
-          onload="new formsapp('68d2b590351bf461e17a667f','standard',{'width':'100vw','height':'600px'}, 'https://firx950x.forms.app');">
-        </script>
+        <p class="muted" style="margin-top:12px">Having trouble? Write to <a
+            href="mailto:rotaractjpnagar@gmail.com">rotaractjpnagar@gmail.com</a>.</p>
       </div>
     </div>
+  </main>
 
-    <div class="card">
-      <h3>Pay via UPI (for bulk)</h3>
-      <p>After submitting the form, make the consolidated payment via UPI.</p>
-      <div class="upi-box">
-        <div class="upi-id" id="upiId">racjpn-pip@ybl</div>
-        <button class="btn copy" id="copyUPI">Copy</button>
-        <a class="btn" id="upiIntent" href="upi://pay?pa=racjpn-pip@ybl&pn=Rotaract%20JP%20Nagar&cu=INR">Open in UPI app</a>
-      </div>
-      <p class="hint" style="margin-top:8px">If your official Season 4 UPI differs, replace it here in the file.</p>
+  <footer class="site-footer">
+  <div class="container footer-grid">
+    <div class="footer-brand">
+      <!-- Dark footer background → use white logo -->
+      <a href="/" class="footer-logo-link" aria-label="Party in Pink 4.0">
+        <img src="/assets/logos/PiP_WHITE.png" alt="Party in Pink 4.0" class="footer-logo" width="200" height="44" loading="lazy">
+      </a>
     </div>
-  </section>
 
-  <div class="info-grid">
-    <div class="card">
-      <h3>Need help?</h3>
-      <p>Write to <a href="mailto:rotaractjpnagar@gmail.com">rotaractjpnagar@gmail.com</a>.</p>
+    <div>
+      <a href="mailto:rotaractjpnagar@gmail.com">rotaractjpnagar@gmail.com</a>
     </div>
-    <div class="card">
-      <h3>Prefer to donate/sponsor?</h3>
-      <p>Use UPI or fill the online form on our <a href="/donate.html">Donate</a> page.</p>
-    </div>
-  </div>
-</main>
-
-<footer>
-  <div class="wrap footer">
-    <div>© Rotaract Club of JP Nagar</div>
-    <div><a href="mailto:rotaractjpnagar@gmail.com">rotaractjpnagar@gmail.com</a></div>
   </div>
 </footer>
 
-<a class="sticky-cta" href="/register.html">Get Tickets →</a>
 
-<script>
-const navToggle=document.getElementById('navToggle'); const navMenu=document.getElementById('navMenu');
-navToggle?.addEventListener('click',()=>navMenu.classList.toggle('show'));
-const upiText=document.getElementById('upiId').textContent.trim();
-document.getElementById('copyUPI').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(upiText);alert('UPI ID copied');}catch(e){}});
-</script>
+
+  <script src="/app.js" defer></script>
 </body>
+
 </html>

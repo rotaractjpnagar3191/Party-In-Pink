@@ -1,32 +1,87 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Thank you — PiP</title>
+  <meta http-equiv="x-ua-compatible" content="ie=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Thanks — Party in Pink 4.0</title>
+  <meta name="description" content="Payment complete. Your passes will be emailed shortly." />
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css" />
 </head>
 
 <body>
-  <main class="wrap narrow">
-    <h1>Thank you!</h1>
-    <p id="info">Checking payment…</p>
-    <a id="dl" class="btn" style="display:none">Download Ticket (PDF)</a>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="navbar">
+      <a class="brand" href="/" aria-label="Party in Pink 4.0">
+        <!-- Light header background → use black logo -->
+        <img src="/assets/logos/PiP_Black.png" alt="Party in Pink 4.0" class="brand-logo" width="180" height="40">
+      </a>
+
+      <button id="navToggle" class="burger" aria-expanded="false" aria-controls="navMenu" aria-label="Menu">
+        ☰
+      </button>
+
+      <nav id="navMenu" class="nav" aria-label="Primary">
+        <a href="/">Home</a>
+        <a href="/register.html">Register</a>
+        <a href="/bulk.html">Bulk</a>
+        <a href="/donate.html">Donate</a>
+        <!-- no Ops link in public nav -->
+      </nav>
+    </div>
+  </header>
+
+
+  <main id="main" class="section">
+    <div class="container">
+      <div class="card" style="max-width:760px;margin:auto">
+        <h1>Thank you! 🎉</h1>
+        <p id="thanksLine" class="lead">Your payment was completed.</p>
+
+        <div id="successStatus">
+          <p>We’re confirming the payment and issuing your passes via KonfHub. This usually takes a few seconds.</p>
+          <div id="statusBadge" class="badge">Checking status…</div>
+          <div id="statusDetail" class="muted"></div>
+        </div>
+
+        <hr>
+        <p><strong>What happens next?</strong></p>
+        <ul class="benefits">
+          <li>You’ll receive a confirmation email from us.</li>
+          <li>Passes will be emailed by KonfHub to the recipient emails you provided.</li>
+          <li>If you don’t see emails within a few minutes, check spam or contact <a
+              href="mailto:rotaractjpnagar@gmail.com">rotaractjpnagar@gmail.com</a>.</li>
+        </ul>
+
+        <p style="margin-top:12px"><a class="btn" href="/">Back to Home</a></p>
+      </div>
+    </div>
   </main>
-  <script>
-    const ref = new URLSearchParams(location.search).get('ref');
-    (async function poll() {
-      const r = await fetch(`/api/order-status?ref=${encodeURIComponent(ref)}`);
-      const j = await r.json();
-      if (j.status === 'PAID') {
-        document.getElementById('info').textContent = 'Payment confirmed. Your ticket is ready.';
-        const dl = document.getElementById('dl'); dl.href = `/api/ticket?ref=${encodeURIComponent(ref)}`; dl.style.display = 'inline-block';
-      } else {
-        document.getElementById('info').textContent = 'Waiting for confirmation… (refresh if this takes more than a minute)'
-      }
-    })();
-  </script>
+
+ <footer class="site-footer">
+  <div class="container footer-grid">
+    <div class="footer-brand">
+      <!-- Dark footer background → use white logo -->
+      <a href="/" class="footer-logo-link" aria-label="Party in Pink 4.0">
+        <img src="/assets/logos/PiP_WHITE.png" alt="Party in Pink 4.0" class="footer-logo" width="200" height="44" loading="lazy">
+      </a>
+    </div>
+
+    <div>
+      <a href="mailto:rotaractjpnagar@gmail.com">rotaractjpnagar@gmail.com</a>
+    </div>
+  </div>
+</footer>
+
+
+
+  <script src="/app.js" defer></script>
 </body>
 
 </html>

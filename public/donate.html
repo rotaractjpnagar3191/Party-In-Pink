@@ -1,57 +1,86 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Donate for the Cause — Party in Pink</title>
-  <link rel="stylesheet" href="/styles.css" />
+  <meta charset="utf-8">
+  <title>Donate — Party in Pink 4.0</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="/styles.css" rel="stylesheet">
 </head>
 <body>
-  <header class="nav">
-    <div class="wrap row">
-      <div class="brand"><span class="dot"></span> Party in Pink 4.0</div>
-      <nav>
-        <a href="/index.html">Home</a>
-        <a href="/register.html">Register</a>
-        <a href="/donate.html">Donate</a>
-      </nav>
-    </div>
-  </header>
+<header class="site-header">
+  <div class="navbar">
+    <a class="brand" href="/" aria-label="Party in Pink 4.0">
+      <img src="/assets/logos/PiP_Black.png" alt="Party in Pink 4.0" class="brand-logo" width="180" height="40">
+    </a>
+    <button id="navToggle" class="burger" aria-expanded="false" aria-controls="navMenu" aria-label="Menu">☰</button>
+    <nav id="navMenu" class="nav" aria-label="Primary">
+      <a href="/">Home</a>
+      <a href="/register.html">Register</a>
+      <a href="/bulk.html">Bulk</a>
+      <a href="/donate.html" aria-current="page">Donate</a>
+    </nav>
+  </div>
+</header>
 
-  <section class="page-head">
-    <div class="wrap">
-      <h1>Donate for the Cause</h1>
-      <p class="sub">Your support powers our screening camps and awareness drives.</p>
-    </div>
+<main id="main" class="container">
+  <section class="section">
+    <h1>Donate for the Cause</h1>
+    <p class="lead">Your donation supports awareness initiatives. We’ll auto-issue Pink Passes based on the slab your amount falls into.</p>
+
+    <table class="slab-table" aria-describedby="slab_hint">
+      <thead>
+        <tr><th>Amount</th><th>Passes</th><th>Perks</th></tr>
+      </thead>
+      <tbody id="slab_body"></tbody>
+    </table>
+    <p id="slab_hint" class="help" style="margin-top:10px"></p>
+
+    <form id="donateForm" class="card form-card" novalidate>
+      <div class="grid two">
+        <div>
+          <label for="donor_name" class="label">Your Name</label>
+          <input id="donor_name" type="text" required placeholder="Full name">
+        </div>
+
+        <div>
+          <label for="donor_email" class="label">Email</label>
+          <input id="donor_email" type="email" required placeholder="you@example.com">
+        </div>
+
+        <div>
+          <label for="donor_phone" class="label">Phone</label>
+          <input id="donor_phone" type="tel" inputmode="tel" required placeholder="10-digit mobile" pattern="^(?:\+?91[-\s]?|0)?[6-9]\d{9}$">
+        </div>
+
+        <div>
+          <label for="donor_amount" class="label">Donation Amount (₹)</label>
+          <input id="donor_amount" type="number" inputmode="numeric" min="0" step="100" required placeholder="5000">
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="donor_submit" class="btn btn-pink" type="submit">Donate</button>
+      </div>
+    </form>
+
+    <p class="help" style="margin-top:10px">
+      Need <strong>80G</strong>? Please do <em>not</em> donate to <code>racjpn2425@axl</code> on this site — email us at
+      <a href="mailto:rotaractjpnagar@gmail.com">rotaractjpnagar@gmail.com</a> for 80G processing.
+    </p>
   </section>
+</main>
 
-  <main class="wrap main">
-    <section class="section grid grid-2">
-      <div class="card">
-        <h3>Direct UPI (no 80G)</h3>
-        <p class="muted">If you don’t need an 80G receipt, you may donate directly to our UPI ID.</p>
-        <div class="note"><b>UPI:</b> racjpn2425@axl</div>
-        <p class="muted">For large gifts, please also email the payment reference to <b>rotaractjpnagar@gmail.com</b> so we can thank you properly.</p>
-      </div>
+<footer class="site-footer">
+  <div class="container footer-grid">
+    <div class="footer-brand">
+      <a href="/" class="footer-logo-link" aria-label="Party in Pink 4.0">
+        <img src="/assets/logos/PiP_WHITE.png" alt="Party in Pink 4.0" class="footer-logo" width="200" height="44" loading="lazy">
+      </a>
+    </div>
+    <div><a href="mailto:rotaractjpnagar@gmail.com">rotaractjpnagar@gmail.com</a></div>
+  </div>
+</footer>
 
-      <div class="card">
-        <h3>Need 80G?</h3>
-        <p class="muted">Please <b>do not donate</b> to the UPI above if you require 80G. Contact us and we’ll share the correct channel for 80G receipts.</p>
-        <div class="note">Write to: <b>rotaractjpnagar@gmail.com</b></div>
-      </div>
-    </section>
-
-    <section class="section">
-      <h3>Donate online (form)</h3>
-      <div class="embed">
-        <!-- forms.app donation form -->
-        <div formsappId="68d2b582325ddf2fe07145d9"></div>
-        <script src="https://forms.app/cdn/embed.js" type="text/javascript" async defer
-          onload="new formsapp('68d2b582325ddf2fe07145d9','standard',{'width':'100vw','height':'800px'},'https://firx950x.forms.app');"></script>
-      </div>
-    </section>
-  </main>
-
-  <footer class="footer"><div class="wrap">© Rotaract JP Nagar</div></footer>
+<script src="/app.js" defer></script>
 </body>
 </html>

@@ -1,100 +1,92 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Bulk Registrations — Party in Pink</title>
-  <link rel="stylesheet" href="/styles.css" />
-  <style>
-    textarea{width:100%;min-height:180px;border:1px solid #eee;border-radius:16px;padding:12px}
-    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    @media (max-width:900px){ .grid2{grid-template-columns:1fr} }
-  </style>
+  <meta charset="utf-8">
+  <title>Bulk Registration — Party in Pink 4.0</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="/styles.css" rel="stylesheet">
 </head>
 <body>
-  <header class="nav">
-    <div class="wrap row">
-      <div class="brand"><span class="dot"></span> Party in Pink 4.0</div>
-      <nav>
-        <a href="/index.html">Home</a>
-        <a href="/register.html">Register</a>
-        <a href="/donate.html">Donate</a>
-      </nav>
-    </div>
-  </header>
+<header class="site-header">
+  <div class="navbar">
+    <a class="brand" href="/" aria-label="Party in Pink 4.0">
+      <img src="/assets/logos/PiP_Black.png" alt="Party in Pink 4.0" class="brand-logo" width="180" height="40">
+    </a>
+    <button id="navToggle" class="burger" aria-expanded="false" aria-controls="navMenu" aria-label="Menu">☰</button>
+    <nav id="navMenu" class="nav" aria-label="Primary">
+      <a href="/">Home</a>
+      <a href="/register.html">Register</a>
+      <a href="/bulk.html" aria-current="page">Bulk</a>
+      <a href="/donate.html">Donate</a>
+    </nav>
+  </div>
+</header>
 
-  <section class="page-head">
-    <div class="wrap">
-      <h1>Bulk registrations (organisers)</h1>
-      <p class="sub">Upload a CSV and we’ll create complimentary tickets via KonfHub Capture API.</p>
-    </div>
+<main id="main" class="container">
+  <section class="section">
+    <h1>Bulk Registration (auto-issue tickets)</h1>
+    <p class="lead">Community-based clubs: <strong data-min-community>12</strong> minimum. University-based clubs: <strong data-min-university>20</strong> minimum.</p>
+
+    <form id="bulkForm" class="card form-card" novalidate>
+      <div class="grid two">
+        <div>
+          <label class="label">Club Type</label>
+          <div class="pill-group">
+            <button type="button" class="pill" data-type="COMMUNITY" data-selected="true">Community-based</button>
+            <button type="button" class="pill" data-type="UNIVERSITY">University-based</button>
+          </div>
+          <p id="minInfo" class="help">Minimum 12 passes</p>
+        </div>
+
+        <div>
+          <label for="bulk_club" class="label">Club Name</label>
+          <input id="bulk_club" type="text" required placeholder="e.g., RaC JP Nagar">
+        </div>
+
+        <div>
+          <label for="bulk_name" class="label">Primary Contact Name</label>
+          <input id="bulk_name" type="text" required placeholder="Your name">
+        </div>
+
+        <div>
+          <label for="bulk_email" class="label">Email</label>
+          <input id="bulk_email" type="email" required placeholder="you@example.com">
+        </div>
+
+        <div>
+          <label for="bulk_phone" class="label">Phone</label>
+          <input id="bulk_phone" type="tel" inputmode="tel" required placeholder="10-digit mobile" pattern="^(?:\+?91[-\s]?|0)?[6-9]\d{9}$">
+        </div>
+
+        <div>
+          <label class="label">Quantity</label>
+          <div class="qty">
+            <button type="button" id="minus" class="step-btn" aria-label="Decrease">−</button>
+            <input id="bulk_qty" type="number" min="12" step="1" value="12" aria-label="Quantity">
+            <button type="button" id="plus" class="step-btn" aria-label="Increase">+</button>
+          </div>
+          <div class="amount">Total: <strong id="bulk_amount">₹0</strong> (₹<span data-bulk-price>199</span> each)</div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="bulk_submit" class="btn btn-pink" type="submit">Pay for Bulk Block</button>
+      </div>
+    </form>
   </section>
+</main>
 
-  <main class="wrap main">
-    <div class="card">
-      <div class="grid2">
-        <input id="sponsor" placeholder="Sponsor / Club (optional)">
-        <input id="upi" placeholder="UPI reference / Txn ID (optional)">
-      </div>
-      <p class="muted">Paste CSV with columns: <b>Name, Email, Phone, Rotaractor(Yes/No), Club</b></p>
-      <textarea id="csv" placeholder="Jane Doe,jane@example.com,9876543210,Yes,RC JP Nagar"></textarea>
-      <div class="ctas" style="margin-top:12px">
-        <button class="btn" id="previewBtn">Preview</button>
-        <button class="btn outline" id="sendBtn" disabled>Send to KonfHub</button>
-      </div>
-      <p id="msg" class="muted"></p>
-      <div id="preview"></div>
+<footer class="site-footer">
+  <div class="container footer-grid">
+    <div class="footer-brand">
+      <a href="/" class="footer-logo-link" aria-label="Party in Pink 4.0">
+        <img src="/assets/logos/PiP_WHITE.png" alt="Party in Pink 4.0" class="footer-logo" width="200" height="44" loading="lazy">
+      </a>
     </div>
-  </main>
+    <div><a href="mailto:rotaractjpnagar@gmail.com">rotaractjpnagar@gmail.com</a></div>
+  </div>
+</footer>
 
-  <footer class="footer"><div class="wrap">© Rotaract JP Nagar</div></footer>
-
-  <script>
-    const parseCSV = (text) => text.split(/\r?\n/)
-      .map(l=>l.trim()).filter(Boolean)
-      .map(l=>{ const [name='',email='',phone='',rot='',club=''] = l.split(',').map(x=>(x||'').trim());
-                return {name,email,phone,rotaractor:rot,club}; });
-
-    const csvEl = document.getElementById('csv');
-    const msgEl = document.getElementById('msg');
-    const prevEl = document.getElementById('preview');
-    const btnPrev = document.getElementById('previewBtn');
-    const btnSend = document.getElementById('sendBtn');
-
-    let rows = [];
-
-    btnPrev.onclick = () => {
-      rows = parseCSV(csvEl.value);
-      if (!rows.length){ msgEl.textContent='No rows detected.'; btnSend.disabled=true; prevEl.innerHTML=''; return; }
-      msgEl.textContent=''; btnSend.disabled=false;
-      prevEl.innerHTML = '<ul>'+rows.map(r=>`<li>${r.name} — ${r.email} — ${r.phone} — ${r.rotaractor} ${r.club?(' | '+r.club):''}</li>`).join('')+'</ul>';
-    };
-
-    btnSend.onclick = async () => {
-      const admin_key = localStorage.getItem('pip_admin_key') || prompt('Organizer key:');
-      if (admin_key) localStorage.setItem('pip_admin_key', admin_key);
-
-      btnSend.disabled = true; msgEl.textContent = 'Submitting…';
-
-      const payload = {
-        admin_key,
-        sponsor: document.getElementById('sponsor').value.trim(),
-        upi_ref: document.getElementById('upi').value.trim(),
-        attendees: rows
-      };
-
-      const res = await fetch('/api/konfhub-capture-bulk', {
-        method:'POST', headers:{'Content-Type':'application/json','x-admin-key':admin_key},
-        body: JSON.stringify(payload)
-      });
-      const text = await res.text();
-      try{
-        const j = JSON.parse(text);
-        if (res.ok && j.ok) msgEl.innerHTML = `<b>Done!</b> Created ${j.total} registrations in ${j.batches} batch(es).`;
-        else msgEl.innerHTML = `<b>Error:</b> ${text}`;
-      }catch{ msgEl.innerHTML = `<b>Error:</b> ${text}`; }
-      btnSend.disabled = false;
-    };
-  </script>
+<script src="/app.js" defer></script>
 </body>
 </html>

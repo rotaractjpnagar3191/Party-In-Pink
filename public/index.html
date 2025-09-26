@@ -1,76 +1,240 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Party in Pink 4.0 — Rotaract JP Nagar</title>
+  <meta http-equiv="x-ua-compatible" content="ie=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Party in Pink 4.0 — Zumba Fundraiser • 12 Oct 2025, Bengaluru</title>
+  <meta name="description"
+    content="Join Party in Pink 4.0 — a high-energy Zumba fundraiser supporting breast cancer awareness. Sun, 12 Oct 2025 • 7:00 AM • BIT, VV Puram, Bengaluru." />
+  <link rel="canonical" href="https://pip.rotaractjpnagar.org/" />
+  <meta name="theme-color" content="#E91E63" />
+  <!-- OG / Twitter -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Party in Pink 4.0 — Zumba Fundraiser" />
+  <meta property="og:description" content="Dance for a cause! Sun, 12 Oct 2025 • 7:00 AM • BIT, VV Puram, Bengaluru." />
+  <meta property="og:image" content="/assets/og.svg" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Party in Pink 4.0 — Zumba Fundraiser" />
+  <meta name="twitter:description" content="High-energy Zumba • Breast cancer awareness • Sun, 12 Oct 2025" />
+  <meta name="twitter:image" content="/assets/og.svg" />
+  <!-- Icons -->
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+  <!-- Fonts & CSS -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css" />
 </head>
+
 <body>
-  <header class="nav">
-    <div class="wrap row">
-      <div class="brand"><span class="dot"></span> Party in Pink 4.0</div>
-      <nav>
-        <a href="/index.html">Home</a>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="navbar">
+      <a class="brand" href="/" aria-label="Party in Pink 4.0">
+        <!-- Light header background → use black logo -->
+        <img src="/assets/logos/PiP_Black.png" alt="Party in Pink 4.0" class="brand-logo" width="180" height="40">
+      </a>
+
+      <button id="navToggle" class="burger" aria-expanded="false" aria-controls="navMenu" aria-label="Menu">
+        ☰
+      </button>
+
+      <nav id="navMenu" class="nav" aria-label="Primary">
+        <a href="/">Home</a>
         <a href="/register.html">Register</a>
+        <a href="/bulk.html">Bulk</a>
         <a href="/donate.html">Donate</a>
+        <!-- no Ops link in public nav -->
       </nav>
     </div>
   </header>
 
-  <section class="hero">
-    <div class="wrap">
-      <div class="kicker">Zumba fundraiser • Breast cancer awareness</div>
-      <h1>Dance. Donate. Make a Difference.</h1>
-      <p class="sub">Sun, 12 Oct 2025 • 7:00 AM • BIT, VV Puram, Bengaluru</p>
-      <div class="ctas">
-        <a class="btn" href="/register.html">Get The Pink Pass</a>
-        <a class="btn outline" href="/donate.html">Donate for the Cause</a>
-      </div>
-    </div>
-  </section>
 
-  <main class="wrap">
-    <section class="section grid grid-3">
-      <article class="card">
-        <h3>Why “Party in Pink”?</h3>
-        <p class="muted">A high-energy Zumba morning that raises funds and awareness for early detection of breast cancer.</p>
-      </article>
-      <article class="card">
-        <h3>What your pass supports</h3>
-        <p class="muted">Screening camps, awareness drives and support activities led by Rotaract JP Nagar.</p>
-      </article>
-      <article class="card">
-        <h3>Season 4</h3>
-        <p class="muted">Back with bigger energy, expert instructors, and a city-wide community of supporters.</p>
-      </article>
+  <main id="main">
+    <!-- HERO -->
+    <section class="hero section">
+      <div class="container">
+        <div class="grid" style="gap:24px">
+          <div class="carousel" data-carousel data-interval="5000" aria-roledescription="carousel">
+            <ul class="slides" aria-live="polite">
+              <li class="slide">
+                <img src="/assets/slide1.svg" alt="Zumba crowd dancing in pink accents" />
+                <div class="caption">
+                  <h1 style="margin:0 0 6px;font-size:clamp(26px,5vw,40px)">Party in Pink <span class="tag">4.0</span>
+                  </h1>
+                  <p style="margin:0 0 12px">Sun, 12 Oct 2025 • 7:00 AM • BIT, VV Puram, Bengaluru</p>
+                  <div style="display:flex;gap:12px;flex-wrap:wrap">
+                    <a class="btn btn-pink" href="/register.html">Register — The Pink Pass ₹199</a>
+                    <a class="btn btn-outline" href="/donate.html">Donate</a>
+                  </div>
+                </div>
+              </li>
+              <li class="slide">
+                <img src="/assets/slide2.svg" alt="Volunteers supporting breast cancer awareness" />
+                <div class="caption">
+                  <p style="margin:0 0 8px;font-weight:700;">Move for a cause</p>
+                  <p style="margin:0">Zumba + Awareness • Community • Impact</p>
+                </div>
+              </li>
+              <li class="slide">
+                <img src="/assets/slide3.svg" alt="Past season highlights collage" />
+                <div class="caption">
+                  <p style="margin:0 0 8px;font-weight:700;">All are welcome</p>
+                  <p style="margin:0">Beginners to pros — just bring your energy!</p>
+                </div>
+              </li>
+            </ul>
+            <div class="controls" aria-hidden="true">
+              <button type="button" data-prev title="Previous slide" aria-label="Previous slide">‹</button>
+              <button type="button" data-next title="Next slide" aria-label="Next slide">›</button>
+            </div>
+            <div class="dots" aria-label="Select slide"></div>
+          </div>
+
+          <div>
+            <p class="lead">A high-energy Zumba session and a heartfelt campaign for breast cancer awareness — hosted by
+              Rotaract Club of Bangalore JP Nagar in collaboration with Bangalore Institute of Technology.</p>
+            <ul>
+              <li><strong>Date & Time:</strong> Sun, 12 Oct 2025 • 7:00 AM</li>
+              <li><strong>Venue:</strong> BIT, VV Puram, Bengaluru (<a
+                  href="https://www.google.com/maps?q=BIT,+VV+Puram,+Bengaluru" target="_blank" rel="noopener">Open in
+                  Google Maps</a>)</li>
+              <li><strong>Ticket:</strong> <em>The Pink Pass — ₹199</em> (purchase via the KonfHub widget)</li>
+            </ul>
+            <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px">
+              <a class="btn btn-pink" href="/register.html">Register</a>
+              <a class="btn" href="/donate.html">Donate for the Cause</a>
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
 
+    <!-- About -->
     <section class="section">
-      <div class="card">
-        <h3>Event Highlights</h3>
-        <ul class="muted">
-          <li>90-minute Zumba session with certified trainers</li>
-          <li>Cause wall &amp; pink photo ops</li>
-          <li>Goodie band + digital ticket with QR check-in</li>
-        </ul>
+      <div class="container">
+        <h2>About the Event</h2>
+        <p class="lead">Party in Pink is a community-driven fitness event where we dance to make a difference. Every
+          step raises awareness and brings us closer to early detection and better outcomes.</p>
+        <div class="cards">
+          <div class="card"><strong>Zumba + Wellness:</strong> Fun, easy-to-follow moves designed for all fitness
+            levels.</div>
+          <div class="card"><strong>Awareness:</strong> Quick insights on early detection and support resources.</div>
+          <div class="card"><strong>Community:</strong> Inclusive and supportive — bring friends and family.</div>
+        </div>
       </div>
     </section>
 
-    <section class="section center">
-      <div class="ctas">
-        <a class="btn" href="/register.html">Register now</a>
-        <a class="btn ghost" href="/donate.html">Donate now</a>
+    <!-- Schedule snippet -->
+    <section class="section alt" id="schedule">
+      <div class="container">
+        <h2>Schedule (glimpse)</h2>
+        <div class="cards">
+          <div class="card">
+            <h3 style="margin:0">7:00 AM</h3>
+            <p>Check-in, warm-up</p>
+          </div>
+          <div class="card">
+            <h3 style="margin:0">7:15 AM</h3>
+            <p>Zumba main session</p>
+          </div>
+          <div class="card">
+            <h3 style="margin:0">8:15 AM</h3>
+            <p>Cool-down & awareness talk</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Past seasons (simple scroller) -->
+    <section class="section" id="past">
+      <div class="container">
+        <h2>Past Seasons</h2>
+        <p class="lead">Swipe/scroll to peek at previous editions.</p>
+        <div class="scroller" aria-label="Past seasons gallery">
+          <img class="snap" src="/assets/slide1.svg" alt="Past season highlight 1" width="360" height="220" />
+          <img class="snap" src="/assets/slide2.svg" alt="Past season highlight 2" width="360" height="220" />
+          <img class="snap" src="/assets/slide3.svg" alt="Past season highlight 3" width="360" height="220" />
+        </div>
+      </div>
+    </section>
+
+    <!-- Partners -->
+    <section class="section alt" id="partners">
+      <div class="container">
+        <h2>Partners & Sponsors</h2>
+        <p class="lead">We’re grateful to our partners who make this possible.</p>
+        <div class="cards" style="align-items:center">
+          <div class="card" style="display:grid;place-items:center">
+            <img src="/assets/logo.svg" alt="Partner logo placeholder" width="140" height="48" />
+          </div>
+          <div class="card" style="display:grid;place-items:center">
+            <img src="/assets/logo.svg" alt="Partner logo placeholder" width="140" height="48" />
+          </div>
+          <div class="card" style="display:grid;place-items:center">
+            <img src="/assets/logo.svg" alt="Partner logo placeholder" width="140" height="48" />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQs -->
+    <section class="section" id="faqs">
+      <div class="container">
+        <h2>FAQs</h2>
+        <details>
+          <summary>Do I need prior Zumba experience?</summary>
+          <p>No — suitable for beginners and regulars alike.</p>
+        </details>
+        <details>
+          <summary>What should I bring?</summary>
+          <p>Comfortable shoes, water bottle, and a towel.</p>
+        </details>
+        <details>
+          <summary>Is there on-site registration?</summary>
+          <p>Limited — please use the Register page to secure your spot.</p>
+        </details>
+        <details>
+          <summary>Is this a fundraiser?</summary>
+          <p>Yes — proceeds support breast cancer awareness initiatives.</p>
+        </details>
+        <details>
+          <summary>Can I register as a club group?</summary>
+          <p>Yes! See <a href="/bulk.html">Bulk Registrations</a> for allotments.</p>
+        </details>
+      </div>
+    </section>
+
+    <!-- Contact -->
+    <section class="section alt" id="contact">
+      <div class="container">
+        <h2>Contact</h2>
+        <p>Email: <a href="mailto:rotaractjpnagar@gmail.com">rotaractjpnagar@gmail.com</a> • Instagram: <a
+            href="https://instagram.com/rotaractjpnagar" target="_blank" rel="noopener">@rotaractjpnagar</a></p>
       </div>
     </section>
   </main>
 
-  <footer class="footer">
-    <div class="wrap">
-      <span>© Rotaract JP Nagar</span> ·
-      <a href="/donate.html">Support the cause</a> ·
-      <a href="/register.html">The Pink Pass</a>
+ <footer class="site-footer">
+  <div class="container footer-grid">
+    <div class="footer-brand">
+      <!-- Dark footer background → use white logo -->
+      <a href="/" class="footer-logo-link" aria-label="Party in Pink 4.0">
+        <img src="/assets/logos/PiP_WHITE.png" alt="Party in Pink 4.0" class="footer-logo" width="200" height="44" loading="lazy">
+      </a>
     </div>
-  </footer>
+
+    <div>
+      <a href="mailto:rotaractjpnagar@gmail.com">rotaractjpnagar@gmail.com</a>
+    </div>
+  </div>
+</footer>
+
+
+
+  <script src="/app.js" defer></script>
 </body>
+
 </html>

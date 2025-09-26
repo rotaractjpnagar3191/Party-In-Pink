@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#ffd6e8" offset="0"></stop>
+      <stop stop-color="#ffeef6" offset="1"></stop>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bg)"></rect>
+  <g fill="#E91E63" opacity=".2">
+    <circle cx="280" cy="220" r="140"></circle>
+    <circle cx="980" cy="640" r="180"></circle>
+    <circle cx="1360" cy="220" r="120"></circle>
+  </g>
+  <text x="80" y="160" font-family="Inter, Arial" font-weight="800" font-size="96" fill="#1e1f24">Dance for a Cause</text>
+  <text x="80" y="250" font-family="Inter, Arial" font-size="44" fill="#1e1f24">Sun, 12 Oct 2025 • 7:00 AM • BIT, VV Puram</text>
+</svg>
