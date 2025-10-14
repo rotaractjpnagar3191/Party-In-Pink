@@ -1,87 +1,94 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
 <head>
   <meta charset="utf-8" />
-  <meta http-equiv="x-ua-compatible" content="ie=edge" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Thanks — Party in Pink 4.0</title>
-  <meta name="description" content="Payment complete. Your passes will be emailed shortly." />
-  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Success · Party In Pink</title>
+  <meta name="theme-color" content="#E91E63" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
 </head>
+<body class="theme-pip">
+  <div id="app-preloader" aria-hidden="true"><div class="spinner"></div></div>
 
-<body>
-  <a class="skip-link" href="#main">Skip to content</a>
   <header class="site-header">
-    <div class="navbar">
-      <a class="brand" href="/" aria-label="Party in Pink 4.0">
-        <!-- Light header background → use black logo -->
-        <img src="/assets/logos/PiP_Black.png" alt="Party in Pink 4.0" class="brand-logo" width="180" height="40">
+    <div class="wrap">
+      <a class="brand" href="index.html">
+        <img src="assets/logos/PiP_Black.png" alt="Party In Pink Logo" onerror="this.style.display='none'">
       </a>
-
-      <button id="navToggle" class="burger" aria-expanded="false" aria-controls="navMenu" aria-label="Menu">
-        ☰
-      </button>
-
-      <nav id="navMenu" class="nav" aria-label="Primary">
-        <a href="/">Home</a>
-        <a href="/register.html">Register</a>
-        <a href="/bulk.html">Bulk</a>
-        <a href="/donate.html">Donate</a>
-        <!-- no Ops link in public nav -->
+      <nav class="main-nav" aria-label="Primary">
+        <a href="register.html">Single Registration</a>
+        <a href="bulk.html">Bulk Registration</a>
+        <a href="donate.html" class="btn btn-primary btn-sm">Donate</a>
       </nav>
+      <button id="navToggle" class="nav-toggle" aria-label="Toggle Menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
     </div>
   </header>
 
+  <main class="section">
+    <div class="wrap">
+      <div class="card success-card center">
+        <div class="checkmark">✓</div>
+        <h1 id="successTitle">Thank you!</h1>
+        <p id="successMsg" class="muted"></p>
 
-  <main id="main" class="section">
-    <div class="container">
-      <div class="card" style="max-width:760px;margin:auto">
-        <h1>Thank you! 🎉</h1>
-        <p id="thanksLine" class="lead">Your payment was completed.</p>
-
-        <div id="successStatus">
-          <p>We’re confirming the payment and issuing your passes via KonfHub. This usually takes a few seconds.</p>
-          <div id="statusBadge" class="badge">Checking status…</div>
-          <div id="statusDetail" class="muted"></div>
+        <div class="cta-row mt-lg">
+          <a href="index.html" class="btn btn-ghost">Home</a>
+          <a href="register.html" class="btn btn-primary">Get Passes</a>
         </div>
-
-        <hr>
-        <p><strong>What happens next?</strong></p>
-        <ul class="benefits">
-          <li>You’ll receive a confirmation email from us.</li>
-          <li>Passes will be emailed by KonfHub to the recipient emails you provided.</li>
-          <li>If you don’t see emails within a few minutes, check spam or contact <a
-              href="mailto:rotaractjpnagar@gmail.com">rotaractjpnagar@gmail.com</a>.</li>
-        </ul>
-
-        <p style="margin-top:12px"><a class="btn" href="/">Back to Home</a></p>
       </div>
     </div>
   </main>
 
- <footer class="site-footer">
-  <div class="container footer-grid">
-    <div class="footer-brand">
-      <!-- Dark footer background → use white logo -->
-      <a href="/" class="footer-logo-link" aria-label="Party in Pink 4.0">
-        <img src="/assets/logos/PiP_WHITE.png" alt="Party in Pink 4.0" class="footer-logo" width="200" height="44" loading="lazy">
-      </a>
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="footer-cols">
+        <div>
+          <h4>Party In Pink</h4>
+          <p>Rotaract Club of Bangalore JP Nagar</p>
+          <p class="muted">© <span id="year"></span> All rights reserved.</p>
+        </div>
+        <nav>
+          <h4>Quick Links</h4>
+          <a href="register.html">Single Registration</a>
+          <a href="bulk.html">Bulk Registration</a>
+          <a href="donate.html">Donate</a>
+        </nav>
+        <div>
+          <h4>Contact</h4>
+          <p><a href="mailto:rotaractjpnagar@gmail.com">rotaractjpnagar@gmail.com</a></p>
+          <p><a href="https://www.rotaractjpnagar.org/pip" target="_blank" rel="noopener">rotaractjpnagar.org/pip</a></p>
+        </div>
+      </div>
     </div>
+  </footer>
 
-    <div>
-      <a href="mailto:rotaractjpnagar@gmail.com">rotaractjpnagar@gmail.com</a>
-    </div>
-  </div>
-</footer>
+  <script>
+    // Lightweight fill for title/message (works even if no extra data is present)
+    (function () {
+      const qs = new URLSearchParams(location.search);
+      const type = (qs.get('type') || qs.get('t') || '').toLowerCase();
+      const email = qs.get('email') || qs.get('e') || localStorage.getItem('pip_last_email') || '';
 
+      const title = document.getElementById('successTitle');
+      const msg = document.getElementById('successMsg');
 
+      let headline = 'Thank you!';
+      if (type.includes('bulk')) headline = 'Thank you for your bulk registration!';
+      else if (type.includes('donation')) headline = 'Thank you for your donation!';
+      else if (type.includes('single') || type.includes('registration')) headline = 'Thank you for your registration!';
 
-  <script src="/app.js" defer></script>
+      title.textContent = headline;
+      msg.textContent = email
+        ? `All passes have been queued for delivery to: ${email}`
+        : 'All passes have been queued for delivery.';
+    })();
+  </script>
+
+  <script src="app.js" defer></script>
 </body>
-
 </html>

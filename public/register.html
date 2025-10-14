@@ -1,84 +1,95 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 
 <head>
   <meta charset="utf-8" />
-  <meta http-equiv="x-ua-compatible" content="ie=edge" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Register — Party in Pink 4.0</title>
-  <meta name="description"
-    content="Register for Party in Pink 4.0. Join the Zumba fundraiser for breast cancer awareness." />
-  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/styles.css" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Single Registration · Party In Pink</title>
+  <meta name="theme-color" content="#E91E63" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
 </head>
 
-<body>
-  <a class="skip-link" href="#main">Skip to content</a>
+<body class="theme-pip">
+  <div id="app-preloader" aria-hidden="true">
+    <div class="spinner"></div>
+  </div>
 
   <header class="site-header">
-    <div class="navbar">
-      <a class="brand" href="/" aria-label="Party in Pink 4.0">
-        <!-- Light header background → use black logo -->
-        <img src="/assets/logos/PiP_Black.png" alt="Party in Pink 4.0" class="brand-logo" width="180" height="40">
+    <div class="wrap">
+      <a class="brand" href="index.html">
+        <img src="assets/logos/PiP_Black.png" alt="Party In Pink Logo" onerror="this.style.display='none'">
+        <!-- <span>Party In Pink</span> -->
       </a>
 
-      <button id="navToggle" class="burger" aria-expanded="false" aria-controls="navMenu" aria-label="Menu">
-        ☰
-      </button>
-
-      <nav id="navMenu" class="nav" aria-label="Primary">
-        <a href="/">Home</a>
-        <a href="/register.html">Register</a>
-        <a href="/bulk.html">Bulk</a>
-        <a href="/donate.html">Donate</a>
-        <!-- no Ops link in public nav -->
+      <nav class="main-nav" aria-label="Primary">
+        <a href="register.html">Single Registration</a>
+        <a href="bulk.html">Bulk Registration</a>
+        <a href="donate.html" class="btn btn-primary btn-sm">Donate</a>
       </nav>
+
+      <button id="navToggle" class="nav-toggle" aria-label="Toggle Menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
     </div>
   </header>
 
+  <main class="section">
+    <div class="wrap">
+      <div class="card">
+        <h1>Register for Party In Pink 4.0</h1>
+        <p class="muted">Use the secure KonfHub widget below to purchase Pink Passes.</p>
 
-  <main id="main" class="section">
-    <div class="container">
-      <div class="card" style="max-width:960px;margin:auto">
-        <h1>Register</h1>
-        <p class="lead">Get your <strong>Pink Pass — ₹199</strong> for <em>Party in Pink 4.0</em> on <strong>Sun, 12 Oct
-            2025 • 7:00 AM</strong> at <strong>BIT, VV Puram, Bengaluru</strong>.</p>
-
-        <!-- KonfHub public widget (new public event) -->
-        <div class="embed-wrap" style="border-radius:10px;overflow:hidden">
-          <iframe
-            src="https://konfhub.com/widget/partyinpink4?desc=true&secondaryBg=F7F7F7&ticketBg=F7F7F7&borderCl=F7F7F7&bg=FFFFFF&fontColor=1e1f24&ticketCl=1e1f24&btnColor=002E6E&fontFamily=Hind&borderRadius=10&widget_type=quick&screen=2&tickets=59605&ticketId=59605%7C1"
-            id="konfhub-widget" title="Register for Party In Pink 4.0" width="100%" height="500"
-            style="border:0"></iframe>
+        <!-- KonfHub widget -->
+        <div class="embed embed--konfhub">
+          <iframe src="https://konfhub.com/widget/partyinpink4?desc=true" id="konfhub-widget" class="embed__frame"
+            style="height: auto;" title="Register for Party In Pink 4.0" loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+            sandbox="allow-scripts allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation">
+          </iframe>
         </div>
-
-        <p class="muted" style="margin-top:12px">Having trouble? Write to <a
-            href="mailto:rotaractjpnagar@gmail.com">rotaractjpnagar@gmail.com</a>.</p>
       </div>
     </div>
   </main>
 
   <footer class="site-footer">
-  <div class="container footer-grid">
-    <div class="footer-brand">
-      <!-- Dark footer background → use white logo -->
-      <a href="/" class="footer-logo-link" aria-label="Party in Pink 4.0">
-        <img src="/assets/logos/PiP_WHITE.png" alt="Party in Pink 4.0" class="footer-logo" width="200" height="44" loading="lazy">
-      </a>
+    <div class="wrap">
+      <div class="footer-cols">
+        <div>
+          <h4>Party In Pink</h4>
+          <p>Rotaract Club of Bangalore JP Nagar</p>
+          <p class="muted">© <span id="year"></span> All rights reserved.</p>
+        </div>
+        <nav>
+          <h4>Quick Links</h4>
+          <a href="register.html">Single Registration</a>
+          <a href="bulk.html">Bulk Registration</a>
+          <a href="donate.html">Donate</a>
+          <a href="#partners">Partners</a>
+        </nav>
+        <div>
+          <h4>Contact</h4>
+          <p><a href="mailto:rotaractjpnagar@gmail.com">rotaractjpnagar@gmail.com</a></p>
+          <p><a href="https://www.rotaractjpnagar.org/pip" target="_blank" rel="noopener">rotaractjpnagar.org/pip</a>
+          </p>
+        </div>
+      </div>
     </div>
+  </footer>
 
-    <div>
-      <a href="mailto:rotaractjpnagar@gmail.com">rotaractjpnagar@gmail.com</a>
-    </div>
-  </div>
-</footer>
-
-
-
-  <script src="/app.js" defer></script>
+  <script src="app.js" defer></script>
+  <script>
+    // Hide skeleton once the iframe is ready
+    window.addEventListener('load', () => {
+      const iframe = document.getElementById('konfhub-widget');
+      const wrap = iframe && iframe.parentElement;
+      if (!iframe || !wrap) return;
+      if (iframe.complete) wrap.classList.add('embed--loaded');
+      iframe.addEventListener('load', () => wrap.classList.add('embed--loaded'));
+    });
+  </script>
 </body>
 
 </html>

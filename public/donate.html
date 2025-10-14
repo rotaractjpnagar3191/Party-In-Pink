@@ -1,86 +1,159 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Donate — Party in Pink 4.0</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link href="/styles.css" rel="stylesheet">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Donate · Party In Pink</title>
+  <meta name="theme-color" content="#E91E63" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
 </head>
-<body>
-<header class="site-header">
-  <div class="navbar">
-    <a class="brand" href="/" aria-label="Party in Pink 4.0">
-      <img src="/assets/logos/PiP_Black.png" alt="Party in Pink 4.0" class="brand-logo" width="180" height="40">
-    </a>
-    <button id="navToggle" class="burger" aria-expanded="false" aria-controls="navMenu" aria-label="Menu">☰</button>
-    <nav id="navMenu" class="nav" aria-label="Primary">
-      <a href="/">Home</a>
-      <a href="/register.html">Register</a>
-      <a href="/bulk.html">Bulk</a>
-      <a href="/donate.html" aria-current="page">Donate</a>
-    </nav>
-  </div>
-</header>
 
-<main id="main" class="container">
-  <section class="section">
-    <h1>Donate for the Cause</h1>
-    <p class="lead">Your donation supports awareness initiatives. We’ll auto-issue Pink Passes based on the slab your amount falls into.</p>
+<body class="theme-pip">
+  <div id="app-preloader" aria-hidden="true"><div class="spinner"></div></div>
 
-    <table class="slab-table" aria-describedby="slab_hint">
-      <thead>
-        <tr><th>Amount</th><th>Passes</th><th>Perks</th></tr>
-      </thead>
-      <tbody id="slab_body"></tbody>
-    </table>
-    <p id="slab_hint" class="help" style="margin-top:10px"></p>
-
-    <form id="donateForm" class="card form-card" novalidate>
-      <div class="grid two">
-        <div>
-          <label for="donor_name" class="label">Your Name</label>
-          <input id="donor_name" type="text" required placeholder="Full name">
-        </div>
-
-        <div>
-          <label for="donor_email" class="label">Email</label>
-          <input id="donor_email" type="email" required placeholder="you@example.com">
-        </div>
-
-        <div>
-          <label for="donor_phone" class="label">Phone</label>
-          <input id="donor_phone" type="tel" inputmode="tel" required placeholder="10-digit mobile" pattern="^(?:\+?91[-\s]?|0)?[6-9]\d{9}$">
-        </div>
-
-        <div>
-          <label for="donor_amount" class="label">Donation Amount (₹)</label>
-          <input id="donor_amount" type="number" inputmode="numeric" min="0" step="100" required placeholder="5000">
-        </div>
-      </div>
-
-      <div class="actions">
-        <button id="donor_submit" class="btn btn-pink" type="submit">Donate</button>
-      </div>
-    </form>
-
-    <p class="help" style="margin-top:10px">
-      Need <strong>80G</strong>? Please do <em>not</em> donate to <code>racjpn2425@axl</code> on this site — email us at
-      <a href="mailto:rotaractjpnagar@gmail.com">rotaractjpnagar@gmail.com</a> for 80G processing.
-    </p>
-  </section>
-</main>
-
-<footer class="site-footer">
-  <div class="container footer-grid">
-    <div class="footer-brand">
-      <a href="/" class="footer-logo-link" aria-label="Party in Pink 4.0">
-        <img src="/assets/logos/PiP_WHITE.png" alt="Party in Pink 4.0" class="footer-logo" width="200" height="44" loading="lazy">
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="index.html">
+        <img src="assets/logos/PiP_Black.png" alt="Party In Pink Logo" onerror="this.style.display='none'">
       </a>
-    </div>
-    <div><a href="mailto:rotaractjpnagar@gmail.com">rotaractjpnagar@gmail.com</a></div>
-  </div>
-</footer>
 
-<script src="/app.js" defer></script>
+      <nav class="main-nav" aria-label="Primary">
+        <a href="register.html">Single Registration</a>
+        <a href="bulk.html">Bulk Registration</a>
+        <a href="donate.html" class="btn btn-primary btn-sm">Donate</a>
+      </nav>
+
+      <button id="navToggle" class="nav-toggle" aria-label="Toggle Menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <main class="section">
+    <div class="wrap">
+      <div class="grid-2 cardish">
+
+        <!-- Form first (better UX) -->
+        <div class="card">
+          <h2>Support the Cause</h2>
+
+          <p class="note80g">
+            <strong>Need an 80G receipt?</strong>
+            Please <a href="mailto:rotaractjpnagar@gmail.com">contact us</a> before donating.
+            Donations made here will <u>not</u> be issued 80G receipts.
+          </p>
+
+          <form id="donateForm" class="form" novalidate>
+            <label>Amount (₹)
+              <!-- Quick-pick chips (filled by JS from slabs) -->
+              <div class="donate-chips" id="slab_quick" role="group" aria-label="Suggested amounts"></div>
+
+              <div class="help-inline">
+                You can donate <strong>any amount</strong> — the buttons are just suggestions.
+                Donations <strong>₹1,000–₹4,999</strong> receive <strong>1 complimentary Pink Pass</strong>.
+                <em>Below ₹1,000, no complimentary pass is issued.</em>
+              </div>
+
+              <input id="donor_amount" type="number" inputmode="numeric" placeholder="5000" min="100" step="100" required />
+            </label>
+
+            <div id="slab_hint" class="muted tiny">
+              Enter an amount (or tap a suggestion) to see how many passes you’ll receive.
+            </div>
+
+            <label class="mt-md">Your name
+              <input id="donor_name" type="text" autocomplete="name" required />
+            </label>
+
+            <label>Email
+              <input id="donor_email" type="email" autocomplete="email" required />
+            </label>
+
+            <label>Phone
+              <input id="donor_phone" type="tel" inputmode="numeric" autocomplete="tel"
+                     pattern="^(?:\\+?91[-\\s]?|0)?[6-9]\\d{9}$" required />
+            </label>
+
+            <div class="actions">
+              <button id="donor_submit" class="btn btn-primary" type="submit">Proceed to Pay</button>
+              <button type="reset" class="btn btn-ghost">Clear</button>
+            </div>
+            <p class="muted tiny">100% of proceeds go to the cause.</p>
+          </form>
+        </div>
+
+        <!-- Slabs / Perks on the side -->
+        <div class="card">
+          <h2>Sponsorship slabs</h2>
+          <table class="slab-table">
+            <thead>
+              <tr>
+                <th>Amount</th>
+                <th>Passes</th>
+                <th>Perks</th>
+              </tr>
+            </thead>
+            <tbody id="slab_body">
+              <!-- Placeholder rows; app.js replaces these with real slabs from config -->
+              <tr data-amt="5000">
+                <td>₹5,000</td>
+                <td>2 passes</td>
+                <td class="help">Perks: stage mention • social shoutout • logo on wall</td>
+              </tr>
+              <tr data-amt="10000">
+                <td>₹10,000</td>
+                <td>5 passes</td>
+                <td class="help">Perks: stage mention • social shoutout • logo on wall</td>
+              </tr>
+              <tr data-amt="15000">
+                <td>₹15,000</td>
+                <td>7 passes</td>
+                <td class="help">Perks: stage mention • social shoutout • logo on wall</td>
+              </tr>
+              <tr data-amt="20000">
+                <td>₹20,000</td>
+                <td>7 passes</td>
+                <td class="help">Perks: stage mention • social shoutout • logo on wall</td>
+              </tr>
+              <tr data-amt="25000">
+                <td>₹25,000</td>
+                <td>10 passes</td>
+                <td class="help">Perks: stage mention • social shoutout • logo on wall</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="footer-cols">
+        <div>
+          <h4>Party In Pink</h4>
+          <p>Rotaract Club of Bangalore JP Nagar</p>
+          <p class="muted">© <span id="year"></span> All rights reserved.</p>
+        </div>
+        <nav>
+          <h4>Quick Links</h4>
+          <a href="register.html">Single Registration</a>
+          <a href="bulk.html">Bulk Registration</a>
+          <a href="donate.html">Donate</a>
+        </nav>
+        <div>
+          <h4>Contact</h4>
+          <p><a href="mailto:rotaractjpnagar@gmail.com">rotaractjpnagar@gmail.com</a></p>
+          <p><a href="https://www.rotaractjpnagar.org/pip" target="_blank" rel="noopener">rotaractjpnagar.org/pip</a></p>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js" defer></script>
 </body>
 </html>
