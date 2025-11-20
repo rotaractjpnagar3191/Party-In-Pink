@@ -1,5 +1,18 @@
 // ===== Party in Pink 4.0 — unified site JS ==================================
 
+// Cache buster: automatically reload on CSS changes
+(() => {
+  const now = new Date().toISOString().split('T')[0];
+  const stored = localStorage.getItem('pip-cache-date');
+  if (stored !== now) {
+    localStorage.setItem('pip-cache-date', now);
+    // Clear any old cached resources
+    if ('caches' in window) {
+      caches.keys().then(names => names.forEach(name => caches.delete(name)));
+    }
+  }
+})();
+
 // ---------- NAV ----------
 (() => {
   const t = document.getElementById("navToggle");
@@ -66,13 +79,13 @@ let CFG = null;
 function parseSlabs(val) {
   if (Array.isArray(val)) {
     return val
-      .map((x) => ({ amount: Number(x.amount), passes: Number(x.passes) }))
+      .map((x) => ({ amount: Number(x.amount), passes: Number(x.passes), tier: x.tier }))
       .filter((x) => Number.isFinite(x.amount) && Number.isFinite(x.passes))
       .sort((a, b) => a.amount - b.amount);
   }
   if (typeof val === "object" && val !== null) {
     return Object.entries(val)
-      .map(([k, v]) => ({ amount: Number(k), passes: Number(v) }))
+      .map(([k, v]) => ({ amount: Number(k), passes: Number(v), tier: v.tier }))
       .filter((x) => Number.isFinite(x.amount) && Number.isFinite(x.passes))
       .sort((a, b) => a.amount - b.amount);
   }
@@ -215,6 +228,49 @@ async function initIndex() {
       if (c < end) requestAnimationFrame(tick);
     })();
   });
+
+  // Load partner and club logos
+  const partnersGrid = $("#partnersGrid");
+  const clubsGrid = $("#clubsGrid");
+
+  const partnerLogos = [
+    "Akash.png",
+    "e-relax.png",
+    "HIPOWER - Logo  - SVG (1).svg",
+    "Hypeexperts2_optimized.png",
+    "ICON logo.png",
+    "Jusgrabs.png",
+    "Keerti Technologies.jpeg",
+    "NXT Power.jpeg",
+    "Sasya_Shyamale-removebg-preview.png",
+    "smartgenie.png",
+    "tag.png",
+    "tie.png",
+    "UK International.png",
+    "Vishwanath Vajramuni Trust (R).PNG"
+  ];
+
+  const clubLogos = [
+    "bmscm.png",
+    "bmscw.png",
+    "Innerwheel JP Nagar.jpeg",
+    "Logo on White and Yellow Background_optimized.png",
+    "Oriongateway.png",
+    "Rac Jayanagar.jpeg",
+    "RCBSW Logo.png"
+  ];
+
+  if (partnersGrid) {
+    partnersGrid.innerHTML = partnerLogos.map((name) => 
+      `<div class="logo"><img src="assets/logos/partners/${name}" alt="Partner logo" loading="lazy" onerror="this.parentElement.style.opacity='0.3'" /></div>`
+    ).join("");
+  }
+
+  if (clubsGrid) {
+    clubsGrid.innerHTML = clubLogos.map((name) => 
+      `<div class="logo"><img src="assets/logos/Clubs/${name}" alt="Club logo" loading="lazy" onerror="this.parentElement.style.opacity='0.3'" /></div>`
+    ).join("");
+  }
 }
 
 // ---------- BULK ----------
@@ -405,11 +461,12 @@ async function initDonate() {
 
   // Slabs (server truth); fallback defaults
   let slabs = CFG?.__SLABS_PARSED__ || [
-    { amount: 5000,  passes: 2 },
-    { amount: 10000, passes: 5 },
-    { amount: 15000, passes: 7 },
-    { amount: 20000, passes: 7 },
-    { amount: 25000, passes: 10 },
+    { amount: 1000,  passes: 1, tier: "Supporter", shoutout: true, perks: "Shoutout • social mention • supporter badge" },
+    { amount: 5000,  passes: 2, tier: "Wellwisher", perks: "Stage mention • social shoutout • logo on wall" },
+    { amount: 10000, passes: 3, tier: "Silver", perks: "Prominent mention • media presence • booth space" },
+    { amount: 15000, passes: 5, tier: "Gold", perks: "Featured mention • exclusive branding • event partnership" },
+    { amount: 20000, passes: 7, tier: "Platinum", perks: "Headline sponsor • premium branding • speaking slot" },
+    { amount: 20001, passes: 10, tier: "Diamond", perks: "Exclusive partnership • VIP recognition • custom benefits" },
   ];
 
   // Render slab table (right side)
@@ -417,9 +474,10 @@ async function initDonate() {
   if (tbody) {
     tbody.innerHTML = slabs.map(s => `
       <tr data-amt="${s.amount}">
+        <td><strong>${s.tier || 'Sponsor'}</strong></td>
         <td>${rupee(s.amount)}</td>
-        <td>${s.passes} passes</td>
-        <td class="help">Perks: stage mention • social shoutout • logo on wall</td>
+        <td>${s.passes} pass${s.passes !== 1 ? 'es' : ''}</td>
+        <td class="help">Perks: ${s.perks || 'stage mention • social shoutout • logo on wall'}</td>
       </tr>
     `).join("");
   }
@@ -457,7 +515,7 @@ async function initDonate() {
 
   // --- Pass logic ---
   const MIN_ONE_PASS = 1000;                              // >= ₹1,000
-  const FIRST_SLAB   = slabs?.[0]?.amount ?? 5000;        // usually ₹5,000
+  const FIRST_SLAB   = slabs?.[0]?.amount ?? 1000;        // usually ₹1,000
 
   function highlightSlab() {
     const v = Number(amountEl?.value || 0);
@@ -474,13 +532,21 @@ async function initDonate() {
 
     // Find best-fit slab (<= v)
     let hit = null;
-    for (const s of slabs) if (v >= s.amount) hit = s;
+    for (const s of slabs) {
+      if (s.amount === 20001) {
+        // Special case for Diamond (20001+)
+        if (v > 20000) hit = s;
+      } else if (v >= s.amount) {
+        hit = s;
+      }
+    }
 
     if (hit) {
       $(`#slab_body tr[data-amt="${hit.amount}"]`)?.classList.add("slab-hit");
+      const tierName = hit.tier || 'Sponsor';
       $("#slab_hint")?.replaceChildren(
         document.createTextNode(
-          `Thank you for choosing this amount. You will receive ${hit.passes} Pink Pass${hit.passes === 1 ? "" : "es"}.`
+          `Thank you! You've chosen the ${tierName} tier. You will receive ${hit.passes} Pink Pass${hit.passes === 1 ? "" : "es"}.`
         )
       );
       return;
@@ -489,7 +555,7 @@ async function initDonate() {
     // Between ₹1,000 and (first slab - 1) → 1 complimentary pass
     if (v >= MIN_ONE_PASS && v < FIRST_SLAB) {
       $("#slab_hint")?.replaceChildren(
-        document.createTextNode("Thank you for choosing this amount. You will receive 1 complimentary Pink Pass.")
+        document.createTextNode("Thank you! You will receive 1 complimentary Pink Pass and a special shoutout.")
       );
       return;
     }

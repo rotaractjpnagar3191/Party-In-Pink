@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=2025-11-20-1" />
+  <link rel="stylesheet" href="styles.css?v=20251120-001" />
   <style>
     /* Enhanced Donate Page Styling */
     .donate-hero {
@@ -308,6 +308,21 @@
       background: rgba(233, 30, 99, 0.08);
     }
 
+    /* In-kind donation buttons (smaller container) */
+    .in-kind-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+      margin: 1.25rem 0;
+    }
+
+    .in-kind-actions a {
+      width: auto;
+      max-width: 100%;
+      padding: 0.65rem 1.25rem;
+      font-size: 0.9rem;
+    }
+
     /* Note styling */
     .note80g {
       background: linear-gradient(135deg, rgba(255, 193, 7, 0.15) 0%, rgba(255, 152, 0, 0.12) 100%);
@@ -332,20 +347,25 @@
       gap: 0.75rem;
       margin-top: 1rem;
       flex-wrap: wrap;
+      justify-content: flex-start;
     }
 
     .note80g .contact-btn {
       display: inline-flex;
       align-items: center;
-      gap: 0.5rem;
-      padding: 0.65rem 1rem;
-      border-radius: 6px;
+      justify-content: center;
+      gap: 0.6rem;
+      padding: 0.75rem 1.25rem;
+      border-radius: 8px;
       border: none;
       font-weight: 600;
       cursor: pointer;
       text-decoration: none;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      font-size: 0.9rem;
+      font-size: 0.95rem;
+      min-width: fit-content;
+      white-space: nowrap;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
 
     .note80g .contact-btn.whatsapp {
@@ -356,7 +376,7 @@
     .note80g .contact-btn.whatsapp:hover {
       background: #20BA5A;
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+      box-shadow: 0 8px 20px rgba(37, 211, 102, 0.4);
     }
 
     .note80g .contact-btn.call {
@@ -367,7 +387,7 @@
     .note80g .contact-btn.call:hover {
       background: #c2185b;
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(233, 30, 99, 0.3);
+      box-shadow: 0 8px 20px rgba(233, 30, 99, 0.4);
     }
 
     .note80g a {
@@ -618,7 +638,7 @@
             If you'd like to contribute in-kind, please reach out to our team directly. 
             We'll work with you to maximize your contribution's impact.
           </p>
-          <div class="actions" style="flex-direction: column; gap: 0.75rem;">
+          <div class="in-kind-actions">
             <a href="https://wa.me/918310398636?text=Hi%20I%20want%20to%20contribute%20an%20in-kind%20donation%20to%20Party%20In%20Pink" 
                target="_blank" rel="noopener" class="btn btn-primary">
               💬 Discuss In-Kind Donation
@@ -663,6 +683,29 @@
               100% of monetary donations go to Sri Shankara Cancer Hospital to support breast cancer surgeries and patient care.
             </p>
           </details>
+        </div>
+      </div>
+
+      <!-- Team Section -->
+      <div style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #333333;">
+        <h2 style="text-align: center; margin-bottom: 1.5rem;">👥 About the PiP Team</h2>
+        <div class="grid-2 cardish">
+          <div class="card">
+            <h3 style="color: var(--pink); margin-bottom: 1rem;">Who We Are</h3>
+            <p>
+              Party In Pink is a passion project of <strong>Rotaract Club of Bangalore JP Nagar</strong>, 
+              a service organization dedicated to making a difference in our community. Our mission is to 
+              combine fun, fitness, and fundraising to support critical healthcare initiatives.
+            </p>
+          </div>
+          <div class="card">
+            <h3 style="color: var(--pink); margin-bottom: 1rem;">Our Impact</h3>
+            <p>
+              Since 2021, we've been organizing Party In Pink events, combining the power of Zumba with 
+              fundraising for breast cancer awareness and support. Every rupee raised directly supports 
+              <strong>Sri Shankara Cancer Hospital</strong> in their mission to provide quality cancer care.
+            </p>
+          </div>
         </div>
       </div>
     </div>
