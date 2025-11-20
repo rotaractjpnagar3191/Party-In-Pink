@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20251120-002" />
+  <link rel="stylesheet" href="styles.css?v=20251120-004" />
 </head>
 <body class="theme-pip">
   <div id="app-preloader" aria-hidden="true"><div class="spinner"></div></div>
@@ -34,10 +34,12 @@
 
   <main class="section">
     <div class="wrap">
-      <div class="card success-card center">
+      <div class="card success-card center" id="successStatus">
         <div class="checkmark">✓</div>
-        <h1 id="successTitle">Thank you!</h1>
+        <h1 id="thanksLine">Thank you!</h1>
         <p id="successMsg" class="muted"></p>
+        <div id="statusBadge" style="margin-top: 10px; font-weight: 600; color: var(--primary);"></div>
+        <div id="statusDetail" class="muted tiny" style="margin-top: 5px;"></div>
 
         <div class="cta-row mt-lg">
           <a href="index.html" class="btn btn-ghost">Home</a>
@@ -77,7 +79,7 @@
       const type = (qs.get('type') || qs.get('t') || '').toLowerCase();
       const email = qs.get('email') || qs.get('e') || localStorage.getItem('pip_last_email') || '';
 
-      const title = document.getElementById('successTitle');
+      const title = document.getElementById('thanksLine');
       const msg = document.getElementById('successMsg');
 
       let headline = 'Thank you!';
