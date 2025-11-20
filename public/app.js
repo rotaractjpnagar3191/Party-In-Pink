@@ -478,13 +478,19 @@ async function initDonate() {
   const tbody = $("#slab_body");
   if (tbody) {
     tbody.innerHTML = slabs.map(s => `
-      <tr data-amt="${s.amount}">
-        <td><strong>${s.tier || 'Sponsor'}</strong></td>
-        <td>${rupee(s.amount)}</td>
-        <td>${s.passes} pass${s.passes !== 1 ? 'es' : ''}</td>
-        <td class="help">Perks: ${s.perks || 'stage mention • social shoutout • logo on wall'}</td>
+      <tr data-amt="${s.amount}" style="border-bottom: 1px solid var(--border); transition: background-color 0.2s;">
+        <td style="padding: 12px; font-weight: 600;">${s.tier || 'Sponsor'}</td>
+        <td style="padding: 12px; text-align: center;">${rupee(s.amount)}</td>
+        <td style="padding: 12px; text-align: center;">${s.passes} pass${s.passes !== 1 ? 'es' : ''}</td>
+        <td style="padding: 12px; color: var(--muted); font-size: 0.85rem;">${s.perks || 'stage mention • social shoutout • logo on wall'}</td>
       </tr>
     `).join("");
+    
+    // Highlight row on hover
+    $$("#slab_body tr").forEach(tr => {
+      tr.addEventListener("mouseenter", function() { this.style.backgroundColor = "rgba(233, 30, 99, 0.05)"; });
+      tr.addEventListener("mouseleave", function() { this.style.backgroundColor = "transparent"; });
+    });
   }
 
   // Build quick-pick chips

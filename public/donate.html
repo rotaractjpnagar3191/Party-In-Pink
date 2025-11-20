@@ -11,486 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20251120-002" />
-  <style>
-    /* Enhanced Donate Page Styling */
-    .donate-hero {
-      text-align: center;
-      padding: 3rem 1rem;
-      background: linear-gradient(135deg, rgba(233, 30, 99, 0.08) 0%, rgba(233, 30, 99, 0.04) 100%);
-      border-radius: 12px;
-      margin-bottom: 2rem;
-      animation: fadeInDown 0.6s ease-out;
-    }
-
-    .donate-hero h1 {
-      font-size: 2.5rem;
-      margin-bottom: 0.5rem;
-      color: var(--text);
-    }
-
-    .donate-hero p {
-      font-size: 1.1rem;
-      color: var(--muted);
-      max-width: 60ch;
-      margin: 0 auto;
-    }
-
-    .pdf-download {
-      margin-top: 1.5rem;
-    }
-
-    .pdf-download a {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.95rem 1.5rem;
-      background: var(--pink);
-      color: white;
-      text-decoration: none;
-      border-radius: 8px;
-      font-weight: 600;
-      font-size: 0.95rem;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      box-shadow: 0 4px 12px rgba(233, 30, 99, 0.15);
-    }
-
-    .pdf-download a:hover {
-      background: #c2185b;
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(233, 30, 99, 0.25);
-    }
-
-    .pdf-download a:active {
-      transform: translateY(0);
-    }
-
-    .donate-chips {
-      display: flex;
-      gap: 0.75rem;
-      flex-wrap: wrap;
-      margin: 1.25rem 0;
-      justify-content: flex-start;
-    }
-
-    .donate-chips button {
-      padding: 0.7rem 1.35rem;
-      border: 2px solid var(--border);
-      border-radius: 8px;
-      background: var(--bg);
-      color: var(--text);
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      font-size: 0.95rem;
-      white-space: nowrap;
-    }
-
-    .donate-chips button:hover {
-      border-color: var(--pink);
-      background: rgba(233, 30, 99, 0.08);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(233, 30, 99, 0.15);
-    }
-
-    .donate-chips button.selected {
-      background: var(--pink);
-      color: white;
-      border-color: var(--pink);
-      box-shadow: 0 6px 16px rgba(233, 30, 99, 0.25);
-    }
-
-    /* Form inputs enhancement */
-    input[type="number"],
-    input[type="text"],
-    input[type="email"],
-    input[type="tel"] {
-      transition: all 0.3s ease;
-      border: 2px solid var(--border);
-      padding: 0.85rem;
-      font-size: 1rem;
-      border-radius: 8px;
-    }
-
-    input[type="number"]:focus,
-    input[type="text"]:focus,
-    input[type="email"]:focus,
-    input[type="tel"]:focus {
-      border-color: var(--pink);
-      background: rgba(233, 30, 99, 0.05);
-      box-shadow: 0 0 0 3px rgba(233, 30, 99, 0.1);
-      outline: none;
-    }
-
-    .help-inline {
-      background: rgba(233, 30, 99, 0.08);
-      padding: 0.85rem;
-      border-radius: 8px;
-      font-size: 0.9rem;
-      color: var(--text);
-      margin: 1rem 0;
-      border-left: 4px solid var(--pink);
-    }
-
-    .help-inline strong {
-      color: var(--pink);
-      font-weight: 700;
-    }
-
-    /* Slab table enhancement */
-    .slab-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 1.5rem;
-    }
-
-    .slab-table thead {
-      background: rgba(233, 30, 99, 0.08);
-    }
-
-    .slab-table th {
-      padding: 1rem;
-      text-align: left;
-      font-weight: 700;
-      color: var(--pink);
-      border-bottom: 2px solid var(--border);
-    }
-
-    .slab-table td {
-      padding: 1rem;
-      border-bottom: 1px solid var(--border);
-      font-size: 0.95rem;
-    }
-
-    .slab-table td:first-child {
-      font-size: 1.05rem;
-      font-weight: 700;
-      color: var(--pink);
-      min-width: 100px;
-    }
-
-    .slab-table td strong {
-      display: block;
-      color: var(--pink);
-      font-weight: 700;
-      font-size: 1.1rem;
-    }
-
-    .slab-table tr:hover {
-      background: rgba(233, 30, 99, 0.04);
-      transition: background 0.2s ease;
-    }
-
-    .slab-table td.help {
-      font-size: 0.85rem;
-      color: var(--muted);
-    }
-
-    /* Tier Badges (compact tier display) */
-    .tier-badges {
-      display: flex;
-      flex-direction: column;
-      gap: 0.65rem;
-    }
-
-    .tier-badge {
-      background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
-      border: 1.5px solid #333333;
-      border-radius: 8px;
-      padding: 0.85rem 1rem;
-      transition: all 0.2s ease;
-    }
-
-    .tier-badge:hover {
-      background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
-      border-color: var(--pink);
-      box-shadow: 0 4px 16px rgba(233, 30, 99, 0.25);
-      transform: translateY(-2px);
-    }
-
-    .tier-name {
-      font-size: 1.05rem;
-      font-weight: 700;
-      color: var(--pink);
-      margin-bottom: 0.3rem;
-      letter-spacing: 0.3px;
-    }
-
-    .tier-details {
-      font-size: 0.85rem;
-      color: var(--text);
-      line-height: 1.4;
-      font-weight: 500;
-    }
-
-    /* Actions button styling */
-    .actions {
-      display: flex;
-      gap: 0.75rem;
-      margin: 1.25rem 0;
-      flex-wrap: wrap;
-    }
-
-    .actions button {
-      flex: 1;
-      min-width: 140px;
-      padding: 0.75rem 1.25rem;
-      border-radius: 8px;
-      font-weight: 600;
-      font-size: 0.95rem;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      border: none;
-      cursor: pointer;
-    }
-
-    .actions button.btn-primary {
-      background: var(--pink);
-      color: white;
-    }
-
-    .actions button.btn-primary:hover {
-      background: var(--pink-600, #c2185b);
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(233, 30, 99, 0.25);
-    }
-
-    .actions button.btn-primary:active {
-      transform: translateY(0);
-    }
-
-    .actions button.btn-ghost {
-      background: transparent;
-      color: var(--text);
-      border: 2px solid var(--border);
-    }
-
-    .actions button.btn-ghost:hover {
-      border-color: var(--pink);
-      background: rgba(233, 30, 99, 0.08);
-    }
-
-    /* Button styling for anchor tags */
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0.75rem 1.25rem;
-      border-radius: 8px;
-      font-weight: 600;
-      font-size: 0.95rem;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      text-decoration: none;
-      border: none;
-      cursor: pointer;
-      width: 100%;
-      gap: 0.5rem;
-    }
-
-    .btn.btn-primary {
-      background: var(--pink);
-      color: white;
-    }
-
-    .btn.btn-primary:hover {
-      background: #c2185b;
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(233, 30, 99, 0.25);
-    }
-
-    .btn.btn-ghost {
-      background: transparent;
-      color: var(--text);
-      border: 2px solid var(--border);
-    }
-
-    .btn.btn-ghost:hover {
-      border-color: var(--pink);
-      background: rgba(233, 30, 99, 0.08);
-    }
-
-    /* In-kind donation buttons (smaller container) */
-    .in-kind-actions {
-      display: flex;
-      flex-direction: column;
-      gap: 0.65rem;
-      margin: 1.25rem 0;
-    }
-
-    .in-kind-actions a {
-      width: auto;
-      max-width: 100%;
-      padding: 0.65rem 1.25rem;
-      font-size: 0.9rem;
-    }
-
-    /* Note styling */
-    .note80g {
-      background: linear-gradient(135deg, rgba(255, 193, 7, 0.15) 0%, rgba(255, 152, 0, 0.12) 100%);
-      border: 2px solid rgba(255, 193, 7, 0.6);
-      border-left: 6px solid #FFC107;
-      padding: 1.25rem;
-      border-radius: 8px;
-      margin: 1rem 0;
-      color: var(--text);
-      font-size: 0.95rem;
-      box-shadow: 0 4px 12px rgba(255, 193, 7, 0.15);
-    }
-
-    .note80g strong {
-      color: #FFC107;
-      font-weight: 700;
-      font-size: 1.05rem;
-    }
-
-    .note80g .contact-buttons {
-      display: flex;
-      gap: 0.75rem;
-      margin-top: 1rem;
-      flex-wrap: wrap;
-      justify-content: flex-start;
-    }
-
-    .note80g .contact-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.6rem;
-      padding: 0.75rem 1.25rem;
-      border-radius: 8px;
-      border: none;
-      font-weight: 600;
-      cursor: pointer;
-      text-decoration: none;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      font-size: 0.95rem;
-      min-width: fit-content;
-      white-space: nowrap;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    }
-
-    .note80g .contact-btn.whatsapp {
-      background: #25D366;
-      color: white;
-    }
-
-    .note80g .contact-btn.whatsapp:hover {
-      background: #20BA5A;
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(37, 211, 102, 0.4);
-    }
-
-    .note80g .contact-btn.call {
-      background: var(--pink);
-      color: white;
-    }
-
-    .note80g .contact-btn.call:hover {
-      background: #c2185b;
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(233, 30, 99, 0.4);
-    }
-
-    .note80g a {
-      color: var(--pink);
-      text-decoration: none;
-      font-weight: 600;
-      border-bottom: 2px solid var(--pink);
-    }
-
-    .note80g a:hover {
-      opacity: 0.8;
-    }
-
-    /* Grid responsiveness */
-    @media (max-width: 768px) {
-      .grid-2.cardish {
-        grid-template-columns: 1fr;
-      }
-
-      .donate-hero h1 {
-        font-size: 2rem;
-      }
-
-      .donate-chips {
-        justify-content: flex-start;
-      }
-
-      .donate-chips button {
-        flex: 1;
-        min-width: 80px;
-      }
-
-      .actions {
-        flex-direction: column;
-      }
-
-      .actions button {
-        width: 100%;
-      }
-
-      .slab-table {
-        font-size: 0.85rem;
-      }
-
-      .slab-table th,
-      .slab-table td {
-        padding: 0.75rem 0.5rem;
-      }
-    }
-
-    /* Animations */
-    @keyframes fadeInDown {
-      from {
-        opacity: 0;
-        transform: translateY(-10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .card {
-      animation: fadeInUp 0.6s ease-out;
-    }
-
-    .card:first-child {
-      animation-delay: 0.1s;
-    }
-
-    .card:last-child {
-      animation-delay: 0.2s;
-    }
-
-    /* Loading state */
-    button[type="submit"]:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-
-    /* Label styling */
-    label {
-      display: block;
-      font-weight: 600;
-      margin-top: 1rem;
-      color: var(--text);
-    }
-
-    label:first-of-type {
-      margin-top: 0;
-    }
-  </style>
+  <link rel="stylesheet" href="styles.css?v=20251120-004" />
 </head>
 
 <body class="theme-pip">
@@ -533,13 +54,27 @@
         <div class="card">
           <h2>Make Your Donation</h2>
 
+          <!-- 80G Notice (before form) -->
+          <div class="note80g">
+            <strong>🎗️ Need an 80G receipt?</strong><br>
+            <p style="margin: 0.75rem 0 0 0;">Please reach out <strong>BEFORE donating</strong>. Direct donations through this form do not receive 80G receipts.</p>
+            <div class="contact-buttons">
+              <a href="https://wa.me/918310398636?text=Hi%20I%20want%20to%20donate%20and%20need%20an%2080G%20receipt" target="_blank" rel="noopener" class="contact-btn whatsapp">
+                <span>💬</span> WhatsApp
+              </a>
+              <a href="tel:+918310398636" class="contact-btn call">
+                <span>📞</span> Call Us
+              </a>
+            </div>
+          </div>
+
           <form id="donateForm" class="form" novalidate>
             <label>Amount (₹)
               <!-- Quick-pick chips (filled by JS from slabs) -->
               <div class="donate-chips" id="slab_quick" role="group" aria-label="Suggested amounts"></div>
 
               <div class="help-inline">
-                <strong>Any amount</strong> is welcome. Donations <strong>₹1,000+</strong> receive complimentary passes.
+                <strong>Any amount</strong> is welcome. Donations <strong>₹5,000+</strong> receive passes and tier benefits.
               </div>
 
               <input id="donor_amount" type="number" inputmode="numeric" placeholder="5000" min="100" step="100" required />
@@ -568,51 +103,25 @@
             </div>
             <p class="muted tiny">100% of proceeds go to the cause.</p>
           </form>
-
-          <!-- 80G Notice (moved below form) -->
-          <hr class="mt-lg mb-md" style="border: none; border-top: 1px solid #eee; margin: 1.5rem 0;">
-          <p class="note80g">
-            <strong>🎗️ Need an 80G receipt?</strong><br>
-            Please reach out <strong>BEFORE donating</strong>. Direct donations through this form do not receive 80G receipts.
-            <div class="contact-buttons" style="margin-top: 8px;">
-              <a href="https://wa.me/918310398636?text=Hi%20I%20want%20to%20donate%20and%20need%20an%2080G%20receipt" target="_blank" rel="noopener" class="contact-btn whatsapp">
-                <span>💬</span> WhatsApp
-              </a>
-              <a href="tel:+918310398636" class="contact-btn call">
-                <span>📞</span> Call Us
-              </a>
-            </div>
-          </p>
         </div>
 
         <!-- Slabs / Sponsorship Tiers -->
         <div class="card">
-          <h2>Sponsorship Tiers</h2>
-          <div class="tier-badges">
-            <div class="tier-badge">
-              <div class="tier-name">💜 Supporter</div>
-              <div class="tier-details">₹1,000–₹4,999 • 1 pass • Shoutout</div>
-            </div>
-            <div class="tier-badge">
-              <div class="tier-name">💙 Wellwisher</div>
-              <div class="tier-details">₹5,000 • 2 passes • Stage mention</div>
-            </div>
-            <div class="tier-badge">
-              <div class="tier-name">🩶 Silver</div>
-              <div class="tier-details">₹10,000 • 3 passes • Prominent mention</div>
-            </div>
-            <div class="tier-badge">
-              <div class="tier-name">💛 Gold</div>
-              <div class="tier-details">₹15,000 • 5 passes • Featured mention</div>
-            </div>
-            <div class="tier-badge">
-              <div class="tier-name">💚 Platinum</div>
-              <div class="tier-details">₹20,000 • 7 passes • Headline sponsor</div>
-            </div>
-            <div class="tier-badge">
-              <div class="tier-name">❤️ Diamond</div>
-              <div class="tier-details">₹20,001+ • 10 passes • Exclusive partnership</div>
-            </div>
+          <h2>Sponsorship Tiers & Benefits</h2>
+          <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+              <thead style="background-color: rgba(233, 30, 99, 0.1); border-bottom: 2px solid var(--pink);">
+                <tr>
+                  <th style="padding: 12px; text-align: left; font-weight: 600;">Tier</th>
+                  <th style="padding: 12px; text-align: center; font-weight: 600;">Amount</th>
+                  <th style="padding: 12px; text-align: center; font-weight: 600;">Passes</th>
+                  <th style="padding: 12px; text-align: left; font-weight: 600;">Perks & Benefits</th>
+                </tr>
+              </thead>
+              <tbody id="slab_body" style="border-bottom: 1px solid var(--border);">
+                <!-- Dynamically filled by app.js -->
+              </tbody>
+            </table>
           </div>
         </div>
 
@@ -672,7 +181,7 @@
               What is the minimum donation?
             </summary>
             <p class="muted tiny">
-              We accept donations of any amount! Donations ₹1,000+ come with complimentary passes. Below ₹1,000, we still deeply appreciate your support!
+              We accept donations of any amount! Donations ₹5,000+ receive complimentary passes and tier benefits. Below ₹5,000, we still deeply appreciate your support!
             </p>
           </details>
           <details style="margin-bottom: 1rem; cursor: pointer;">
