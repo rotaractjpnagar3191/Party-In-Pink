@@ -6,6 +6,9 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Bulk Registration · Party In Pink</title>
   <meta name="theme-color" content="#E91E63" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -14,14 +17,280 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=2025-11-20-1" />
   <style>
-    /* ensure visible selection regardless of stylesheet version */
-    .pill.is-active,
-    .pill[data-selected="true"] {
-      opacity: 1;
-      border-color: var(--ring);
-      box-shadow: 0 0 0 3px rgba(244, 143, 177, .18) inset;
+    /* Enhanced Bulk Registration Styling */
+    .bulk-hero {
+      text-align: center;
+      padding: 2.5rem 1rem;
+      background: linear-gradient(135deg, rgba(233, 30, 99, 0.08) 0%, rgba(233, 30, 99, 0.04) 100%);
+      border-radius: 12px;
+      margin-bottom: 2rem;
+      animation: fadeInDown 0.6s ease-out;
+    }
+
+    .bulk-hero h1 {
+      font-size: 2.2rem;
+      margin-bottom: 0.5rem;
+      color: var(--text);
+    }
+
+    .bulk-hero p {
+      font-size: 1rem;
+      color: var(--muted);
+      max-width: 55ch;
+      margin: 0 auto;
+    }
+
+    /* Pill styling for club type */
+    .pills {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin: 1rem 0;
+    }
+
+    .pills .pill {
+      padding: 0.7rem 1.5rem;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--text);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      font-size: 0.95rem;
+      flex: 1;
+      min-width: 120px;
+    }
+
+    .pills .pill:hover {
+      border-color: var(--pink);
+      background: rgba(233, 30, 99, 0.1);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(233, 30, 99, 0.15);
+    }
+
+    .pills .pill[data-selected="true"],
+    .pills .pill.is-active {
+      background: var(--pink);
+      color: white;
+      border-color: var(--pink);
+      box-shadow: 0 6px 16px rgba(233, 30, 99, 0.25);
+    }
+
+    /* Enhanced input styling */
+    input[type="text"],
+    input[type="email"],
+    input[type="tel"],
+    input[type="number"] {
+      transition: all 0.3s ease;
+      border: 2px solid var(--border);
+      padding: 0.85rem;
+      font-size: 1rem;
+      border-radius: 8px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    input[type="text"]:focus,
+    input[type="email"]:focus,
+    input[type="tel"]:focus,
+    input[type="number"]:focus {
+      border-color: var(--pink);
+      background: rgba(233, 30, 99, 0.05);
+      box-shadow: 0 0 0 3px rgba(233, 30, 99, 0.1);
+      outline: none;
+    }
+
+    /* Quantity controls */
+    .qty-control {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin: 1rem 0;
+    }
+
+    .qty-control button {
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      border: 2px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-weight: 700;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .qty-control button:hover {
+      border-color: var(--pink);
+      background: rgba(233, 30, 99, 0.1);
+      transform: scale(1.05);
+    }
+
+    .qty-control button:active {
+      transform: scale(0.95);
+    }
+
+    .qty-control input {
+      max-width: 100px;
+      text-align: center;
+      padding: 0.75rem;
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    /* Info messages */
+    .form-msg {
+      padding: 0.75rem;
+      border-radius: 8px;
+      margin: 0.75rem 0;
+      background: rgba(233, 30, 99, 0.08);
+      color: var(--text);
+      font-size: 0.95rem;
+      border-left: 4px solid var(--pink);
+    }
+
+    .form-msg strong {
+      color: var(--pink);
+      font-weight: 700;
+    }
+
+    .form-msg.tiny {
+      font-size: 0.85rem;
+      color: var(--muted);
+      background: transparent;
+      border: none;
+      padding: 0;
+      margin: 0.5rem 0;
+    }
+
+    /* Actions button styling */
+    .actions {
+      display: flex;
+      gap: 1rem;
+      margin: 2rem 0 1rem;
+      flex-wrap: wrap;
+    }
+
+    .actions button {
+      flex: 1;
+      min-width: 160px;
+      padding: 1rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 1rem;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      border: none;
+      cursor: pointer;
+    }
+
+    .actions button.btn-primary {
+      background: var(--pink);
+      color: white;
+    }
+
+    .actions button.btn-primary:hover {
+      background: var(--pink-600, #c2185b);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(233, 30, 99, 0.25);
+    }
+
+    .actions button.btn-primary:active {
+      transform: translateY(0);
+    }
+
+    .actions button.btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Label styling */
+    label {
+      display: block;
+      font-weight: 600;
+      margin-top: 1.25rem;
+      color: var(--text);
+    }
+
+    label:first-of-type {
+      margin-top: 0;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .mt-md {
+      margin-top: 1rem;
+    }
+
+    /* Card animation */
+    .card {
+      animation: fadeInUp 0.6s ease-out;
+    }
+
+    /* Animations */
+    @keyframes fadeInDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+      .bulk-hero h1 {
+        font-size: 1.8rem;
+      }
+
+      .pills {
+        flex-direction: column;
+      }
+
+      .pills .pill {
+        width: 100%;
+      }
+
+      .qty-control {
+        justify-content: center;
+      }
+
+      .actions {
+        flex-direction: column;
+      }
+
+      .actions button {
+        width: 100%;
+      }
+
+      input[type="text"],
+      input[type="email"],
+      input[type="tel"],
+      input[type="number"] {
+        font-size: 16px;
+      }
     }
   </style>
 </head>
@@ -52,6 +321,12 @@
 
   <main class="section">
     <div class="wrap">
+      <!-- Hero Section -->
+      <div class="bulk-hero">
+        <h1>👥 Group Registration</h1>
+        <p>Register multiple people from your community, university, or organization.</p>
+      </div>
+
       <div class="card" style="max-width:840px;margin-inline:auto">
         <h2>Group / Club Registration</h2>
         <p class="muted">Buy multiple passes for your community, university, or corporate group.</p>
@@ -81,9 +356,9 @@
           </label>
 
           <label>Passes</label>
-          <div style="display:flex;align-items:center;gap:10px">
-            <button type="button" id="minus" class="btn btn-ghost" aria-label="Decrease">–</button>
-            <input id="bulk_qty" type="number" min="1" value="12" style="max-width:120px;text-align:center" />
+          <div class="qty-control">
+            <button type="button" id="minus" class="btn btn-ghost" aria-label="Decrease">−</button>
+            <input id="bulk_qty" type="number" min="1" value="12" />
             <button type="button" id="plus" class="btn btn-ghost" aria-label="Increase">+</button>
           </div>
 
@@ -125,7 +400,7 @@
     </div>
   </footer>
 
-  <script src="app.js" defer></script>
+  <script src="app.js?v=2025-11-20" defer></script>
 </body>
 
 </html>
