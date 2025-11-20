@@ -120,11 +120,21 @@ async function issueComplimentaryPasses(env, oc) {
       ? (getenv(env, 'KONFHUB_INTERNAL_FREE_TICKET_ID') || getenv(env, 'KONFHUB_FREE_TICKET_ID'))
       : null;
 
-  if (!EVENT_ID)   throw new Error('KonfHub event id (internal) missing');
-  if (!PRIMARY_ID) throw new Error('KonfHub complimentary ticket id (internal) missing');
+  console.log('[issueComplimentaryPasses] ===== START =====');
+  console.log('[issueComplimentaryPasses] Type:', oc.type);
+  console.log('[issueComplimentaryPasses] EVENT_ID:', EVENT_ID);
+  console.log('[issueComplimentaryPasses] PRIMARY_ID:', PRIMARY_ID);
+  console.log('[issueComplimentaryPasses] FALLBACK_ID:', FALLBACK_ID);
+
+  if (!EVENT_ID)   throw new Error(`KonfHub event id missing (internal: ${getenv(env, 'KONFHUB_EVENT_ID_INTERNAL')}, public: ${getenv(env, 'KONFHUB_EVENT_ID')})`);
+  if (!PRIMARY_ID) throw new Error(`KonfHub ticket id missing for type ${oc.type}`);
 
   const { primary: codePrimary, fallback: codeFallback } = accessCodes(env, oc.type);
+  console.log('[issueComplimentaryPasses] Access codes -', { primary: !!codePrimary, fallback: !!codeFallback });
+  
   const people = buildPeople(oc);
+  console.log('[issueComplimentaryPasses] Built', people.length, 'attendees');
+  console.log('[issueComplimentaryPasses] First attendee:', people[0]);
 
   const limit = 20;
   const created = [];
@@ -134,27 +144,40 @@ async function issueComplimentaryPasses(env, oc) {
   for (let start = 0; start < people.length; start += limit) {
     const group = people.slice(start, start + limit);
 
+    console.log(`[issueComplimentaryPasses] Group ${start}-${Math.min(start + limit - 1, people.length - 1)}: ${group.length} people`);
     const first = await capture(env, PRIMARY_ID, group, EVENT_ID, codePrimary);
+    console.log(`[issueComplimentaryPasses] Response (PRIMARY):`, { ok: first.ok, status: first.status, code: first.json?.error?.error_code });
+    
     if (first.ok) {
       ticketsUsed.add(PRIMARY_ID);
       created.push({ start, count: group.length, ticket_id: PRIMARY_ID, response: first.json });
+      console.log(`[issueComplimentaryPasses] ✓ Group created via PRIMARY ticket`);
       continue;
     }
 
     if (isTicketInaccessible(first.json, first.status) && FALLBACK_ID) {
+      console.log(`[issueComplimentaryPasses] PRIMARY failed (ticket inaccessible), trying FALLBACK...`);
       const second = await capture(env, FALLBACK_ID, group, EVENT_ID, codeFallback);
+      console.log(`[issueComplimentaryPasses] Response (FALLBACK):`, { ok: second.ok, status: second.status });
+      
       if (second.ok) {
         ticketsUsed.add(FALLBACK_ID);
         created.push({ start, count: group.length, ticket_id: FALLBACK_ID, response: second.json });
+        console.log(`[issueComplimentaryPasses] ✓ Group created via FALLBACK ticket`);
         continue;
       }
       errors.push({ start, count: group.length, ticket_id: FALLBACK_ID, error: second.json, status: second.status, tried_fallback: true });
+      console.log(`[issueComplimentaryPasses] ✗ FALLBACK also failed:`, second.json);
       continue;
     }
 
     errors.push({ start, count: group.length, ticket_id: PRIMARY_ID, error: first.json, status: first.status });
+    console.log(`[issueComplimentaryPasses] ✗ PRIMARY failed:`, first.json);
   }
 
+  console.log('[issueComplimentaryPasses] ===== RESULT =====');
+  console.log('[issueComplimentaryPasses] Total:', people.length, 'Created:', created.length, 'Errors:', errors.length);
+  
   return { total: people.length, created, errors, tickets_used: Array.from(ticketsUsed) };
 }
 
