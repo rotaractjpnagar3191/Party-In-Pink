@@ -4,10 +4,16 @@ const { getConfig, mapAmountToPasses } = require('./_config');
 const { getJson, putJson } = require('./_github');
 const { issueComplimentaryPasses } = require('./_konfhub');
 
+// CRITICAL: Log immediately on invocation
+console.log('[cf-webhook-BOOT] Module loaded at', new Date().toISOString());
+
 exports.handler = async (event) => {
-  console.log('[cf-webhook] ===== WEBHOOK START =====');
-  console.log('[cf-webhook] Method:', event.httpMethod);
-  console.log('[cf-webhook] Headers:', Object.keys(event.headers));
+  console.log('\n\n==============================================');
+  console.log('[cf-webhook] ===== WEBHOOK INVOKED =====');
+  console.log('[cf-webhook] Timestamp:', new Date().toISOString());
+  console.log('[cf-webhook] Method:', event?.httpMethod);
+  console.log('[cf-webhook] Has event:', !!event);
+  console.log('[cf-webhook] Headers:', event?.headers ? Object.keys(event.headers) : 'NO HEADERS');
   
   try {
     if (event.httpMethod !== 'POST') return respond(405, 'Method not allowed');
@@ -160,12 +166,20 @@ exports.handler = async (event) => {
 
     return respond(200, `Issued ${oc.passes} pass(es)`);
   } catch (e) {
-    console.error('cf-webhook error', e);
-    return respond(500, e.message || 'Webhook error');
+    console.error('\n\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+    console.error('[cf-webhook] ❌ OUTER CATCH - UNEXPECTED ERROR');
+    console.error('[cf-webhook] Error:', e?.message || String(e));
+    console.error('[cf-webhook] Stack:', e?.stack);
+    console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+    return respond(500, `OUTER CATCH: ${e?.message || String(e)}`);
   }
 };
 
-const respond = (statusCode, body) => ({
-  statusCode,
-  body: typeof body === 'string' ? body : JSON.stringify(body)
-});
+const respond = (statusCode, body) => {
+  const response = {
+    statusCode,
+    body: typeof body === 'string' ? body : JSON.stringify(body)
+  };
+  console.log('[cf-webhook] RESPONDING:', statusCode, body);
+  return response;
+};
