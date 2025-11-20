@@ -5,10 +5,430 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Donate · Party In Pink</title>
   <meta name="theme-color" content="#E91E63" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=2025-11-20" />
+  <style>
+    /* Enhanced Donate Page Styling */
+    .donate-hero {
+      text-align: center;
+      padding: 3rem 1rem;
+      background: linear-gradient(135deg, rgba(233, 30, 99, 0.08) 0%, rgba(233, 30, 99, 0.04) 100%);
+      border-radius: 12px;
+      margin-bottom: 2rem;
+      animation: fadeInDown 0.6s ease-out;
+    }
+
+    .donate-hero h1 {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+      color: var(--text);
+    }
+
+    .donate-hero p {
+      font-size: 1.1rem;
+      color: var(--muted);
+      max-width: 60ch;
+      margin: 0 auto;
+    }
+
+    .pdf-download {
+      margin-top: 1.5rem;
+    }
+
+    .pdf-download a {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.95rem 1.5rem;
+      background: var(--pink);
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 12px rgba(233, 30, 99, 0.15);
+    }
+
+    .pdf-download a:hover {
+      background: #c2185b;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(233, 30, 99, 0.25);
+    }
+
+    .pdf-download a:active {
+      transform: translateY(0);
+    }
+
+    .donate-chips {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin: 1rem 0;
+      justify-content: center;
+    }
+
+    .donate-chips button {
+      padding: 0.65rem 1.25rem;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--text);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      font-size: 0.95rem;
+    }
+
+    .donate-chips button:hover {
+      border-color: var(--pink);
+      background: rgba(233, 30, 99, 0.1);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(233, 30, 99, 0.15);
+    }
+
+    .donate-chips button.selected {
+      background: var(--pink);
+      color: white;
+      border-color: var(--pink);
+      box-shadow: 0 6px 16px rgba(233, 30, 99, 0.25);
+    }
+
+    /* Form inputs enhancement */
+    input[type="number"],
+    input[type="text"],
+    input[type="email"],
+    input[type="tel"] {
+      transition: all 0.3s ease;
+      border: 2px solid var(--border);
+      padding: 0.85rem;
+      font-size: 1rem;
+      border-radius: 8px;
+    }
+
+    input[type="number"]:focus,
+    input[type="text"]:focus,
+    input[type="email"]:focus,
+    input[type="tel"]:focus {
+      border-color: var(--pink);
+      background: rgba(233, 30, 99, 0.05);
+      box-shadow: 0 0 0 3px rgba(233, 30, 99, 0.1);
+      outline: none;
+    }
+
+    .help-inline {
+      background: rgba(233, 30, 99, 0.08);
+      padding: 0.85rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      color: var(--text);
+      margin: 1rem 0;
+      border-left: 4px solid var(--pink);
+    }
+
+    .help-inline strong {
+      color: var(--pink);
+      font-weight: 700;
+    }
+
+    /* Slab table enhancement */
+    .slab-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1.5rem;
+    }
+
+    .slab-table thead {
+      background: rgba(233, 30, 99, 0.08);
+    }
+
+    .slab-table th {
+      padding: 1rem;
+      text-align: left;
+      font-weight: 700;
+      color: var(--pink);
+      border-bottom: 2px solid var(--border);
+    }
+
+    .slab-table td {
+      padding: 1rem;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.95rem;
+    }
+
+    .slab-table td:first-child {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--pink);
+      min-width: 100px;
+    }
+
+    .slab-table td strong {
+      display: block;
+      color: var(--pink);
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+
+    .slab-table tr:hover {
+      background: rgba(233, 30, 99, 0.04);
+      transition: background 0.2s ease;
+    }
+
+    .slab-table td.help {
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    /* Tier Badges (compact tier display) */
+    .tier-badges {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .tier-badge {
+      background: linear-gradient(135deg, #f5f5f5 0%, #fafafa 100%);
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 0.85rem 1rem;
+      transition: all 0.2s ease;
+    }
+
+    .tier-badge:hover {
+      background: linear-gradient(135deg, #f0f0f0 0%, #f5f5f5 100%);
+      border-color: var(--pink);
+      box-shadow: 0 3px 10px rgba(233, 30, 99, 0.12);
+      transform: translateX(2px);
+    }
+
+    .tier-name {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--pink);
+      margin-bottom: 0.3rem;
+    }
+
+    .tier-details {
+      font-size: 0.9rem;
+      color: var(--text);
+      line-height: 1.4;
+    }
+
+    /* Actions button styling */
+    .actions {
+      display: flex;
+      gap: 1rem;
+      margin: 1.5rem 0;
+      flex-wrap: wrap;
+    }
+
+    .actions button {
+      flex: 1;
+      min-width: 150px;
+      padding: 0.95rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 1rem;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      border: none;
+      cursor: pointer;
+    }
+
+    .actions button.btn-primary {
+      background: var(--pink);
+      color: white;
+    }
+
+    .actions button.btn-primary:hover {
+      background: var(--pink-600, #c2185b);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(233, 30, 99, 0.25);
+    }
+
+    .actions button.btn-primary:active {
+      transform: translateY(0);
+    }
+
+    .actions button.btn-ghost {
+      background: transparent;
+      color: var(--text);
+      border: 2px solid var(--border);
+    }
+
+    .actions button.btn-ghost:hover {
+      border-color: var(--pink);
+      background: rgba(233, 30, 99, 0.08);
+    }
+
+    /* Note styling */
+    .note80g {
+      background: linear-gradient(135deg, rgba(255, 193, 7, 0.15) 0%, rgba(255, 152, 0, 0.12) 100%);
+      border: 2px solid rgba(255, 193, 7, 0.6);
+      border-left: 6px solid #FFC107;
+      padding: 1.25rem;
+      border-radius: 8px;
+      margin: 1rem 0;
+      color: var(--text);
+      font-size: 0.95rem;
+      box-shadow: 0 4px 12px rgba(255, 193, 7, 0.15);
+    }
+
+    .note80g strong {
+      color: #FFC107;
+      font-weight: 700;
+      font-size: 1.05rem;
+    }
+
+    .note80g .contact-buttons {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .note80g .contact-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.65rem 1rem;
+      border-radius: 6px;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      font-size: 0.9rem;
+    }
+
+    .note80g .contact-btn.whatsapp {
+      background: #25D366;
+      color: white;
+    }
+
+    .note80g .contact-btn.whatsapp:hover {
+      background: #20BA5A;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+    }
+
+    .note80g .contact-btn.call {
+      background: var(--pink);
+      color: white;
+    }
+
+    .note80g .contact-btn.call:hover {
+      background: #c2185b;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(233, 30, 99, 0.3);
+    }
+
+    .note80g a {
+      color: var(--pink);
+      text-decoration: none;
+      font-weight: 600;
+      border-bottom: 2px solid var(--pink);
+    }
+
+    .note80g a:hover {
+      opacity: 0.8;
+    }
+
+    /* Grid responsiveness */
+    @media (max-width: 768px) {
+      .grid-2.cardish {
+        grid-template-columns: 1fr;
+      }
+
+      .donate-hero h1 {
+        font-size: 2rem;
+      }
+
+      .donate-chips {
+        justify-content: flex-start;
+      }
+
+      .donate-chips button {
+        flex: 1;
+        min-width: 80px;
+      }
+
+      .actions {
+        flex-direction: column;
+      }
+
+      .actions button {
+        width: 100%;
+      }
+
+      .slab-table {
+        font-size: 0.85rem;
+      }
+
+      .slab-table th,
+      .slab-table td {
+        padding: 0.75rem 0.5rem;
+      }
+    }
+
+    /* Animations */
+    @keyframes fadeInDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .card {
+      animation: fadeInUp 0.6s ease-out;
+    }
+
+    .card:first-child {
+      animation-delay: 0.1s;
+    }
+
+    .card:last-child {
+      animation-delay: 0.2s;
+    }
+
+    /* Loading state */
+    button[type="submit"]:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* Label styling */
+    label {
+      display: block;
+      font-weight: 600;
+      margin-top: 1rem;
+      color: var(--text);
+    }
+
+    label:first-of-type {
+      margin-top: 0;
+    }
+  </style>
 </head>
 
 <body class="theme-pip">
@@ -34,17 +454,22 @@
 
   <main class="section">
     <div class="wrap">
+      <!-- Hero Section -->
+      <div class="donate-hero">
+        <h1>💖 Support the Cause</h1>
+        <p>Your generous donation helps us fight breast cancer and support women in need.</p>
+        <div class="pdf-download">
+          <a href="assets/PiP 4.0 - Sponsorship Deck.pdf" target="_blank" rel="noopener noreferrer" download class="btn btn-primary">
+            📄 Download Sponsorship Deck
+          </a>
+        </div>
+      </div>
+
       <div class="grid-2 cardish">
 
         <!-- Form first (better UX) -->
         <div class="card">
-          <h2>Support the Cause</h2>
-
-          <p class="note80g">
-            <strong>Need an 80G receipt?</strong>
-            Please <a href="mailto:rotaractjpnagar@gmail.com">contact us</a> before donating.
-            Donations made here will <u>not</u> be issued 80G receipts.
-          </p>
+          <h2>Make Your Donation</h2>
 
           <form id="donateForm" class="form" novalidate>
             <label>Amount (₹)
@@ -52,16 +477,14 @@
               <div class="donate-chips" id="slab_quick" role="group" aria-label="Suggested amounts"></div>
 
               <div class="help-inline">
-                You can donate <strong>any amount</strong> — the buttons are just suggestions.
-                Donations <strong>₹1,000–₹4,999</strong> receive <strong>1 complimentary Pink Pass</strong>.
-                <em>Below ₹1,000, no complimentary pass is issued.</em>
+                <strong>Any amount</strong> is welcome. Donations <strong>₹1,000+</strong> receive complimentary passes.
               </div>
 
               <input id="donor_amount" type="number" inputmode="numeric" placeholder="5000" min="100" step="100" required />
             </label>
 
             <div id="slab_hint" class="muted tiny">
-              Enter an amount (or tap a suggestion) to see how many passes you’ll receive.
+              Enter an amount to see pass details.
             </div>
 
             <label class="mt-md">Your name
@@ -83,50 +506,122 @@
             </div>
             <p class="muted tiny">100% of proceeds go to the cause.</p>
           </form>
+
+          <!-- 80G Notice (moved below form) -->
+          <hr class="mt-lg mb-md" style="border: none; border-top: 1px solid #eee; margin: 1.5rem 0;">
+          <p class="note80g">
+            <strong>🎗️ Need an 80G receipt?</strong><br>
+            Please reach out <strong>BEFORE donating</strong>. Direct donations through this form do not receive 80G receipts.
+            <div class="contact-buttons" style="margin-top: 8px;">
+              <a href="https://wa.me/918310398636?text=Hi%20I%20want%20to%20donate%20and%20need%20an%2080G%20receipt" target="_blank" rel="noopener" class="contact-btn whatsapp">
+                <span>💬</span> WhatsApp
+              </a>
+              <a href="tel:+918310398636" class="contact-btn call">
+                <span>📞</span> Call Us
+              </a>
+            </div>
+          </p>
         </div>
 
-        <!-- Slabs / Perks on the side -->
+        <!-- Slabs / Sponsorship Tiers -->
         <div class="card">
-          <h2>Sponsorship slabs</h2>
-          <table class="slab-table">
-            <thead>
-              <tr>
-                <th>Amount</th>
-                <th>Passes</th>
-                <th>Perks</th>
-              </tr>
-            </thead>
-            <tbody id="slab_body">
-              <!-- Placeholder rows; app.js replaces these with real slabs from config -->
-              <tr data-amt="5000">
-                <td>₹5,000</td>
-                <td>2 passes</td>
-                <td class="help">Perks: stage mention • social shoutout • logo on wall</td>
-              </tr>
-              <tr data-amt="10000">
-                <td>₹10,000</td>
-                <td>5 passes</td>
-                <td class="help">Perks: stage mention • social shoutout • logo on wall</td>
-              </tr>
-              <tr data-amt="15000">
-                <td>₹15,000</td>
-                <td>7 passes</td>
-                <td class="help">Perks: stage mention • social shoutout • logo on wall</td>
-              </tr>
-              <tr data-amt="20000">
-                <td>₹20,000</td>
-                <td>7 passes</td>
-                <td class="help">Perks: stage mention • social shoutout • logo on wall</td>
-              </tr>
-              <tr data-amt="25000">
-                <td>₹25,000</td>
-                <td>10 passes</td>
-                <td class="help">Perks: stage mention • social shoutout • logo on wall</td>
-              </tr>
-            </tbody>
-          </table>
+          <h2>Sponsorship Tiers</h2>
+          <div class="tier-badges">
+            <div class="tier-badge">
+              <div class="tier-name">💜 Supporter</div>
+              <div class="tier-details">₹1,000–₹4,999 • 1 pass • Shoutout</div>
+            </div>
+            <div class="tier-badge">
+              <div class="tier-name">💙 Wellwisher</div>
+              <div class="tier-details">₹5,000 • 2 passes • Stage mention</div>
+            </div>
+            <div class="tier-badge">
+              <div class="tier-name">🩶 Silver</div>
+              <div class="tier-details">₹10,000 • 3 passes • Prominent mention</div>
+            </div>
+            <div class="tier-badge">
+              <div class="tier-name">💛 Gold</div>
+              <div class="tier-details">₹15,000 • 5 passes • Featured mention</div>
+            </div>
+            <div class="tier-badge">
+              <div class="tier-name">💚 Platinum</div>
+              <div class="tier-details">₹20,000 • 7 passes • Headline sponsor</div>
+            </div>
+            <div class="tier-badge">
+              <div class="tier-name">❤️ Diamond</div>
+              <div class="tier-details">₹20,001+ • 10 passes • Exclusive partnership</div>
+            </div>
+          </div>
         </div>
 
+      </div>
+
+      <!-- In-Kind Donation Section -->
+      <div class="grid-2 cardish" style="margin-top: 2rem;">
+        <div class="card">
+          <h2>💝 In-Kind Donations</h2>
+          <p>
+            We also welcome <strong>in-kind donations</strong> to support the event and the cause!
+          </p>
+          <p class="note80g">
+            <strong>🎁 What can you contribute?</strong><br>
+            • Beverages & snacks for participants<br>
+            • Event materials & decor<br>
+            • Prizes & giveaways<br>
+            • Services (photography, videography, etc.)<br>
+            • Medical support or wellness services<br>
+            • Any other resources that help our cause
+          </p>
+          <p>
+            If you'd like to contribute in-kind, please reach out to our team directly. 
+            We'll work with you to maximize your contribution's impact.
+          </p>
+          <div class="actions" style="flex-direction: column; gap: 0.75rem;">
+            <a href="https://wa.me/918310398636?text=Hi%20I%20want%20to%20contribute%20an%20in-kind%20donation%20to%20Party%20In%20Pink" 
+               target="_blank" rel="noopener" class="btn btn-primary" style="text-align: center; display: inline-block;">
+              💬 Discuss In-Kind Donation
+            </a>
+            <a href="tel:+918310398636" class="btn btn-ghost" style="text-align: center; display: inline-block;">
+              📞 Call Our Team
+            </a>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>❓ FAQ</h2>
+          <details style="margin-bottom: 1rem; cursor: pointer;">
+            <summary style="font-weight: 600; color: var(--pink); margin-bottom: 0.5rem;">
+              Can I donate multiple times?
+            </summary>
+            <p class="muted tiny">
+              Yes! You can make as many donations as you'd like. Each donation will be processed separately.
+            </p>
+          </details>
+          <details style="margin-bottom: 1rem; cursor: pointer;">
+            <summary style="font-weight: 600; color: var(--pink); margin-bottom: 0.5rem;">
+              Will I get an 80G certificate?
+            </summary>
+            <p class="muted tiny">
+              Donations made through this form will not automatically get 80G certificates. Please contact us before donating if you need 80G benefits.
+            </p>
+          </details>
+          <details style="margin-bottom: 1rem; cursor: pointer;">
+            <summary style="font-weight: 600; color: var(--pink); margin-bottom: 0.5rem;">
+              What is the minimum donation?
+            </summary>
+            <p class="muted tiny">
+              We accept donations of any amount! Donations ₹1,000+ come with complimentary passes. Below ₹1,000, we still deeply appreciate your support!
+            </p>
+          </details>
+          <details style="margin-bottom: 1rem; cursor: pointer;">
+            <summary style="font-weight: 600; color: var(--pink); margin-bottom: 0.5rem;">
+              Where does my donation go?
+            </summary>
+            <p class="muted tiny">
+              100% of monetary donations go to Sri Shankara Cancer Hospital to support breast cancer surgeries and patient care.
+            </p>
+          </details>
+        </div>
       </div>
     </div>
   </main>
@@ -144,6 +639,7 @@
           <a href="register.html">Single Registration</a>
           <a href="bulk.html">Bulk Registration</a>
           <a href="donate.html">Donate</a>
+          <a href="assets/PiP 4.0 - Sponsorship Deck.pdf" target="_blank" rel="noopener noreferrer">📄 Sponsorship Deck</a>
         </nav>
         <div>
           <h4>Contact</h4>
@@ -154,6 +650,6 @@
     </div>
   </footer>
 
-  <script src="app.js" defer></script>
+  <script src="app.js?v=2025-11-20" defer></script>
 </body>
 </html>
