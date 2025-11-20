@@ -138,9 +138,14 @@ function loadCashfree(env) {
   });
 }
 async function openCashfreeCheckout(sessionId, env) {
-  await loadCashfree(env || "sandbox");
-  const cf = new Cashfree(sessionId);
-  cf.redirect();
+  try {
+    await loadCashfree(env || "sandbox");
+    const cf = new Cashfree(sessionId);
+    cf.redirect();
+  } catch (err) {
+    console.error("Cashfree checkout error:", err);
+    alert("Payment initiation failed. Please try again or refresh the page.");
+  }
 }
 function goToPayment(resp) {
   if (resp.redirect_url) {
@@ -160,7 +165,8 @@ function goToPayment(resp) {
     openCashfreeCheckout(sid, resp.cf_env || "sandbox");
     return;
   }
-  alert("Could not start payment. Please try again.");
+  console.error("goToPayment: No payment method found", resp);
+  alert("Could not start payment. Please try again or contact support.");
 }
 async function postJSON(url, data, btn) {
   let spinner = null;
@@ -466,7 +472,7 @@ async function initDonate() {
     { amount: 10000, passes: 3, tier: "Silver", perks: "Prominent mention • media presence • booth space" },
     { amount: 15000, passes: 5, tier: "Gold", perks: "Featured mention • exclusive branding • event partnership" },
     { amount: 20000, passes: 7, tier: "Platinum", perks: "Headline sponsor • premium branding • speaking slot" },
-    { amount: 20001, passes: 10, tier: "Diamond", perks: "Exclusive partnership • VIP recognition • custom benefits" },
+    { amount: 25000, passes: 10, tier: "Diamond", perks: "Exclusive partnership • VIP recognition • custom benefits" },
   ];
 
   // Render slab table (right side)
@@ -531,13 +537,11 @@ async function initDonate() {
     }
 
     // Find best-fit slab (<= v)
+    // Iterate through slabs and find the highest one where v >= amount
     let hit = null;
     for (const s of slabs) {
-      if (s.amount === 20001) {
-        // Special case for Diamond (20001+)
-        if (v > 20000) hit = s;
-      } else if (v >= s.amount) {
-        hit = s;
+      if (v >= s.amount) {
+        hit = s; // Keep updating to get the highest matching slab
       }
     }
 
@@ -608,6 +612,11 @@ async function initDonate() {
     }
 
     const amt = Number(amountEl?.value || 0);
+    if (amt < 100) {
+      alert("Minimum donation amount is ₹100.");
+      return;
+    }
+
     const payload = {
       type: "donation",
       name:  (nameEl?.value || "").trim(),
@@ -620,6 +629,11 @@ async function initDonate() {
 
     try {
       const resp = await postJSON("/api/create-order", payload, $("#donor_submit"));
+      if (!resp || !resp.order_id) {
+        alert("Server error: Invalid response. Please try again.");
+        console.error("Invalid response:", resp);
+        return;
+      }
       goToPayment(resp);
     } catch (err) {
       alert("Could not create donation: " + err.message);
