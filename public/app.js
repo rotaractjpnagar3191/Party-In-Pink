@@ -465,30 +465,49 @@ async function initDonate() {
   // Phone pattern from helper
   $("#donor_phone")?.setAttribute("pattern", phonePattern());
 
-  // Slabs (server truth); fallback defaults
-  // Matching sponsorship deck: Wellwisher + 3 main tiers
-  let slabs = CFG?.__SLABS_PARSED__ || [
-    { amount: 5000,  passes: 1, tier: "Wellwisher", perks: "Donor recognition • Social Media Recognition" },
-    { amount: 10000, passes: 2, tier: "Silver", perks: "Major Donor Recognition • Logo on Backdrop • Social Media & Certificate" },
-    { amount: 15000, passes: 5, tier: "Gold", perks: "All Silver benefits • 3 Min Stage Time • Recognition & MC Shoutout • Deliverables/Pamphlets" },
-    { amount: 20000, passes: 7, tier: "Platinum", perks: "All Gold benefits • 5 Min Stage Time • Premium Recognition & Dedicated MC Mention" },
+  // Tier metadata (frontend maintained) - maps amounts to tier names and perks
+  const tierMetadata = {
+    1000:  { tier: "Supporter", perks: "Social shoutout • Event certificate" },
+    5000:  { tier: "Wellwisher", perks: "Donor recognition • Event certificate" },
+    10000: { tier: "Silver", perks: "Major Donor Recognition • Logo on Backdrop • Social Media & Certificate" },
+    15000: { tier: "Gold", perks: "All Silver benefits • 3 Min Stage Time • Recognition & MC Shoutout • Deliverables/Pamphlets" },
+    20000: { tier: "Platinum", perks: "All Gold benefits • 5 Min Stage Time • Premium Recognition & Dedicated MC Mention" },
+    25000: { tier: "Diamond", perks: "Exclusive partnership • VIP recognition • Custom benefits" },
+    50000: { tier: "Platinum+", perks: "All benefits • Premier sponsorship • Dedicated support" },
+  };
+
+  // Slabs from server (or fallback defaults)
+  let serverSlabs = CFG?.__SLABS_PARSED__ || [
+    { amount: 5000,  passes: 1 },
+    { amount: 10000, passes: 2 },
+    { amount: 15000, passes: 5 },
+    { amount: 20000, passes: 7 },
   ];
+
+  // Merge server slabs with tier metadata
+  let slabs = serverSlabs.map(s => ({
+    amount: s.amount,
+    passes: s.passes,
+    tier: tierMetadata[s.amount]?.tier || `Sponsor (₹${s.amount/1000}k)`,
+    perks: tierMetadata[s.amount]?.perks || 'Stage mention • Social shoutout • Logo on wall'
+  }));
 
   // Render slab table (right side)
   const tbody = $("#slab_body");
   if (tbody) {
     tbody.innerHTML = slabs.map(s => `
-      <tr data-amt="${s.amount}" style="border-bottom: 1px solid var(--border); transition: background-color 0.2s;">
-        <td style="padding: 12px; font-weight: 600;">${s.tier || 'Sponsor'}</td>
-        <td style="padding: 12px; text-align: center;">${rupee(s.amount)}</td>
-        <td style="padding: 12px; text-align: center;">${s.passes} pass${s.passes !== 1 ? 'es' : ''}</td>
-        <td style="padding: 12px; color: var(--muted); font-size: 0.85rem;">${s.perks || 'stage mention • social shoutout • logo on wall'}</td>
+      <tr data-amt="${s.amount}" style="border-bottom: 1px solid var(--border); vertical-align: top;">
+        <td style="padding: 10px 8px; font-weight: 700; color: var(--pink);">${s.tier}</td>
+        <td style="padding: 10px 8px; text-align: center; font-weight: 600;">${rupee(s.amount)}</td>
+        <td style="padding: 10px 8px; text-align: center; font-weight: 600;">${s.passes}</td>
+        <td style="padding: 10px 8px; font-size: 0.9rem; color: var(--muted); line-height: 1.4;">${s.perks}</td>
       </tr>
     `).join("");
     
     // Highlight row on hover
     $$("#slab_body tr").forEach(tr => {
-      tr.addEventListener("mouseenter", function() { this.style.backgroundColor = "rgba(233, 30, 99, 0.05)"; });
+      tr.style.cursor = "pointer";
+      tr.addEventListener("mouseenter", function() { this.style.backgroundColor = "rgba(233, 30, 99, 0.08)"; });
       tr.addEventListener("mouseleave", function() { this.style.backgroundColor = "transparent"; });
     });
   }
