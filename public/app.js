@@ -466,13 +466,12 @@ async function initDonate() {
   $("#donor_phone")?.setAttribute("pattern", phonePattern());
 
   // Slabs (server truth); fallback defaults
+  // Matching sponsorship deck: Wellwisher + 3 main tiers
   let slabs = CFG?.__SLABS_PARSED__ || [
-    { amount: 1000,  passes: 1, tier: "Supporter", shoutout: true, perks: "Shoutout • social mention • supporter badge" },
-    { amount: 5000,  passes: 2, tier: "Wellwisher", perks: "Stage mention • social shoutout • logo on wall" },
-    { amount: 10000, passes: 3, tier: "Silver", perks: "Prominent mention • media presence • booth space" },
-    { amount: 15000, passes: 5, tier: "Gold", perks: "Featured mention • exclusive branding • event partnership" },
-    { amount: 20000, passes: 7, tier: "Platinum", perks: "Headline sponsor • premium branding • speaking slot" },
-    { amount: 25000, passes: 10, tier: "Diamond", perks: "Exclusive partnership • VIP recognition • custom benefits" },
+    { amount: 5000,  passes: 1, tier: "Wellwisher", perks: "Donor recognition • Social Media Recognition" },
+    { amount: 10000, passes: 2, tier: "Silver", perks: "Major Donor Recognition • Logo on Backdrop • Social Media & Certificate" },
+    { amount: 15000, passes: 5, tier: "Gold", perks: "All Silver benefits • 3 Min Stage Time • Recognition & MC Shoutout • Deliverables/Pamphlets" },
+    { amount: 20000, passes: 7, tier: "Platinum", perks: "All Gold benefits • 5 Min Stage Time • Premium Recognition & Dedicated MC Mention" },
   ];
 
   // Render slab table (right side)
@@ -520,8 +519,8 @@ async function initDonate() {
   }
 
   // --- Pass logic ---
-  const MIN_ONE_PASS = 1000;                              // >= ₹1,000
-  const FIRST_SLAB   = slabs?.[0]?.amount ?? 1000;        // usually ₹1,000
+  const MIN_SLAB = 5000;                                 // First slab amount
+  const FIRST_SLAB   = slabs?.[0]?.amount ?? 5000;        // usually ₹5,000
 
   function highlightSlab() {
     const v = Number(amountEl?.value || 0);
@@ -556,17 +555,17 @@ async function initDonate() {
       return;
     }
 
-    // Between ₹1,000 and (first slab - 1) → 1 complimentary pass
-    if (v >= MIN_ONE_PASS && v < FIRST_SLAB) {
+    // Below first slab (₹5,000) → donation without passes
+    if (v > 0 && v < FIRST_SLAB) {
       $("#slab_hint")?.replaceChildren(
-        document.createTextNode("Thank you! You will receive 1 complimentary Pink Pass and a special shoutout.")
+        document.createTextNode("Thank you for your generous donation! You can still enjoy the event.")
       );
       return;
     }
 
-    // Below ₹1,000 → no pass
+    // Below any amount → no pass
     $("#slab_hint")?.replaceChildren(
-      document.createTextNode("Thank you for your donation.")
+      document.createTextNode("Enter an amount to see how many passes you'll receive.")
     );
   }
 
