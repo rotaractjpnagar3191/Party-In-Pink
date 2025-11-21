@@ -902,7 +902,10 @@ function initRegister() {
         clearTimeout(timeoutId);
       }
       if (r.ok) {
-        const oc = await r.json();
+        const resp = await r.json();
+        // API returns { ok: true, order: {...} }
+        const oc = resp.order || resp;
+        console.log('[success-poll] Got order status:', { fulfilled: oc?.fulfilled });
         renderProgress(oc);
 
         const ok = oc.fulfilled?.status === "ok";
@@ -925,12 +928,13 @@ function initRegister() {
         }
       }
     } catch (e) {
+      console.log('[success-poll] Error (continuing):', e.message);
       /* ignore network error; keep polling */
     }
 
     // keep user informed
     if (badge && !done) {
-      badge.textContent = `Processing…`;
+      badge.textContent = `Processing… (${tries * 2}s)`;
     }
     if (tries < 40) setTimeout(poll, 2000);
     else {
