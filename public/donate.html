@@ -97,22 +97,31 @@
     .donate-form-section {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 2rem;
+      gap: 2.5rem;
       margin-bottom: 3rem;
+      grid-auto-flow: dense;
+    }
+
+    @media (max-width: 1024px) {
+      .donate-form-section {
+        gap: 2rem;
+      }
     }
 
     @media (max-width: 960px) {
       .donate-form-section {
         grid-template-columns: 1fr;
+        gap: 2rem;
       }
     }
 
     .form-card {
       background: linear-gradient(135deg, #1a1a1e 0%, #2d2d35 100%);
-      padding: 2rem;
+      padding: 2.5rem;
       border-radius: 16px;
       border: 1px solid rgba(233, 30, 99, 0.2);
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      min-height: fit-content;
     }
 
     .form-card h2 {
@@ -158,7 +167,15 @@
 
     /* Input fields */
     .form-group {
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.75rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid rgba(233, 30, 99, 0.1);
+    }
+
+    .form-group:last-of-type {
+      margin-bottom: 1.75rem;
+      padding-bottom: 0;
+      border-bottom: none;
     }
 
     .form-label {
@@ -330,6 +347,8 @@
       padding: 2rem;
       border-radius: 16px;
       border: 1px solid rgba(233, 30, 99, 0.2);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      min-height: fit-content;
     }
 
     .faq-card h2 {
@@ -341,6 +360,14 @@
 
     .faq-item {
       margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid rgba(233, 30, 99, 0.1);
+    }
+
+    .faq-item:last-child {
+      margin-bottom: 0;
+      padding-bottom: 0;
+      border-bottom: none;
     }
 
     .faq-summary {
@@ -351,6 +378,8 @@
       display: flex;
       align-items: center;
       gap: 8px;
+      padding: 0.5rem 0;
+      transition: color 0.3s ease;
     }
 
     .faq-summary:hover {
@@ -361,7 +390,8 @@
       font-size: 0.9rem;
       color: #bbb;
       line-height: 1.6;
-      padding: 0 0 0 24px;
+      padding: 0.75rem 0 0 24px;
+      margin-top: 0.5rem;
     }
 
     details[open] .faq-summary {
@@ -500,6 +530,14 @@
         padding: 1.5rem;
       }
 
+      .form-card {
+        padding: 1.75rem;
+      }
+
+      .faq-card {
+        padding: 1.75rem;
+      }
+
       .tiers-table th,
       .tiers-table td {
         padding: 8px 4px;
@@ -527,6 +565,31 @@
       .btn-inkind {
         min-width: auto;
         width: 100%;
+      }
+
+      .faq-item {
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+      }
+
+      .faq-content {
+        font-size: 0.85rem;
+        padding: 0.5rem 0 0 16px;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .form-card, .faq-card {
+        padding: 1.25rem;
+      }
+
+      .donate-hero h1 {
+        font-size: 1.5rem;
+      }
+
+      .form-card h2, .faq-card h2 {
+        font-size: 1.25rem;
+        margin-bottom: 1rem;
       }
     }
 
