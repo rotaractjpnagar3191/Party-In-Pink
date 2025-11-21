@@ -264,6 +264,17 @@ exports.handler = async (event) => {
     console.log('[cf-webhook] Order fulfilled:', oc.fulfilled);
     console.log('[cf-webhook] Processed webhooks:', oc.processed_webhooks);
     
+    // SAFETY CHECK: Before saving, re-check GitHub to catch concurrent issuances
+    // If another webhook already saved fulfillment, abort save to avoid duplicate data
+    const latestFromGitHub = await getJson(ENV, path);
+    if (latestFromGitHub?.fulfilled?.status === 'ok' || latestFromGitHub?.fulfilled?.status === 'partial') {
+      console.log('[cf-webhook] ⚠️  CONCURRENT SAVE DETECTED: Another webhook already saved fulfillment');
+      console.log('[cf-webhook] Order fulfilled by:', latestFromGitHub.fulfilled.at);
+      console.log('[cf-webhook] Skipping save to avoid concurrent write collision');
+      // Still return 200 - tickets were issued successfully by us
+      return respond(200, `Issued ${oc.passes} pass(es) (concurrent issuance detected)`);
+    }
+    
     try {
       await putJson(ENV, path, oc);
       console.log('[cf-webhook] ✓ Order successfully saved to GitHub');
