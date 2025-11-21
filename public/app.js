@@ -497,18 +497,30 @@ async function initDonate() {
   if (tbody) {
     tbody.innerHTML = slabs.map(s => `
       <tr data-amt="${s.amount}" style="border-bottom: 1px solid var(--border); vertical-align: top;">
-        <td style="padding: 10px 8px; font-weight: 700; color: var(--pink);">${s.tier}</td>
-        <td style="padding: 10px 8px; text-align: center; font-weight: 600;">${rupee(s.amount)}</td>
-        <td style="padding: 10px 8px; text-align: center; font-weight: 600;">${s.passes}</td>
-        <td style="padding: 10px 8px; font-size: 0.9rem; color: var(--muted); line-height: 1.4;">${s.perks}</td>
+        <td style="padding: 8px 6px; font-weight: 700; color: var(--pink); font-size: 0.85rem; white-space: nowrap;">${s.tier}</td>
+        <td style="padding: 8px 6px; text-align: center; font-weight: 600; font-size: 0.85rem; white-space: nowrap;">${rupee(s.amount)}</td>
+        <td style="padding: 8px 6px; text-align: center; font-weight: 600; font-size: 0.85rem; white-space: nowrap;">${s.passes}</td>
+        <td style="padding: 8px 6px; font-size: 0.78rem; color: var(--muted); line-height: 1.4; word-break: break-word;">${s.perks}</td>
       </tr>
     `).join("");
     
-    // Highlight row on hover
+    // Make rows clickable on mobile and remove hover effects (CSS handles it via .slab-hit class)
     $$("#slab_body tr").forEach(tr => {
       tr.style.cursor = "pointer";
-      tr.addEventListener("mouseenter", function() { this.style.backgroundColor = "rgba(233, 30, 99, 0.08)"; });
-      tr.addEventListener("mouseleave", function() { this.style.backgroundColor = "transparent"; });
+      // Click to select amount
+      tr.addEventListener("click", function() {
+        const amt = this.dataset.amt;
+        const amountEl = $("#donor_amount");
+        if (amountEl) {
+          amountEl.value = amt;
+          amountEl.dispatchEvent(new Event("input", { bubbles: true }));
+          amountEl.focus();
+          // Scroll to form on mobile
+          if (window.innerWidth <= 640) {
+            amountEl.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+        }
+      });
     });
   }
 
