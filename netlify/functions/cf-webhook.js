@@ -104,30 +104,46 @@ exports.handler = async (event) => {
     const path = `${ENV.STORE_PATH}/orders/${order_id}.json`;
     let oc   = await getJson(ENV, path);
     
+    if (!oc) {
+      console.log(`[cf-webhook] ⚠️  Order ${order_id} NOT in GitHub storage`);
+      console.log(`[cf-webhook] GitHub path: ${ENV.GITHUB_OWNER}/${ENV.GITHUB_REPO}/${path}`);
+    } else {
+      console.log(`[cf-webhook] ✓ Order ${order_id} loaded from GitHub`);
+    }
+    
     // If order not found in storage, reconstruct from webhook payload
     if (!oc) {
-      console.log(`Order ${order_id} not in storage, reconstructing from webhook...`);
+      console.log(`[cf-webhook] Reconstructing order from webhook...`);
       
-      // Try to extract type from order_note (format: "type|tier|quantity")
+      // Try to extract type from order_note (format: "type|tier|quantity" or "type|club_type|quantity")
       const note = data?.order?.order_note || '';
-      const [noteType] = String(note).split('|');
+      const noteParts = String(note).split('|');
+      const noteType = noteParts[0];
+      const noteMetaField = noteParts[1]; // tier or club_type
+      const noteQuantity = noteParts[2];  // for bulk
+      
       const inferredType = ['bulk', 'donation'].includes(String(noteType).toLowerCase()) 
         ? String(noteType).toLowerCase() 
         : 'donation';
       
+      console.log(`[cf-webhook] Order note parsed: type=${noteType}, meta=${noteMetaField}, qty=${noteQuantity}`);
+      
       oc = {
         order_id,
-        type: inferredType,  // Extracted from order_note or defaulted
+        type: inferredType,  // CRITICAL: must be 'bulk' or 'donation'
         amount: paidAmt,
-        passes: 1,  // Default, will be recalculated below
+        passes: noteQuantity ? parseInt(noteQuantity, 10) : 1,  // For bulk: quantity, else: 1 (recalc below)
         email: data?.customer_details?.customer_email || 'unknown@example.com',
         phone: data?.customer_details?.customer_phone || '',
         name: data?.customer_details?.customer_name || 'Guest',
         recipients: [data?.customer_details?.customer_email || 'unknown@example.com'],
         created_at: new Date().toISOString(),
         reconstructed_from_webhook: true,
-        note: `Reconstructed from webhook: ${note}`
+        note: `Reconstructed from webhook: ${note}`,
+        meta: noteType === 'bulk' ? { quantity: parseInt(noteQuantity, 10), club_type: noteMetaField } : { tier: noteMetaField }
       };
+      
+      console.log(`[cf-webhook] Reconstructed order:`, { type: oc.type, passes: oc.passes, meta: oc.meta });
     }
 
     if (oc.fulfilled) {
@@ -214,7 +230,18 @@ exports.handler = async (event) => {
       count: issued.total
     };
 
-    await putJson(ENV, path, oc);
+    console.log('[cf-webhook] About to save order to GitHub:');
+    console.log('[cf-webhook] Path:', path);
+    console.log('[cf-webhook] Order fulfilled:', oc.fulfilled);
+    console.log('[cf-webhook] Processed webhooks:', oc.processed_webhooks);
+    
+    try {
+      await putJson(ENV, path, oc);
+      console.log('[cf-webhook] ✓ Order successfully saved to GitHub');
+    } catch (saveErr) {
+      console.error('[cf-webhook] ❌ FAILED to save order to GitHub:', saveErr.message);
+      throw saveErr;  // Don't silently fail
+    }
 
     // No emails from webhook — KonfHub handles attendee mails.
     // Admin notifications can be checked in the dashboard/logs.
