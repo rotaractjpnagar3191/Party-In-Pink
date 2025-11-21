@@ -80,6 +80,12 @@ exports.handler = async (event) => {
 
     console.log('[cf-webhook] Status:', status, 'OrderID:', order_id, 'Amount:', paidAmt);
     console.log('[cf-webhook] Full payload keys:', Object.keys(data || {}));
+    console.log('[cf-webhook] ⚠️  FULL PAYLOAD for debugging:');
+    console.log('[cf-webhook] Order ID:', data?.order?.order_id);
+    console.log('[cf-webhook] Payment Status:', data?.payment?.payment_status);
+    console.log('[cf-webhook] Customer Email:', data?.customer_details?.customer_email);
+    console.log('[cf-webhook] Payment Time:', data?.payment?.payment_time);
+    console.log('[cf-webhook] CF Payment ID:', data?.payment?.cf_payment_id);
     
     if (!order_id) return respond(ALLOW_TEST_PING ? 200 : 400, 'No order_id');
     
@@ -185,6 +191,10 @@ exports.handler = async (event) => {
     // If we've already processed this exact webhook, skip it
     const webhookKey = `${order_id}:${ts}:${sig}`;
     if (!oc.processed_webhooks) oc.processed_webhooks = [];
+    
+    console.log('[cf-webhook] ⚠️  WEBHOOK DEDUPLICATION CHECK:');
+    console.log('[cf-webhook] Current webhook key:', webhookKey);
+    console.log('[cf-webhook] Previously processed webhooks:', oc.processed_webhooks);
     
     if (oc.processed_webhooks.includes(webhookKey)) {
       console.log('[cf-webhook] ⚠️  DUPLICATE WEBHOOK - already processed this exact webhook');
