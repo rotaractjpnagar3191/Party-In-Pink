@@ -125,6 +125,12 @@
     })();
   </script>
 
+  <style>
+    .loader-overlay.hidden {
+      display: none !important;
+    }
+  </style>
+
   <!-- SUCCESS PAGE POLLING -->
   <script>
     const qs = new URLSearchParams(location.search);
@@ -196,10 +202,14 @@
                     : 'Some passes could not be issued. We\'ll fix this manually.';
                 }
                 
+                // Remove overlay - try multiple methods to ensure it's gone
+                console.log('[poll] Removing overlay...');
+                ov.classList.add('hidden');
+                ov.setAttribute('aria-busy', 'false');
                 setTimeout(() => {
-                  ov.setAttribute('aria-busy', 'false');
-                  ov.remove();
-                }, 500);
+                  ov.parentNode?.removeChild(ov);
+                  console.log('[poll] Overlay removed');
+                }, 50);
                 return;
               }
             }
