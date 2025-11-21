@@ -461,37 +461,6 @@
       color: #E91E63;
     }
 
-    /* Impact Stats */
-    .impact-stats {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 2rem;
-      margin-bottom: 3rem;
-      text-align: center;
-    }
-
-    .stat {
-      padding: 2rem;
-      background: linear-gradient(135deg, rgba(233, 30, 99, 0.1) 0%, rgba(156, 39, 176, 0.05) 100%);
-      border-radius: 12px;
-      border: 1px solid rgba(233, 30, 99, 0.2);
-    }
-
-    .stat-number {
-      font-size: 2.5rem;
-      font-weight: 800;
-      background: linear-gradient(135deg, #E91E63, #F06292);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .stat-label {
-      font-size: 0.95rem;
-      color: #bbb;
-      margin-top: 0.5rem;
-    }
-
     /* Team Section */
     .team-section {
       margin-top: 4rem;
@@ -683,7 +652,7 @@
               <div class="form-group">
                 <label class="form-label">Amount (₹)</label>
                 <input id="donor_amount" type="number" inputmode="numeric" class="form-input" placeholder="e.g., 5000" min="100" step="100" required autocomplete="off" />
-                <div class="help-text" id="slab_hint">💡 Tip: ₹5,000+ includes event passes</div>
+                <div class="help-text" id="slab_hint">💡 Tip: ₹1,000+ includes event passes</div>
               </div>
 
               <div class="donate-chips" id="slab_quick" role="group" aria-label="Suggested amounts"></div>
@@ -754,7 +723,7 @@
             <div class="faq-item">
               <details>
                 <summary class="faq-summary">What's the minimum?</summary>
-                <div class="faq-content">Any amount! ₹5,000+ gets passes. Below that still supports our cause.</div>
+                <div class="faq-content">Any amount! ₹1,000+ gets at least 1 pass. Below that still supports our cause.</div>
               </details>
             </div>
 
@@ -782,29 +751,13 @@
         </div>
       </div>
 
-      <!-- In-Kind Section -->
+      <!-- In-Kind Donations Section -->
       <div class="inkind-section">
-        <h2>🎁 Have Skills or Services?</h2>
-        <p>Photography? Design? Venue? Medical support? Let's connect and make it happen together!</p>
+        <h2>🎁 In-Kind Donations</h2>
+        <p>Have skills or services to contribute? Photography, design, venue, medical support? Let's connect and make it happen together!</p>
         <div class="inkind-actions">
           <a href="https://wa.me/918310398636?text=Hi%20I%20want%20to%20contribute%20an%20in-kind%20donation%20to%20Party%20In%20Pink" target="_blank" rel="noopener noreferrer" class="btn-inkind">💬 Start a Chat</a>
           <a href="mailto:rotaractjpnagar@gmail.com" class="btn-inkind secondary">📧 Email Us</a>
-        </div>
-      </div>
-
-      <!-- Impact Stats -->
-      <div class="impact-stats">
-        <div class="stat">
-          <div class="stat-number">₹1.5L+</div>
-          <div class="stat-label">Raised in 3 years</div>
-        </div>
-        <div class="stat">
-          <div class="stat-number">500+</div>
-          <div class="stat-label">Community Members</div>
-        </div>
-        <div class="stat">
-          <div class="stat-number">100%</div>
-          <div class="stat-label">To Cause</div>
         </div>
       </div>
 

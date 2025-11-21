@@ -496,9 +496,10 @@ async function initDonate() {
 
   // Slabs from server (or fallback defaults)
   let serverSlabs = CFG?.__SLABS_PARSED__ || [
-    { amount: 5000,  passes: 1 },
-    { amount: 10000, passes: 2 },
-    { amount: 15000, passes: 5 },
+    { amount: 1000,  passes: 1 },
+    { amount: 5000,  passes: 2 },
+    { amount: 10000, passes: 5 },
+    { amount: 15000, passes: 7 },
     { amount: 20000, passes: 7 },
   ];
 
@@ -510,10 +511,12 @@ async function initDonate() {
     perks: tierMetadata[s.amount]?.perks || 'Stage mention • Social shoutout • Logo on wall'
   }));
 
-  // Render slab table (right side)
+  // Render slab table (right side) - exclude ₹1,000 tier from display
   const tbody = $("#slab_body");
   if (tbody) {
-    tbody.innerHTML = slabs.map(s => `
+    // Filter out ₹1,000 tier from table (but keep in logic)
+    const tableSlabs = slabs.filter(s => s.amount > 1000);
+    tbody.innerHTML = tableSlabs.map(s => `
       <tr data-amt="${s.amount}" style="border-bottom: 1px solid var(--border); vertical-align: top;">
         <td style="padding: 8px 6px; font-weight: 700; color: var(--pink); font-size: 0.85rem; white-space: nowrap;">${s.tier}</td>
         <td style="padding: 8px 6px; text-align: center; font-weight: 600; font-size: 0.85rem; white-space: nowrap;">${rupee(s.amount)}</td>
@@ -610,8 +613,7 @@ async function initDonate() {
   }
 
   // --- Pass logic ---
-  const MIN_SLAB = 5000;                                 // First slab amount
-  const FIRST_SLAB   = slabs?.[0]?.amount ?? 5000;        // usually ₹5,000
+  const FIRST_SLAB = slabs?.[0]?.amount ?? 1000;        // First slab amount (usually ₹1,000)
 
   function highlightSlab() {
     const v = Number(amountEl?.value || 0);
@@ -646,10 +648,10 @@ async function initDonate() {
       return;
     }
 
-    // Below first slab (₹5,000) → donation without passes
+    // Below first slab (₹1,000) → donation without passes
     if (v > 0 && v < FIRST_SLAB) {
       $("#slab_hint")?.replaceChildren(
-        document.createTextNode("Thank you for your generous donation! You can still enjoy the event.")
+        document.createTextNode("Thank you for your donation! Reach ₹1,000 for event passes.")
       );
       return;
     }
