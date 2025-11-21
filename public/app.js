@@ -557,13 +557,17 @@ async function initDonate() {
 
     const chipBtns = $$("#slab_quick .chip");
     const setChipActive = (val) => {
-      chipBtns.forEach(b => b.setAttribute(
-        "data-active",
-        Number(b.dataset.amt) === Number(val) ? "true" : "false"
-      ));
+      chipBtns.forEach(b => {
+        if (Number(b.dataset.amt) === Number(val)) {
+          b.classList.add("active");
+        } else {
+          b.classList.remove("active");
+        }
+      });
     };
     chipBtns.forEach(b => {
-      b.addEventListener("click", () => {
+      b.addEventListener("click", (e) => {
+        e.preventDefault();
         amountEl.value = String(b.dataset.amt);
         setChipActive(b.dataset.amt);
         amountEl.dispatchEvent(new Event("input", { bubbles:true }));
@@ -870,10 +874,11 @@ function initRegister() {
     if (tries < 40) setTimeout(poll, 2000);
     else {
       if (!done) {
-        if (badge) badge.textContent = "Still processing";
+        done = true;
+        if (badge) badge.textContent = "Processing (may take a few moments)";
         if (detail)
           detail.textContent =
-            "We are waiting for confirmation. If passes don’t arrive soon, reply to the confirmation email or contact us.";
+            "Your passes are being prepared. Check your email within a few minutes. If they don't arrive soon, reply to the confirmation email or contact us at rotaractjpnagar@gmail.com.";
         ov.setAttribute("aria-busy", "false");
         ov.remove();
       }

@@ -1506,37 +1506,65 @@ body {
 
 .donate-chips {
   display: flex;
-  gap: 0.75rem;
+  gap: 10px;
   flex-wrap: wrap;
-  margin: 1.25rem 0;
+  margin: 1rem 0;
   justify-content: flex-start;
 }
 
+.donate-chips .chip {
+  padding: 10px 16px;
+  background: rgba(233, 30, 99, 0.1);
+  border: 2px solid transparent;
+  border-radius: 24px;
+  color: #ddd;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+}
+
+.donate-chips .chip:hover {
+  background: rgba(233, 30, 99, 0.2);
+  border-color: #E91E63;
+  transform: translateY(-2px);
+}
+
+.donate-chips .chip.active {
+  background: #E91E63;
+  border-color: #E91E63;
+  color: white;
+  box-shadow: 0 4px 12px rgba(233, 30, 99, 0.4);
+}
+
+/* Fallback for old button styling */
 .donate-chips button {
-  padding: 0.7rem 1.35rem;
-  border: 2px solid var(--border);
-  border-radius: 8px;
-  background: var(--bg);
-  color: var(--text);
+  padding: 10px 16px;
+  border: 2px solid transparent;
+  border-radius: 24px;
+  background: rgba(233, 30, 99, 0.1);
+  color: #ddd;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   white-space: nowrap;
 }
 
 .donate-chips button:hover {
   border-color: var(--pink);
-  background: rgba(233, 30, 99, 0.08);
+  background: rgba(233, 30, 99, 0.2);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(233, 30, 99, 0.15);
 }
 
+.donate-chips button.active,
 .donate-chips button.selected {
   background: var(--pink);
   color: white;
   border-color: var(--pink);
-  box-shadow: 0 6px 16px rgba(233, 30, 99, 0.25);
+  box-shadow: 0 4px 12px rgba(233, 30, 99, 0.4);
 }
 
 /* Form inputs enhancement */

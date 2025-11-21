@@ -27,6 +27,9 @@ exports.handler = async (event) => {
       body: JSON.stringify({ 
         order_id: id,
         status: 'pending',
+        fulfilled: {
+          status: 'pending'
+        },
         note: 'Order being processed - webhook may reconstruct from payment data'
       }) 
     };
