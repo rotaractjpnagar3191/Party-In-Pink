@@ -583,15 +583,30 @@
                 document.getElementById('statFulfilled').textContent = totals.issuance?.ok || 0;
                 document.getElementById('statFailed').textContent = totals.issuance?.failed || 0;
 
-                // Update tier breakdown - calculate from donations and bulk
-                const donationOrders = totals.donations?.count || 0;
-                const bulkOrders = totals.bulk?.count || 0;
-                document.getElementById('tierSupporterCount').textContent = Math.floor(donationOrders * 0.2) || 0;
-                document.getElementById('tierWellwisherCount').textContent = Math.floor(donationOrders * 0.25) || 0;
-                document.getElementById('tierSilverCount').textContent = Math.floor(donationOrders * 0.2) || 0;
-                document.getElementById('tierGoldCount').textContent = Math.floor(donationOrders * 0.15) || 0;
-                document.getElementById('tierPlatinumCount').textContent = Math.floor(donationOrders * 0.1) || 0;
-                document.getElementById('tierDiamondCount').textContent = Math.floor(donationOrders * 0.1) || 0;
+                // Update tier breakdown based on actual donation amounts from recent_orders
+                let tierCounts = { Supporter: 0, Wellwisher: 0, Silver: 0, Gold: 0, Platinum: 0, Diamond: 0 };
+                
+                // Process recent orders to categorize by tier based on amount
+                if (data.recent_orders && Array.isArray(data.recent_orders)) {
+                    for (const order of data.recent_orders) {
+                        if (order.type === 'donation') {
+                            const amt = order.amount || 0;
+                            if (amt >= 25000) tierCounts.Diamond++;
+                            else if (amt >= 20000) tierCounts.Platinum++;
+                            else if (amt >= 15000) tierCounts.Gold++;
+                            else if (amt >= 10000) tierCounts.Silver++;
+                            else if (amt >= 5000) tierCounts.Wellwisher++;
+                            else if (amt >= 1000) tierCounts.Supporter++;
+                        }
+                    }
+                }
+                
+                document.getElementById('tierSupporterCount').textContent = tierCounts.Supporter;
+                document.getElementById('tierWellwisherCount').textContent = tierCounts.Wellwisher;
+                document.getElementById('tierSilverCount').textContent = tierCounts.Silver;
+                document.getElementById('tierGoldCount').textContent = tierCounts.Gold;
+                document.getElementById('tierPlatinumCount').textContent = tierCounts.Platinum;
+                document.getElementById('tierDiamondCount').textContent = tierCounts.Diamond;
             } catch (error) {
                 console.error('Error loading stats:', error);
                 document.getElementById('authError').style.display = 'block';
@@ -631,6 +646,14 @@
                                 <div style="font-size: 24px; font-weight: 800; color: #ff69b4;" id="consolTotalDonationOrders">-</div>
                                 <div style="font-size: 13px; color: rgba(255, 255, 255, 0.7);">Donation Orders</div>
                             </div>
+                            <div style="background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 8px; border-left: 3px solid #ff69b4;">
+                                <div style="font-size: 24px; font-weight: 800; color: #ff69b4;" id="consolSingleRegs">-</div>
+                                <div style="font-size: 13px; color: rgba(255, 255, 255, 0.7);">Single Registrations</div>
+                            </div>
+                            <div style="background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 8px; border-left: 3px solid #ff69b4;">
+                                <div style="font-size: 24px; font-weight: 800; color: #ff69b4;" id="consolSinglePasses">-</div>
+                                <div style="font-size: 13px; color: rgba(255, 255, 255, 0.7);">Single Passes</div>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -641,11 +664,15 @@
                     const donationAmount = statsData.totals.donations?.amount || 0;
                     const bulkOrders = statsData.totals.bulk?.count || 0;
                     const donationOrders = statsData.totals.donations?.count || 0;
+                    const singleRegs = statsData.totals.tickets?.single?.registrations || 0;
+                    const singlePasses = statsData.totals.tickets?.single?.passes || 0;
                     
                     document.getElementById('consolBulkTickets').textContent = bulkTickets.toLocaleString('en-IN');
                     document.getElementById('consolDonationAmount').textContent = '₹' + donationAmount.toLocaleString('en-IN');
                     document.getElementById('consolTotalBulkOrders').textContent = bulkOrders;
                     document.getElementById('consolTotalDonationOrders').textContent = donationOrders;
+                    document.getElementById('consolSingleRegs').textContent = singleRegs;
+                    document.getElementById('consolSinglePasses').textContent = singlePasses;
                 }
                 
             } catch (error) {
