@@ -577,30 +577,6 @@ async function initDonate() {
     amountEl?.addEventListener("input", () => setChipActive(Number(amountEl.value || 0)));
   }
 
-  // Handle new tier picker buttons (if present)
-  const tierBtns = $$("#donate-form-wrapper .tier-btn, .donate-form-wrapper .tier-btn");
-  if (tierBtns.length) {
-    const setTierActive = (val) => {
-      tierBtns.forEach(b => {
-        if (Number(b.dataset.amt) === Number(val)) {
-          b.classList.add("active");
-        } else {
-          b.classList.remove("active");
-        }
-      });
-    };
-    tierBtns.forEach(b => {
-      b.addEventListener("click", (e) => {
-        e.preventDefault();
-        amountEl.value = String(b.dataset.amt);
-        setTierActive(b.dataset.amt);
-        amountEl.dispatchEvent(new Event("input", { bubbles: true }));
-        amountEl.focus();
-      });
-    });
-    amountEl?.addEventListener("input", () => setTierActive(Number(amountEl.value || 0)));
-  }
-
   // Update benefit preview when amount changes
   const benefitPreview = $("#benefitPreview");
   const benefitText = $("#benefitText");
