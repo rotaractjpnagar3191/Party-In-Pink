@@ -29,6 +29,8 @@ async function putJson(env, path, data){
   
   const api = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${encodeURIComponent(path)}`;
   console.log('[_github.putJson] Saving to:', api);
+  console.log('[_github.putJson] Repository:', `${GITHUB_OWNER}/${GITHUB_REPO}`);
+  console.log('[_github.putJson] Branch:', GITHUB_BRANCH);
   
   const get = await fetch(api, { headers: { Authorization: `Bearer ${GITHUB_TOKEN}`, 'user-agent':'pip-netlify' } });
   const exists = get.ok ? (await get.json()) : null;
@@ -37,6 +39,12 @@ async function putJson(env, path, data){
     console.log('[_github.putJson] File exists, sha:', exists.sha?.slice(0,8));
   } else {
     console.log('[_github.putJson] File does not exist, will create');
+    if (!get.ok) {
+      console.warn('[_github.putJson] GET returned:', get.status, get.statusText);
+      if (get.status === 404) {
+        console.warn('[_github.putJson] ⚠️  404 on GET - repo/path/branch might not exist');
+      }
+    }
   }
   
   const content = Buffer.from(JSON.stringify(data, null, 2)).toString('base64');
@@ -51,6 +59,7 @@ async function putJson(env, path, data){
     const errText = await res.text();
     console.error('[_github.putJson] GitHub API error:', res.status, res.statusText);
     console.error('[_github.putJson] Response:', errText);
+    console.error('[_github.putJson] Debug: Using repo=' + GITHUB_OWNER + '/' + GITHUB_REPO + ', branch=' + GITHUB_BRANCH);
     throw new Error(`GitHub store failed: ${res.status} ${res.statusText}`);
   }
   

@@ -258,8 +258,11 @@ exports.handler = async (event) => {
       await putJson(ENV, path, oc);
       console.log('[cf-webhook] ✓ Order successfully saved to GitHub');
     } catch (saveErr) {
-      console.error('[cf-webhook] ❌ FAILED to save order to GitHub:', saveErr.message);
-      throw saveErr;  // Don't silently fail
+      console.error('[cf-webhook] ⚠️  SOFT FAIL - GitHub storage error (non-critical):', saveErr.message);
+      console.error('[cf-webhook] ⚠️  Order was NOT persisted, but tickets WERE issued successfully');
+      console.error('[cf-webhook] ⚠️  This may cause re-issuance on webhook retries, but is better than losing tickets');
+      // DON'T THROW - We successfully issued tickets, just couldn't save metadata
+      // Return 200 to Cashfree to prevent retries
     }
     
     // CACHE THIS ISSUANCE TO PREVENT RACE CONDITIONS
