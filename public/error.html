@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Error · Party In Pink</title>
+  <meta name="theme-color" content="#E91E63" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css?v=20251120-004" />
+</head>
+<body class="theme-pip">
+  <div id="app-preloader" aria-hidden="true"><div class="spinner"></div></div>
+
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="index.html">
+        <img src="assets/logos/PiP_Black.png" alt="Party In Pink Logo" onerror="this.style.display='none'">
+      </a>
+      <nav class="main-nav" aria-label="Primary">
+        <a href="about.html">About Us</a>
+        <a href="register.html">Single Registration</a>
+        <a href="bulk.html">Bulk Registration</a>
+        <a href="donate.html" class="btn btn-primary btn-sm">Donate</a>
+      </nav>
+      <button id="navToggle" class="nav-toggle" aria-label="Toggle Menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <main class="section">
+    <div class="wrap">
+      <div class="card success-card center" id="errorStatus">
+        <div class="checkmark" style="color: #FF9800; font-size: 3rem;">⚠️</div>
+        <h1 id="errorLine">Something Went Wrong</h1>
+        <p id="errorMsg" class="muted"></p>
+        
+        <div id="errorBadge" style="margin-top: 10px; font-weight: 600; color: #FF9800;"></div>
+        <div id="errorDetail" class="muted tiny" style="margin-top: 5px; max-width: 500px; margin-left: auto; margin-right: auto;"></div>
+
+        <div id="networkStatus" style="margin-top: 2rem; padding: 1rem; background: rgba(255, 152, 0, 0.1); border-left: 3px solid #FF9800; border-radius: 8px; display: none;">
+          <strong style="color: #FF9800; display: block; margin-bottom: 0.75rem;">Network Status</strong>
+          <div id="networkMessage" class="muted tiny">Checking connection...</div>
+        </div>
+
+        <div id="supportBox" style="margin-top: 2rem; padding: 1rem; background: rgba(233, 30, 99, 0.1); border-left: 3px solid #E91E63; border-radius: 8px;">
+          <strong style="color: #E91E63; display: block; margin-bottom: 0.75rem;">Need Help?</strong>
+          <div class="muted tiny">
+            <p style="margin: 0.5rem 0;">If this error persists:</p>
+            <ul style="margin: 0; padding-left: 1.5rem; line-height: 1.8;">
+              <li>Try refreshing the page</li>
+              <li>Check your internet connection</li>
+              <li>Clear your browser cache (Ctrl+Shift+Delete)</li>
+              <li>Try a different browser</li>
+              <li><strong>Contact us:</strong> <a href="mailto:rotaractjpnagar@gmail.com" style="color: #E91E63;">rotaractjpnagar@gmail.com</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="cta-row mt-lg">
+          <a href="index.html" class="btn btn-ghost">Home</a>
+          <button id="retryBtn" class="btn btn-primary">Retry</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="footer-cols">
+        <div>
+          <h4>Party In Pink</h4>
+          <p>Rotaract Club of Bangalore JP Nagar</p>
+          <p class="muted">© <span id="year"></span> All rights reserved.</p>
+        </div>
+        <nav>
+          <h4>Quick Links</h4>
+          <a href="register.html">Single Registration</a>
+          <a href="bulk.html">Bulk Registration</a>
+          <a href="donate.html">Donate</a>
+        </nav>
+        <div>
+          <h4>Contact</h4>
+          <p><a href="mailto:rotaractjpnagar@gmail.com">rotaractjpnagar@gmail.com</a></p>
+          <p><a href="https://www.rotaractjpnagar.org/pip" target="_blank" rel="noopener noreferrer">rotaractjpnagar.org/pip</a></p>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    (function() {
+      const qs = new URLSearchParams(location.search);
+      const errorCode = qs.get('code') || qs.get('error') || 'UNKNOWN';
+      const errorMsg = qs.get('msg') || qs.get('message') || '';
+      const prevPage = qs.get('from') || sessionStorage.getItem('pip_last_page') || 'register.html';
+
+      const title = document.getElementById('errorLine');
+      const msg = document.getElementById('errorMsg');
+      const badge = document.getElementById('errorBadge');
+      const detail = document.getElementById('errorDetail');
+      const retryBtn = document.getElementById('retryBtn');
+      const networkStatus = document.getElementById('networkStatus');
+      const networkMessage = document.getElementById('networkMessage');
+      const yearEl = document.getElementById('year');
+
+      if (yearEl) yearEl.textContent = new Date().getFullYear();
+
+      // Map error codes to user-friendly messages
+      const errorMap = {
+        'TIMEOUT': {
+          title: 'Request Timeout',
+          msg: 'The server took too long to respond. Your connection may be slow.',
+          badge: '⏱️ Timeout'
+        },
+        'NETWORK': {
+          title: 'Network Error',
+          msg: 'Unable to connect to the payment service. Check your internet connection.',
+          badge: '📡 Network Error'
+        },
+        'SERVER': {
+          title: 'Server Error',
+          msg: 'Our servers are experiencing issues. Please try again in a few moments.',
+          badge: '🖥️ Server Error'
+        },
+        'VALIDATION': {
+          title: 'Invalid Data',
+          msg: 'The information you provided was invalid. Please check and try again.',
+          badge: '✓ Validation Error'
+        },
+        'PAYMENT': {
+          title: 'Payment Failed',
+          msg: 'The payment gateway encountered an error. Your account was not charged.',
+          badge: '💳 Payment Error'
+        },
+        'DUPLICATE': {
+          title: 'Duplicate Request',
+          msg: 'This order already exists. Please check your email or try a different registration.',
+          badge: '⚠️ Duplicate'
+        },
+        'UNKNOWN': {
+          title: 'Something Went Wrong',
+          msg: 'An unexpected error occurred. Our team has been notified.',
+          badge: '⚠️ Error'
+        }
+      };
+
+      const errorInfo = errorMap[errorCode] || errorMap['UNKNOWN'];
+      title.textContent = errorInfo.title;
+      msg.textContent = errorMsg || errorInfo.msg;
+      badge.textContent = errorInfo.badge;
+
+      // Show detailed error code for debugging
+      if (errorCode && errorCode !== 'UNKNOWN') {
+        detail.innerHTML = `Error code: <code style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 3px;">${errorCode}</code>`;
+      }
+
+      // Check network status
+      function updateNetworkStatus() {
+        networkStatus.style.display = 'block';
+        if (navigator.onLine) {
+          networkMessage.textContent = '✓ You are online';
+          networkMessage.style.color = 'var(--muted)';
+          if (retryBtn) retryBtn.disabled = false;
+        } else {
+          networkMessage.textContent = '✗ You are offline. Reconnect to your internet and try again.';
+          networkMessage.style.color = '#FF9800';
+          if (retryBtn) retryBtn.disabled = true;
+        }
+      }
+
+      updateNetworkStatus();
+      window.addEventListener('online', updateNetworkStatus);
+      window.addEventListener('offline', updateNetworkStatus);
+
+      // Retry button
+      if (retryBtn) {
+        retryBtn.addEventListener('click', () => {
+          // Try to go back to the previous page
+          window.history.back();
+          // If history is empty, go to the referring page or home
+          setTimeout(() => {
+            if (document.location.href.includes('error.html')) {
+              window.location.href = prevPage;
+            }
+          }, 500);
+        });
+      }
+
+      // Save this page as reference point
+      sessionStorage.setItem('pip_last_page', 'error.html');
+    })();
+  </script>
+
+  <script src="app.js?v=2025-11-20" defer></script>
+</body>
+</html>
