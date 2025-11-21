@@ -72,10 +72,10 @@ function postJSON(url, headers, body) {
     });
     req.on('error', reject);
     
-    // Add 10s timeout for the request
-    req.setTimeout(10000, () => {
+    // Add 20s timeout for the request (bulk registrations with many attendees need more time)
+    req.setTimeout(20000, () => {
       req.destroy();
-      reject(new Error('KonfHub API timeout (10s)'));
+      reject(new Error('KonfHub API timeout (20s)'));
     });
     
     req.write(body);

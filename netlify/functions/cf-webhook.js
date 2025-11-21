@@ -143,6 +143,19 @@ exports.handler = async (event) => {
         return respond(200, 'Already fulfilled');
       }
       
+      // CHECK: If currently processing, don't re-issue (concurrent webhook protection)
+      if (oc.processing?.status === 'in_progress') {
+        const processingAge = Date.now() - new Date(oc.processing.started_at).getTime();
+        if (processingAge < 15000) { // 15 second processing window
+          console.log(`[cf-webhook] ⚠️  Order already processing (started ${processingAge}ms ago)`);
+          console.log(`[cf-webhook] Webhook will wait and retry after processing completes`);
+          return respond(202, `Order is currently being processed, retry after ${15 - Math.floor(processingAge / 1000)}s`);
+        } else {
+          console.log(`[cf-webhook] Processing lock expired (${processingAge}ms), clearing`);
+          oc.processing = null;
+        }
+      }
+      
       // CHECK: If konfhub registrations already exist, don't re-issue
       if (oc.konfhub?.registrations?.length > 0) {
         console.log('[cf-webhook] ⚠️  KonfHub registrations already exist for this order');
@@ -209,6 +222,23 @@ exports.handler = async (event) => {
     oc.cashfree = oc.cashfree || {};
     oc.cashfree.webhook = data;
     oc.cashfree.webhook_received_at = new Date().toISOString();
+
+    // --- SET PROCESSING LOCK to prevent concurrent issuances ---
+    // This is the critical gate that prevents multiple webhooks from issuing simultaneously
+    oc.processing = {
+      status: 'in_progress',
+      started_at: new Date().toISOString(),
+      webhook_id: webhookKey.slice(0, 20) // for tracking
+    };
+    
+    try {
+      await putJson(ENV, path, oc);
+      console.log('[cf-webhook] ✓ Processing lock acquired and saved to GitHub');
+    } catch (lockErr) {
+      console.error('[cf-webhook] ⚠️  Failed to acquire processing lock:', lockErr.message);
+      console.error('[cf-webhook] Proceeding anyway, but concurrent issuances may occur');
+      // Don't abort - try to proceed
+    }
 
     // --- Compute passes/amount (server as source of truth) ---
     if (oc.type === "bulk") {
