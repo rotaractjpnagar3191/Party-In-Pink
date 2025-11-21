@@ -8,7 +8,8 @@
 //
 // Required env:
 //   ADMIN_KEY (or OPS_ADMIN_KEY)
-//   GITHUB_REPO=rotaractjpnagar3191/pip-tickets-data
+//   GITHUB_OWNER=rotaractjpnagar3191
+//   GITHUB_REPO=pip-tickets-data
 //   GITHUB_TOKEN (repo read token)
 //   STORE_PATH=storage
 // Optional:
@@ -21,6 +22,7 @@ const DEFAULT_LIMIT = 30;
 function cfg() {
   return {
     ADMIN_KEY: process.env.ADMIN_KEY || process.env.OPS_ADMIN_KEY || "",
+    OWNER: process.env.GITHUB_OWNER || "",
     REPO: process.env.GITHUB_REPO || "",
     TOKEN: process.env.GITHUB_TOKEN || "",
     BRANCH: process.env.GITHUB_BRANCH || process.env.BRANCH || "main",
@@ -62,9 +64,9 @@ function encPath(path) {
 }
 
 // ---------- GitHub content ----------
-async function listFilesGitHub({ REPO, TOKEN, BRANCH, path, limit }) {
+async function listFilesGitHub({ OWNER, REPO, TOKEN, BRANCH, path, limit }) {
   const url =
-    `https://api.github.com/repos/${REPO}/contents/${encPath(path)}` +
+    `https://api.github.com/repos/${OWNER}/${REPO}/contents/${encPath(path)}` +
     `?ref=${encodeURIComponent(BRANCH)}`;
   const res = await fetch(url, { headers: ghHeaders(TOKEN) });
   if (res.status === 404) return [];
@@ -79,8 +81,8 @@ async function listFilesGitHub({ REPO, TOKEN, BRANCH, path, limit }) {
   return typeof limit === "number" ? files.slice(0, limit) : files;
 }
 
-async function getJsonFromGitHub({ REPO, TOKEN, BRANCH, path }) {
-  const url = `https://raw.githubusercontent.com/${REPO}/${encodeURIComponent(
+async function getJsonFromGitHub({ OWNER, REPO, TOKEN, BRANCH, path }) {
+  const url = `https://raw.githubusercontent.com/${OWNER}/${REPO}/${encodeURIComponent(
     BRANCH
   )}/${encPath(path)}`;
   const res = await fetch(url, { headers: ghHeaders(TOKEN) });
@@ -212,6 +214,7 @@ function getAtKH(e) {
 async function loadOrders(env, limit) {
   const dir = `${env.STORE_PATH}/orders`;
   const files = await listFilesGitHub({
+    OWNER: env.OWNER,
     REPO: env.REPO,
     TOKEN: env.TOKEN,
     BRANCH: env.BRANCH,
@@ -222,7 +225,7 @@ async function loadOrders(env, limit) {
   const rows = [];
   for (const f of files) {
     const p = `${env.STORE_PATH}/orders/${f.name}`;
-    const j = await getJsonFromGitHub({ REPO: env.REPO, TOKEN: env.TOKEN, BRANCH: env.BRANCH, path: p });
+    const j = await getJsonFromGitHub({ OWNER: env.OWNER, REPO: env.REPO, TOKEN: env.TOKEN, BRANCH: env.BRANCH, path: p });
     if (j) rows.push(j);
     if (rows.length >= limit * 2) break;
   }
@@ -236,6 +239,7 @@ async function loadKonfhub(env, limit) {
   for (const d of dirs) {
     try {
       const part = await listFilesGitHub({
+        OWNER: env.OWNER,
         REPO: env.REPO,
         TOKEN: env.TOKEN,
         BRANCH: env.BRANCH,
@@ -259,7 +263,7 @@ async function loadKonfhub(env, limit) {
   const rows = [];
   for (const f of uniq.slice(0, limit * 2)) {
     const base = f.path || `${env.STORE_PATH}/konfhub/${f.name}`;
-    const j = await getJsonFromGitHub({ REPO: env.REPO, TOKEN: env.TOKEN, BRANCH: env.BRANCH, path: base });
+    const j = await getJsonFromGitHub({ OWNER: env.OWNER, REPO: env.REPO, TOKEN: env.TOKEN, BRANCH: env.BRANCH, path: base });
     if (j) rows.push(j);
   }
   return rows;
@@ -278,8 +282,8 @@ exports.handler = async (event) => {
     if (!env.ADMIN_KEY || supplied !== env.ADMIN_KEY) {
       return json(401, { ok: false, error: "Unauthorized" });
     }
-    if (!env.REPO) {
-      return json(500, { ok: false, error: "GITHUB_REPO not configured" });
+    if (!env.OWNER || !env.REPO) {
+      return json(500, { ok: false, error: "GITHUB_OWNER or GITHUB_REPO not configured" });
     }
 
     const q = event.queryStringParameters || {};
@@ -394,7 +398,7 @@ exports.handler = async (event) => {
       recent_orders: recent_orders.slice(0, limit),
       recent_konfhub: recent_konfhub.slice(0, limit),
       meta: {
-        repo: cfg().REPO,
+        repo: `${cfg().OWNER}/${cfg().REPO}`,
         branch: cfg().BRANCH,
         store_path: cfg().STORE_PATH,
         single_event_ids: env.KH_SINGLE_EVENT_IDS,
