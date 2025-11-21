@@ -905,11 +905,13 @@ function initRegister() {
         const resp = await r.json();
         // API returns { ok: true, order: {...} }
         const oc = resp.order || resp;
-        console.log('[success-poll] Got order status:', { fulfilled: oc?.fulfilled });
+        console.log('[success-poll] Got order status:', { fulfilled: oc?.fulfilled, passed: oc?.passes, qty: oc?.quantity });
+        console.log('[success-poll] Full response keys:', Object.keys(oc || {}));
         renderProgress(oc);
 
         const ok = oc.fulfilled?.status === "ok";
         const partial = oc.fulfilled?.status === "partial";
+        console.log('[success-poll] Checking fulfilled - ok:', ok, 'partial:', partial);
 
         if (ok || partial) {
           done = true;

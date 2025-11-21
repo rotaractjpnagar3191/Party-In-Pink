@@ -64,12 +64,19 @@ exports.handler = async (event) => {
     safe.cashfree = { env: order.cashfree.env };
   }
   
+  const responseBody = { 
+    ok: true,
+    order: safe
+  };
+  console.log('[order-status] RESPONDING with:', { 
+    ok: responseBody.ok, 
+    order_id: safe.order_id,
+    fulfilled: safe.fulfilled 
+  });
+  
   return { 
     statusCode: 200, 
     headers: { 'content-type': 'application/json' }, 
-    body: JSON.stringify({ 
-      ok: true,
-      order: safe
-    }) 
+    body: JSON.stringify(responseBody)
   };
 };
