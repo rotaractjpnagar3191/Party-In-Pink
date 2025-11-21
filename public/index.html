@@ -13,11 +13,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="preload" as="image" href="assets/images/IMG_7757.webp" fetchpriority="high">
-  <link rel="stylesheet" href="styles.css?v=20251120-002" />
+  <link rel="stylesheet" href="styles.css?v=20251120-003" />
 </head>
 
 <body class="theme-pip">
-  <!-- Global preloader (single instance) -->
+  <!-- Global preloader -->
   <div id="app-preloader" aria-hidden="true">
     <div class="spinner"></div>
   </div>
@@ -32,6 +32,7 @@
       <nav class="main-nav" aria-label="Primary">
         <a href="register.html">Single Registration</a>
         <a href="bulk.html">Bulk Registration</a>
+        <a href="https://www.rotaractjpnagar.org" target="_blank" rel="noopener noreferrer">About Us</a>
         <a href="donate.html" class="btn btn-primary btn-sm">Donate</a>
       </nav>
 
@@ -45,7 +46,6 @@
   <section class="hero">
     <div class="carousel" data-autoplay="3000" id="heroCarousel" aria-label="Event photos carousel">
       <div class="carousel-track">
-        <!-- Use web paths (forward slashes). Missing images gracefully fall back to the CSS gradient. -->
         <div class="slide" style="--bg:url('assets/images/IMG_7757.webp')">
           <div class="slide-overlay">
             <img src="assets/logos/PiP_Black.png" alt="Party In Pink">
@@ -73,7 +73,6 @@
             </div>
           </div>
         </div>
-        
       </div>
 
       <button class="carousel-nav prev" aria-label="Previous slide">‹</button>
@@ -82,8 +81,56 @@
     </div>
   </section>
 
-  <!-- Event details -->
+  <!-- Why It Matters - Hero Section -->
   <section class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Why It Matters 💖</h2>
+        <p>Breast cancer affects millions. Early detection saves lives. Your movement creates impact.</p>
+      </div>
+      
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem; margin-bottom: 3rem;">
+        <div style="background: linear-gradient(135deg, #1a1a1e 0%, #2d2d35 100%); padding: 2.5rem; border-radius: 16px; border: 1px solid rgba(233, 30, 99, 0.2);">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">🩺</div>
+          <h3 style="color: #E91E63; margin-bottom: 1rem;">Early Detection Saves Lives</h3>
+          <p style="color: #bbb; line-height: 1.6;">One in 28 women in India faces breast cancer. Early detection increases survival rates by 90%. Awareness and access to screening change lives.</p>
+        </div>
+        
+        <div style="background: linear-gradient(135deg, #1a1a1e 0%, #2d2d35 100%); padding: 2.5rem; border-radius: 16px; border: 1px solid rgba(233, 30, 99, 0.2);">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">💪</div>
+          <h3 style="color: #E91E63; margin-bottom: 1rem;">Support Through Treatment</h3>
+          <p style="color: #bbb; line-height: 1.6;">Treatment is expensive and emotionally draining. Sri Shankara Cancer Hospital provides world-class care without financial barriers. Your donation helps fighters and survivors.</p>
+        </div>
+        
+        <div style="background: linear-gradient(135deg, #1a1a1e 0%, #2d2d35 100%); padding: 2.5rem; border-radius: 16px; border: 1px solid rgba(233, 30, 99, 0.2);">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">🌍</div>
+          <h3 style="color: #E91E63; margin-bottom: 1rem;">Community Moves Together</h3>
+          <p style="color: #bbb; line-height: 1.6;">Party In Pink is more than an event—it's a movement. We dance, celebrate, and fund. Together, we're making breast cancer care accessible to everyone.</p>
+        </div>
+      </div>
+
+      <div style="background: linear-gradient(135deg, rgba(233, 30, 99, 0.1) 0%, rgba(156, 39, 176, 0.05) 100%); border-left: 4px solid #E91E63; padding: 2rem; border-radius: 12px;">
+        <h3 style="color: #E91E63; margin-top: 0; margin-bottom: 1rem;">Our Impact So Far</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1.5rem;">
+          <div style="text-align: center;">
+            <div style="font-size: 2.5rem; font-weight: 800; color: #E91E63;">₹1.5L+</div>
+            <div style="color: #bbb; font-size: 0.9rem;">Raised in 3 editions</div>
+          </div>
+          <div style="text-align: center;">
+            <div style="font-size: 2.5rem; font-weight: 800; color: #E91E63;">500+</div>
+            <div style="color: #bbb; font-size: 0.9rem;">Participants & Supporters</div>
+          </div>
+          <div style="text-align: center;">
+            <div style="font-size: 2.5rem; font-weight: 800; color: #E91E63;">100%</div>
+            <div style="color: #bbb; font-size: 0.9rem;">Goes to the Cause</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Event details -->
+  <section class="section section-alt">
     <div class="wrap">
       <div class="grid-2 gap-xl cardish">
         <div class="card">
@@ -105,29 +152,75 @@
         </div>
 
         <div class="card">
-          <h2>Why It Matters</h2>
+          <h2>What Happens Here</h2>
           <p>
-            We’re raising funds and awareness for breast cancer through a high-energy Zumba event.
-            Early detection saves lives. Your participation directly supports surgeries and care.
+            Party In Pink is a high-energy Zumba fundraiser where community comes together for a cause. 
+            Dance, celebrate, and raise awareness for breast cancer.
           </p>
-          <div class="stats">
-            <div class="stat">
-              <div class="num" data-countto="4">0</div>
-              <div class="label">4th Edition</div>
-            </div>
-          
-            <div class="stat">
-              <div class="num rupee-lakh plus" data-countto="5">0</div>
-              <div class="label">raised (3 editions)</div>
-            </div>
-          
-            <div class="stat">
-              <div class="num plus" data-countto="200">0</div>
-              <div class="label">Participants (last year)</div>
-            </div>
+          <p style="color: #E91E63; font-weight: 600; margin-bottom: 1rem;">
+            ✨ Live DJ • 💃 Group Zumba • 🎤 Inspiring Stories • 🌟 Community Celebration
+          </p>
+          <p style="color: #bbb;">
+            Everyone's welcome—dancers or supporters, fit or starting their fitness journey. 
+            It's not about perfection; it's about purpose.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Meet the Team -->
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Meet the Team 👥</h2>
+        <p>The passionate leaders behind Party In Pink 4.0</p>
+      </div>
+
+      <div style="margin-bottom: 3rem;">
+        <h3 style="color: #E91E63; text-align: center; margin-bottom: 2rem; font-size: 1.3rem;">Event Leadership</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem;">
+          <div style="background: linear-gradient(135deg, #1a1a1e 0%, #2d2d35 100%); padding: 2rem; border-radius: 16px; border: 1px solid rgba(233, 30, 99, 0.2); text-align: center;">
+            <div style="font-size: 2.5rem; margin-bottom: 1rem;">👑</div>
+            <h4 style="color: #E91E63; margin: 0.5rem 0;">Event Chair</h4>
+            <p style="color: #bbb; font-size: 0.9rem; margin: 0;">Leading the vision</p>
           </div>
+          <div style="background: linear-gradient(135deg, #1a1a1e 0%, #2d2d35 100%); padding: 2rem; border-radius: 16px; border: 1px solid rgba(233, 30, 99, 0.2); text-align: center;">
+            <div style="font-size: 2.5rem; margin-bottom: 1rem;">⭐</div>
+            <h4 style="color: #E91E63; margin: 0.5rem 0;">Co-Chair 1</h4>
+            <p style="color: #bbb; font-size: 0.9rem; margin: 0;">Supporting the mission</p>
+          </div>
+          <div style="background: linear-gradient(135deg, #1a1a1e 0%, #2d2d35 100%); padding: 2rem; border-radius: 16px; border: 1px solid rgba(233, 30, 99, 0.2); text-align: center;">
+            <div style="font-size: 2.5rem; margin-bottom: 1rem;">✨</div>
+            <h4 style="color: #E91E63; margin: 0.5rem 0;">Co-Chair 2</h4>
+            <p style="color: #bbb; font-size: 0.9rem; margin: 0;">Driving execution</p>
+          </div>
+        </div>
+      </div>
 
-
+      <div>
+        <h3 style="color: #E91E63; text-align: center; margin-bottom: 2rem; font-size: 1.3rem;">Rotaract Club Officers</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem;">
+          <div style="background: linear-gradient(135deg, #1a1a1e 0%, #2d2d35 100%); padding: 2rem; border-radius: 16px; border: 1px solid rgba(233, 30, 99, 0.2); text-align: center;">
+            <div style="font-size: 2rem; margin-bottom: 0.5rem;">🎯</div>
+            <h4 style="color: #E91E63; margin: 0.5rem 0; font-size: 1rem;">President</h4>
+            <p style="color: #bbb; font-size: 0.85rem; margin: 0;">Visionary Leadership</p>
+          </div>
+          <div style="background: linear-gradient(135deg, #1a1a1e 0%, #2d2d35 100%); padding: 2rem; border-radius: 16px; border: 1px solid rgba(233, 30, 99, 0.2); text-align: center;">
+            <div style="font-size: 2rem; margin-bottom: 0.5rem;">📋</div>
+            <h4 style="color: #E91E63; margin: 0.5rem 0; font-size: 1rem;">Secretary</h4>
+            <p style="color: #bbb; font-size: 0.85rem; margin: 0;">Managing Operations</p>
+          </div>
+          <div style="background: linear-gradient(135deg, #1a1a1e 0%, #2d2d35 100%); padding: 2rem; border-radius: 16px; border: 1px solid rgba(233, 30, 99, 0.2); text-align: center;">
+            <div style="font-size: 2rem; margin-bottom: 0.5rem;">🤝</div>
+            <h4 style="color: #E91E63; margin: 0.5rem 0; font-size: 1rem;">Joint Secretary</h4>
+            <p style="color: #bbb; font-size: 0.85rem; margin: 0;">Supporting Coordination</p>
+          </div>
+          <div style="background: linear-gradient(135deg, #1a1a1e 0%, #2d2d35 100%); padding: 2rem; border-radius: 16px; border: 1px solid rgba(233, 30, 99, 0.2); text-align: center;">
+            <div style="font-size: 2rem; margin-bottom: 0.5rem;">❤️</div>
+            <h4 style="color: #E91E63; margin: 0.5rem 0; font-size: 1rem;">Community Service Directors (2)</h4>
+            <p style="color: #bbb; font-size: 0.85rem; margin: 0;">Social Impact Focus</p>
+          </div>
         </div>
       </div>
     </div>
@@ -156,7 +249,7 @@
     <div class="wrap">
       <div class="section-head">
         <h2>Collaborating Clubs</h2>
-        <p>Clubs and communities who’ve collaborated with us over the years.</p>
+        <p>Clubs and communities who've collaborated with us over the years.</p>
       </div>
       <div id="clubsGrid" class="logo-grid">
         <div class="logo skeleton"></div>
@@ -192,20 +285,20 @@
           <a href="bulk.html">Bulk Registration</a>
           <a href="donate.html">Donate</a>
           <a href="#partners">Partners</a>
+          <a href="https://www.rotaractjpnagar.org" target="_blank" rel="noopener noreferrer">About Us</a>
         </nav>
         <div>
           <h4>Contact</h4>
           <p><a href="mailto:rotaractjpnagar@gmail.com">rotaractjpnagar@gmail.com</a></p>
-          <p><a href="https://www.rotaractjpnagar.org/pip" target="_blank" rel="noopener noreferrer">rotaractjpnagar.org/pip</a>
-          </p>
+          <p><a href="https://www.rotaractjpnagar.org/pip" target="_blank" rel="noopener noreferrer">rotaractjpnagar.org/pip</a></p>
         </div>
       </div>
     </div>
   </footer>
 
-  <script src="app.js?v=2025-11-20" defer></script>
+  <script src="app.js?v=2025-11-21" defer></script>
 
-  <!-- Minimal carousel wiring (works even if app.js doesn't) -->
+  <!-- Carousel wiring -->
   <script>
     (function () {
       const root = document.getElementById('heroCarousel');
