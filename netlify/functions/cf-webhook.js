@@ -232,21 +232,21 @@ exports.handler = async (event) => {
 
     // Prevent webhook replays: track this webhook invocation
     // If we've already processed this exact webhook, skip it
-    const webhookKey = `${order_id}:${ts}:${sig}`;
+    const webhookKeyForReplay = `${order_id}:${ts}:${sig}`;
     if (!oc.processed_webhooks) oc.processed_webhooks = [];
     
     console.log('[cf-webhook] ⚠️  WEBHOOK DEDUPLICATION CHECK:');
-    console.log('[cf-webhook] Current webhook key:', webhookKey);
+    console.log('[cf-webhook] Current webhook key:', webhookKeyForReplay);
     console.log('[cf-webhook] Previously processed webhooks:', oc.processed_webhooks);
     
-    if (oc.processed_webhooks.includes(webhookKey)) {
+    if (oc.processed_webhooks.includes(webhookKeyForReplay)) {
       console.log('[cf-webhook] ⚠️  DUPLICATE WEBHOOK - already processed this exact webhook');
-      console.log('[cf-webhook] Webhook key:', webhookKey);
+      console.log('[cf-webhook] Webhook key:', webhookKeyForReplay);
       return respond(200, 'Webhook already processed (duplicate)');
     }
 
     // Track this webhook
-    oc.processed_webhooks = [webhookKey, ...oc.processed_webhooks.slice(0, 9)]; // keep last 10
+    oc.processed_webhooks = [webhookKeyForReplay, ...oc.processed_webhooks.slice(0, 9)]; // keep last 10
 
     // Audit payload
     oc.cashfree = oc.cashfree || {};
