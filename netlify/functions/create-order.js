@@ -1,5 +1,5 @@
 // create-order.js
-const { getConfig, normalizeINPhone, isValidINMobile } = require("./_config");
+const { getConfig, normalizeINPhone, isValidINMobile, mapAmountToPasses } = require("./_config");
 const { putJson } = require("./_github");
 
 const json = (s, b) => ({
@@ -84,8 +84,14 @@ exports.handler = async (event) => {
         meta = { tier: amt };
       } else if (custom && custom > 0) {
         amount = custom;
-        passes = 0;
-        meta = { tier: "CUSTOM" };
+        // Map custom amount to passes using slabs
+        passes = mapAmountToPasses(
+          custom,
+          CFG.public.SLABS,
+          1,  // below minimum gets 1 complimentary pass
+          ENV.SLAB_ABOVE_MAX || 'TOP'
+        );
+        meta = { tier: "CUSTOM", amount: custom };
       } else {
         return json(400, { error: "Invalid tier or amount" });
       }
@@ -141,7 +147,7 @@ exports.handler = async (event) => {
       return json(502, { error: "No payment session returned", details: cfJson });
     }
 
-    // Save a small order record (optional)
+    // Save order record to GitHub (for webhook lookup)
     const record = {
       order_id,
       type,
@@ -155,8 +161,17 @@ exports.handler = async (event) => {
       created_at: new Date().toISOString(),
       cashfree: { env: cfEnv, order: cfJson },
     };
-    if (ENV.GITHUB_TOKEN) {
-      await putJson(ENV, `${ENV.STORE_PATH}/orders/${order_id}.json`, record);
+    
+    // Try to save to GitHub (webhook will reconstruct if this fails)
+    try {
+      if (ENV.GITHUB_TOKEN) {
+        await putJson(ENV, `${ENV.STORE_PATH}/orders/${order_id}.json`, record);
+      } else {
+        console.warn(`create-order: GITHUB_TOKEN not set, webhook will reconstruct order ${order_id}`);
+      }
+    } catch (e) {
+      console.error(`create-order: Failed to save order to GitHub: ${e.message}`);
+      // Don't fail the payment - webhook will reconstruct
     }
 
     return json(200, {

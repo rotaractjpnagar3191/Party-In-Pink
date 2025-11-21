@@ -1,0 +1,75 @@
+{
+  "name": "Party In Pink 4.0",
+  "short_name": "Party In Pink",
+  "description": "A Zumba Fundraiser for Sri Shankara Cancer Hospital by Rotaract Club of Bangalore JP Nagar",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#E91E63",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en-IN",
+  "categories": ["entertainment", "health", "social"],
+  "icons": [
+    {
+      "src": "/assets/logos/PiP_Black.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/logos/PiP_Black.png", 
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/assets/images/IMG_7757.webp",
+      "sizes": "1080x1920",
+      "type": "image/webp",
+      "form_factor": "narrow"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Register Now",
+      "description": "Single registration for Party In Pink",
+      "url": "/register.html",
+      "icons": [
+        {
+          "src": "/assets/logos/PiP_Black.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Bulk Registration", 
+      "description": "Register multiple people at once",
+      "url": "/bulk.html",
+      "icons": [
+        {
+          "src": "/assets/logos/PiP_Black.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Donate",
+      "description": "Support the cause with a donation",
+      "url": "/donate.html",
+      "icons": [
+        {
+          "src": "/assets/logos/PiP_Black.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false
+}
