@@ -67,6 +67,26 @@ exports.handler = async (event) => {
       };
     }
 
+    // Check if recently issued (within last 5 seconds) to prevent rapid re-issuance
+    if (oc.konfhub?.registrations) {
+      const lastIssuanceTime = new Date(oc.konfhub.last_issued_at || 0).getTime();
+      const now = new Date().getTime();
+      if (now - lastIssuanceTime < 5000) {
+        console.log('[finalize-order] Recently issued (within 5s), skipping duplicate issuance');
+        return { 
+          statusCode: 200, 
+          body: JSON.stringify({ 
+            ok: true, 
+            order_id, 
+            status: 'already_fulfilled',
+            message: 'Issuance happened very recently, likely a duplicate call',
+            fulfilled: oc.fulfilled,
+            passes: oc.passes
+          }) 
+        };
+      }
+    }
+
     // Not yet fulfilled - trigger issuance
     try {
       console.log(`[finalize-order] Triggering issuance of ${oc.passes} passes`);
@@ -80,7 +100,8 @@ exports.handler = async (event) => {
           oc.type === 'bulk'
             ? (ENV.KONFHUB_BULK_TICKET_ID || ENV.KONFHUB_FREE_TICKET_ID)
             : ENV.KONFHUB_FREE_TICKET_ID,
-        registrations: issued.created
+        registrations: issued.created,
+        last_issued_at: new Date().toISOString()
       };
       if (issued.errors?.length) oc.issuance_errors = issued.errors;
 

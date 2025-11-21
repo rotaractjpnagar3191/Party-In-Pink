@@ -799,22 +799,35 @@ function initRegister() {
   const issueSub = ov.querySelector("#issueSub");
 
   // try to finalize on server (works when webhook can't reach localhost)
+  let finalizeCalled = false;
   async function finalize() {
+    // Only call finalize ONCE to prevent webhook replay
+    if (finalizeCalled) {
+      console.log('[success] finalize() already called, skipping duplicate');
+      return;
+    }
+    finalizeCalled = true;
+    
     try {
       const abortController = new AbortController();
       // Increased timeout to 15s - may need to access GitHub/KonfHub
       const timeoutId = setTimeout(() => abortController.abort(), 15000);
       try {
-        await fetch("/api/finalize-order", {
+        const res = await fetch("/api/finalize-order", {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ order_id: orderId }),
           signal: abortController.signal,
         });
+        if (res.ok) {
+          const data = await res.json();
+          console.log('[success] finalize-order response:', data);
+        }
       } finally {
         clearTimeout(timeoutId);
       }
     } catch (e) {
+      console.log('[success] finalize-order error (ignoring, webhook still works):', e.message);
       /* ignore: server may not implement; polling still works */
     }
   }
@@ -920,7 +933,10 @@ function initRegister() {
   }
 
   // Kick it off
-  finalize().finally(poll);
+  // CRITICAL: Only poll. Don't call finalize() on success page.
+  // Let the Cashfree webhook handle ticket issuance.
+  // finalize() is a fallback that should NOT be called automatically.
+  poll();
 })();
 
 // ---------- Boot ----------

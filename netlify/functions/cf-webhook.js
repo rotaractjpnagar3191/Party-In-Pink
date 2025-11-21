@@ -119,8 +119,23 @@ exports.handler = async (event) => {
 
     if (oc.fulfilled) {
       // idempotent
+      console.log('[cf-webhook] Order already fulfilled, returning 200');
       return respond(200, 'Already fulfilled');
     }
+
+    // Prevent webhook replays: track this webhook invocation
+    // If we've already processed this exact webhook, skip it
+    const webhookKey = `${order_id}:${ts}:${sig}`;
+    if (!oc.processed_webhooks) oc.processed_webhooks = [];
+    
+    if (oc.processed_webhooks.includes(webhookKey)) {
+      console.log('[cf-webhook] ⚠️  DUPLICATE WEBHOOK - already processed this exact webhook');
+      console.log('[cf-webhook] Webhook key:', webhookKey);
+      return respond(200, 'Webhook already processed (duplicate)');
+    }
+
+    // Track this webhook
+    oc.processed_webhooks = [webhookKey, ...oc.processed_webhooks.slice(0, 9)]; // keep last 10
 
     // Audit payload
     oc.cashfree = oc.cashfree || {};
@@ -175,7 +190,8 @@ exports.handler = async (event) => {
         oc.type === 'bulk'
           ? (ENV.KONFHUB_BULK_TICKET_ID || ENV.KONFHUB_FREE_TICKET_ID)
           : ENV.KONFHUB_FREE_TICKET_ID,
-      registrations: issued.created
+      registrations: issued.created,
+      last_issued_at: new Date().toISOString()
     };
     if (issued.errors?.length) oc.issuance_errors = issued.errors;
 
