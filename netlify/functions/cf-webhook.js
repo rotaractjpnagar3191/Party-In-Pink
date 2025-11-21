@@ -7,6 +7,10 @@ const { issueComplimentaryPasses } = require('./_konfhub');
 // CRITICAL: Log immediately on invocation
 console.log('[cf-webhook-BOOT] Module loaded at', new Date().toISOString());
 
+// In-memory cache to prevent race conditions while orders are being saved to GitHub
+// Maps order_id -> { timestamp, fulfilled_status }
+const issuanceCache = new Map();
+
 exports.handler = async (event) => {
   console.log('\n\n==============================================');
   console.log('[cf-webhook] ===== WEBHOOK INVOKED =====');
@@ -102,6 +106,21 @@ exports.handler = async (event) => {
 
     // --- Load stored order context ---
     const path = `${ENV.STORE_PATH}/orders/${order_id}.json`;
+    
+    // CHECK IN-MEMORY CACHE FIRST (prevents race conditions with rapid webhooks)
+    const cacheEntry = issuanceCache.get(order_id);
+    if (cacheEntry) {
+      const cacheAge = Date.now() - cacheEntry.timestamp;
+      if (cacheAge < 10000) { // 10 second window
+        console.log(`[cf-webhook] ⚠️  ORDER IN-MEMORY CACHE HIT: ${order_id} (age: ${cacheAge}ms)`);
+        console.log(`[cf-webhook] Cached fulfilled status:`, cacheEntry.fulfilled_status);
+        return respond(200, `Already issued (cached, age ${cacheAge}ms)`);
+      } else {
+        console.log(`[cf-webhook] Cache expired for ${order_id}, clearing`);
+        issuanceCache.delete(order_id);
+      }
+    }
+    
     let oc   = await getJson(ENV, path);
     
     if (!oc) {
@@ -242,6 +261,14 @@ exports.handler = async (event) => {
       console.error('[cf-webhook] ❌ FAILED to save order to GitHub:', saveErr.message);
       throw saveErr;  // Don't silently fail
     }
+    
+    // CACHE THIS ISSUANCE TO PREVENT RACE CONDITIONS
+    issuanceCache.set(order_id, {
+      timestamp: Date.now(),
+      fulfilled_status: oc.fulfilled.status,
+      passes_issued: oc.passes
+    });
+    console.log('[cf-webhook] ✓ Cached issuance for 10 seconds');
 
     // No emails from webhook — KonfHub handles attendee mails.
     // Admin notifications can be checked in the dashboard/logs.
