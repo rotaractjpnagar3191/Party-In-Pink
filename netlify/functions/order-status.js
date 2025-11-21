@@ -4,10 +4,10 @@ const { getJson } = require('./_github');
 console.log('[order-status-BOOT] Module loaded');
 
 exports.handler = async (event) => {
-  const query = new URL(event.rawUrl).searchParams.get('q');
+  const query = new URL(event.rawUrl).searchParams.get('q') || new URL(event.rawUrl).searchParams.get('id');
   console.log('[order-status] INVOKED for query:', query);
   
-  if (!query) return { statusCode: 400, headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ok: false, error: 'Missing query parameter' }) };
+  if (!query) return { statusCode: 400, headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ok: false, error: 'Missing query parameter (q or id)' }) };
 
   const { private: ENV } = getConfig();
   
