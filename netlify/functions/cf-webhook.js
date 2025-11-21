@@ -87,6 +87,19 @@ exports.handler = async (event) => {
     if (status !== 'SUCCESS' && ALLOW_TEST_PING) return respond(200, 'Test ping accepted');
     if (status !== 'SUCCESS') return respond(200, 'Ignoring non-success');
 
+    // ⚠️  EMERGENCY KILL SWITCH: Check if GitHub config is complete
+    // If not configured, block all issuances to prevent duplicate tickets
+    if (!ENV.GITHUB_OWNER || !ENV.GITHUB_REPO) {
+      console.error('[cf-webhook] ❌ EMERGENCY KILL SWITCH ACTIVATED');
+      console.error('[cf-webhook] GitHub config missing:');
+      console.error('[cf-webhook] - GITHUB_OWNER:', ENV.GITHUB_OWNER || 'NOT SET');
+      console.error('[cf-webhook] - GITHUB_REPO:', ENV.GITHUB_REPO || 'NOT SET');
+      console.error('[cf-webhook] - GITHUB_TOKEN:', ENV.GITHUB_TOKEN ? 'SET' : 'NOT SET');
+      console.error('[cf-webhook] Cannot proceed without GitHub config. Blocking ticket issuance.');
+      console.error('[cf-webhook] FIX: Set GITHUB_OWNER, GITHUB_REPO in Netlify env vars and redeploy');
+      return respond(500, 'BLOCKED: GitHub config incomplete - contact admin');
+    }
+
     // --- Load stored order context ---
     const path = `${ENV.STORE_PATH}/orders/${order_id}.json`;
     let oc   = await getJson(ENV, path);
