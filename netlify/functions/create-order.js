@@ -143,7 +143,7 @@ exports.handler = async (event) => {
           1,  // below minimum gets 1 complimentary pass
           ENV.SLAB_ABOVE_MAX || 'TOP'
         );
-        meta = { tier: "CUSTOM", amount: custom };
+        meta = { tier: custom, amount: custom };
       } else {
         return json(400, { error: "Invalid tier or amount" });
       }
