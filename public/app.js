@@ -577,6 +577,62 @@ async function initDonate() {
     amountEl?.addEventListener("input", () => setChipActive(Number(amountEl.value || 0)));
   }
 
+  // Handle new tier picker buttons (if present)
+  const tierBtns = $$("#donate-form-wrapper .tier-btn, .donate-form-wrapper .tier-btn");
+  if (tierBtns.length) {
+    const setTierActive = (val) => {
+      tierBtns.forEach(b => {
+        if (Number(b.dataset.amt) === Number(val)) {
+          b.classList.add("active");
+        } else {
+          b.classList.remove("active");
+        }
+      });
+    };
+    tierBtns.forEach(b => {
+      b.addEventListener("click", (e) => {
+        e.preventDefault();
+        amountEl.value = String(b.dataset.amt);
+        setTierActive(b.dataset.amt);
+        amountEl.dispatchEvent(new Event("input", { bubbles: true }));
+        amountEl.focus();
+      });
+    });
+    amountEl?.addEventListener("input", () => setTierActive(Number(amountEl.value || 0)));
+  }
+
+  // Update benefit preview when amount changes
+  const benefitPreview = $("#benefitPreview");
+  const benefitText = $("#benefitText");
+  if (benefitPreview && benefitText) {
+    amountEl?.addEventListener("input", () => {
+      const v = Number(amountEl?.value || 0);
+      
+      if (v < 100) {
+        benefitPreview.style.display = "none";
+        return;
+      }
+
+      benefitPreview.style.display = "block";
+      let benefits = ["📧 Receipt via email"];
+      
+      // Find matching slab
+      let hit = null;
+      for (const s of slabs) {
+        if (v >= s.amount) hit = s;
+      }
+      
+      if (hit) {
+        benefits.push(`🎟️ ${hit.passes} Pink Pass${hit.passes === 1 ? "" : "es"}`);
+        benefits.push(`🎭 Entry to Party In Pink event`);
+        if (hit.passes >= 5) benefits.push(`📱 VIP WhatsApp channel access`);
+        if (hit.passes >= 7) benefits.push(`🎯 Direct sponsor recognition`);
+      }
+      
+      benefitText.innerHTML = benefits.map(b => `<div>✓ ${b}</div>`).join("");
+    });
+  }
+
   // --- Pass logic ---
   const MIN_SLAB = 5000;                                 // First slab amount
   const FIRST_SLAB   = slabs?.[0]?.amount ?? 5000;        // usually ₹5,000
