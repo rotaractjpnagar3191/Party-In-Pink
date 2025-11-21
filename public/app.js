@@ -772,7 +772,9 @@ function initRegister() {
 }
 
 // ---------- Success page finalize + progress ----------
-(function () {
+// NOTE: Old polling code removed - now handled in success.html
+// The success.html file handles polling directly to avoid conflicts
+// if (false) {
   const wrap = document.getElementById("successStatus");
   if (!wrap) return;
 
@@ -956,8 +958,9 @@ function initRegister() {
   // CRITICAL: Only poll. Don't call finalize() on success page.
   // Let the Cashfree webhook handle ticket issuance.
   // finalize() is a fallback that should NOT be called automatically.
-  poll();
-})();
+  // poll();
+  // }
+// end of disabled code
 
 // ---------- Boot ----------
 document.addEventListener("DOMContentLoaded", () => {

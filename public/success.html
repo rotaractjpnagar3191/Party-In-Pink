@@ -126,8 +126,12 @@
   </script>
 
   <style>
-    .loader-overlay.hidden {
+    .loader-overlay.hidden,
+    .loader-overlay[aria-busy="false"] {
       display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
     }
   </style>
 
@@ -205,10 +209,17 @@
                 // Remove overlay - try multiple methods to ensure it's gone
                 console.log('[poll] Removing overlay...');
                 ov.classList.add('hidden');
-                ov.setAttribute('aria-busy', 'false');
+                ov.removeAttribute('aria-busy');
                 setTimeout(() => {
-                  ov.parentNode?.removeChild(ov);
-                  console.log('[poll] Overlay removed');
+                  try {
+                    if (ov.parentNode) {
+                      ov.parentNode.removeChild(ov);
+                    }
+                    console.log('[poll] Overlay removed from DOM');
+                  } catch (e) {
+                    console.log('[poll] Error removing overlay:', e.message);
+                    ov.style.display = 'none';
+                  }
                 }, 50);
                 return;
               }
