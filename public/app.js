@@ -166,7 +166,8 @@ function goToPayment(resp) {
     return;
   }
   console.error("goToPayment: No payment method found", resp);
-  alert("Could not start payment. Please try again or contact support.");
+  const debugMsg = JSON.stringify(resp, null, 2);
+  alert(`Could not start payment. Response: ${debugMsg}\n\nPlease ensure Cashfree credentials are configured in Netlify and try again, or contact support.`);
 }
 async function postJSON(url, data, btn) {
   let spinner = null;
