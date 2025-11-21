@@ -177,11 +177,23 @@ async function postJSON(url, data, btn) {
       spinner.className = "spinner";
       btn.prepend(spinner);
     }
-    const r = await fetch(url, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(data),
-    });
+    
+    // Create AbortController with 10s timeout
+    const abortController = new AbortController();
+    const timeoutId = setTimeout(() => abortController.abort(), 10000);
+    
+    let r;
+    try {
+      r = await fetch(url, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(data),
+        signal: abortController.signal,
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
+    
     const text = await r.text();
     let j;
     try {
@@ -194,6 +206,12 @@ async function postJSON(url, data, btn) {
         j?.details?.message || j?.error || text || "HTTP " + r.status
       );
     return j;
+  } catch (err) {
+    // Handle timeout specifically
+    if (err.name === 'AbortError') {
+      throw new Error('Request timeout. The payment service took too long to respond. Please try again.');
+    }
+    throw err;
   } finally {
     if (btn) {
       btn.disabled = false;
@@ -745,11 +763,19 @@ function initRegister() {
   // try to finalize on server (works when webhook can't reach localhost)
   async function finalize() {
     try {
-      await fetch("/api/finalize-order", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ order_id: orderId }),
-      });
+      const abortController = new AbortController();
+      // Increased timeout to 15s - may need to access GitHub/KonfHub
+      const timeoutId = setTimeout(() => abortController.abort(), 15000);
+      try {
+        await fetch("/api/finalize-order", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ order_id: orderId }),
+          signal: abortController.signal,
+        });
+      } finally {
+        clearTimeout(timeoutId);
+      }
     } catch (e) {
       /* ignore: server may not implement; polling still works */
     }
@@ -798,10 +824,18 @@ function initRegister() {
     if (done) return;
     tries++;
     try {
-      const r = await fetch(
-        `/api/order-status?id=${encodeURIComponent(orderId)}`,
-        { cache: "no-store" }
-      );
+      const abortController = new AbortController();
+      // Increased timeout to 10s - may need to access GitHub
+      const timeoutId = setTimeout(() => abortController.abort(), 10000);
+      let r;
+      try {
+        r = await fetch(
+          `/api/order-status?id=${encodeURIComponent(orderId)}`,
+          { cache: "no-store", signal: abortController.signal }
+        );
+      } finally {
+        clearTimeout(timeoutId);
+      }
       if (r.ok) {
         const oc = await r.json();
         renderProgress(oc);

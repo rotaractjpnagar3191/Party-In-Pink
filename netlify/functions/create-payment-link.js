@@ -32,24 +32,40 @@ exports.handler = async (event) => {
     })
 
     // Create Payment Link (hosted page)
-    const pl = await fetch(`${BASE}/pg/links`, {
-      method: 'POST',
-      headers: {
-        'Content-Type':'application/json',
-        'x-client-id': process.env.CASHFREE_APP_ID,
-        'x-client-secret': process.env.CASHFREE_SECRET_KEY,
-        'x-api-version': process.env.CASHFREE_API_VERSION || '2025-01-01'
-      },
-      body: JSON.stringify({
-        link_id: ref,
-        link_amount: amount,
-        link_currency: cfg.event.currency || 'INR',
-        link_purpose: `${cfg.event.title} Ticket`,
-        customer_details: { customer_name: name, customer_email: email, customer_phone: phone },
-        link_meta: { return_url: `${process.env.SITE_URL}/success.html?ref=${encodeURIComponent(ref)}` },
-        link_notes: { tier, qty: q }
-      })
-    }).then(r=>r.json()).catch(()=>null)
+    const abortController = new AbortController();
+    const timeoutId = setTimeout(() => abortController.abort(), 10000);
+
+    let pl;
+    try {
+      const res = await fetch(`${BASE}/pg/links`, {
+        method: 'POST',
+        headers: {
+          'Content-Type':'application/json',
+          'x-client-id': process.env.CASHFREE_APP_ID,
+          'x-client-secret': process.env.CASHFREE_SECRET_KEY,
+          'x-api-version': process.env.CASHFREE_API_VERSION || '2025-01-01'
+        },
+        body: JSON.stringify({
+          link_id: ref,
+          link_amount: amount,
+          link_currency: cfg.event.currency || 'INR',
+          link_purpose: `${cfg.event.title} Ticket`,
+          customer_details: { customer_name: name, customer_email: email, customer_phone: phone },
+          link_meta: { return_url: `${process.env.SITE_URL}/success.html?ref=${encodeURIComponent(ref)}` },
+          link_notes: { tier, qty: q }
+        }),
+        signal: abortController.signal
+      });
+      pl = await res.json();
+    } catch (err) {
+      if (err.name === 'AbortError') {
+        pl = { error: 'Payment service timeout' };
+      } else {
+        pl = null;
+      }
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     if (!pl || !(pl.link_url || pl.link_url)) {
       return { statusCode: 400, body: (pl && (pl.message||pl.error)) || 'Failed to create payment link' }

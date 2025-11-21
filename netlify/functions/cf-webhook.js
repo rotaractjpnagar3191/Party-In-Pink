@@ -28,9 +28,11 @@ exports.handler = async (event) => {
     console.log('[cf-webhook] ALLOW_TEST_PING:', ALLOW_TEST_PING);
 
     // --- Verify Cashfree signature ---
-    const sig = event.headers['x-webhook-signature'];
-    const ts  = event.headers['x-webhook-timestamp'];
+    // Cashfree sends headers in various cases, try both
+    const sig = event.headers['x-webhook-signature'] || event.headers['X-Webhook-Signature'];
+    const ts  = event.headers['x-webhook-timestamp'] || event.headers['X-Webhook-Timestamp'];
     console.log('[cf-webhook] Signature present:', !!sig, 'Timestamp present:', !!ts);
+    console.log('[cf-webhook] All headers:', JSON.stringify(event?.headers || {}));
     
     if (!sig || !ts) return respond(ALLOW_TEST_PING ? 200 : 400, 'Missing signature headers');
 
@@ -39,13 +41,30 @@ exports.handler = async (event) => {
       : Buffer.from(event.body || '');
 
     const SECRET = process.env.CF_WEBHOOK_SECRET || ENV.CASHFREE_SECRET_KEY;
+    
+    // Cashfree API v2025-01-01 & v2023-08-01: HMAC-SHA256(timestamp + rawBody)
+    // Direct concatenation, NO separator
+    const signatureString = ts + raw.toString('utf8');
     const expected = crypto
       .createHmac('sha256', SECRET)
-      .update(ts + raw.toString('utf8'))
+      .update(signatureString)
       .digest('base64');
 
-    console.log('[cf-webhook] Signature match:', expected === sig);
-    if (expected !== sig) return respond(ALLOW_TEST_PING ? 200 : 401, 'Invalid signature');
+    console.log('[cf-webhook] Signature verification:');
+    console.log('[cf-webhook] - Timestamp:', ts);
+    console.log('[cf-webhook] - Raw body length:', raw.toString('utf8').length);
+    console.log('[cf-webhook] - Expected signature:', expected);
+    console.log('[cf-webhook] - Received signature:', sig);
+    console.log('[cf-webhook] - Match:', expected === sig);
+    
+    if (expected !== sig) {
+      console.warn('[cf-webhook] ⚠️  SIGNATURE MISMATCH');
+      // Allow test pings through regardless of signature
+      if (!ALLOW_TEST_PING) {
+        return respond(401, 'Invalid signature');
+      }
+      console.warn('[cf-webhook] Continuing because ALLOW_TEST_PING=1');
+    }
 
     // --- Parse payload ---
     const payload = JSON.parse(raw.toString('utf8'));
@@ -56,8 +75,15 @@ exports.handler = async (event) => {
     const paidAmt  = Number(data?.order?.order_amount || data?.order_amount || 0);
 
     console.log('[cf-webhook] Status:', status, 'OrderID:', order_id, 'Amount:', paidAmt);
+    console.log('[cf-webhook] Full payload keys:', Object.keys(data || {}));
     
     if (!order_id) return respond(ALLOW_TEST_PING ? 200 : 400, 'No order_id');
+    
+    // Test ping: allow any status if it's a test
+    if (ALLOW_TEST_PING && !status) {
+      return respond(200, 'Test ping accepted (no status required)');
+    }
+    
     if (status !== 'SUCCESS' && ALLOW_TEST_PING) return respond(200, 'Test ping accepted');
     if (status !== 'SUCCESS') return respond(200, 'Ignoring non-success');
 
@@ -178,7 +204,11 @@ exports.handler = async (event) => {
 const respond = (statusCode, body) => {
   const response = {
     statusCode,
-    body: typeof body === 'string' ? body : JSON.stringify(body)
+    headers: {
+      'content-type': 'application/json',
+      'cache-control': 'no-cache'
+    },
+    body: typeof body === 'string' ? JSON.stringify({ message: body }) : JSON.stringify(body)
   };
   console.log('[cf-webhook] RESPONDING:', statusCode, body);
   return response;

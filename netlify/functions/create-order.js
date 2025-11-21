@@ -122,16 +122,26 @@ exports.handler = async (event) => {
       },
     };
 
-    const cfRes = await fetch(`${cfBase}/pg/orders`, {
-      method: "POST",
-      headers: {
-        "x-client-id": ENV.CASHFREE_APP_ID,
-        "x-client-secret": ENV.CASHFREE_SECRET_KEY,
-        "x-api-version": apiVersion,
-        "content-type": "application/json",
-      },
-      body: JSON.stringify(orderPayload),
-    });
+    // Create AbortController with 10s timeout
+    const abortController = new AbortController();
+    const timeoutId = setTimeout(() => abortController.abort(), 10000);
+
+    let cfRes;
+    try {
+      cfRes = await fetch(`${cfBase}/pg/orders`, {
+        method: "POST",
+        headers: {
+          "x-client-id": ENV.CASHFREE_APP_ID,
+          "x-client-secret": ENV.CASHFREE_SECRET_KEY,
+          "x-api-version": apiVersion,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify(orderPayload),
+        signal: abortController.signal,
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     const cfJson = await cfRes.json().catch(() => ({}));
     if (!cfRes.ok) {
@@ -182,6 +192,10 @@ exports.handler = async (event) => {
     });
   } catch (e) {
     console.error("create-order error", e);
+    // Handle timeout specifically
+    if (e.name === "AbortError") {
+      return json(504, { error: "Payment service timeout. Please try again." });
+    }
     return json(500, { error: e.message || "Server error" });
   }
 };

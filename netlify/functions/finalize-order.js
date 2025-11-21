@@ -30,6 +30,15 @@ exports.handler = async (event) => {
     let oc = await getJson(ENV, path);
     console.log('[finalize-order] Order lookup:', oc ? 'FOUND' : 'NOT FOUND');
 
+    // Retry logic: if order not found, wait a bit and try again
+    // (GitHub save might still be in progress from create-order)
+    if (!oc) {
+      console.log(`[finalize-order] Order ${order_id} not found, retrying after 1s...`);
+      await new Promise(res => setTimeout(res, 1000));
+      oc = await getJson(ENV, path);
+      console.log('[finalize-order] Second lookup:', oc ? 'FOUND' : 'NOT FOUND');
+    }
+
     // If order not found, return helpful error (caller should have data)
     if (!oc) {
       console.warn(`finalize-order: Order ${order_id} not found in storage`);

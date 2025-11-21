@@ -49,7 +49,7 @@ function isTicketInaccessible(resp, status) {
   return code === 'ASC-20' || /ticket is not accessible/i.test(msg) || status === 403;
 }
 
-/** tiny https JSON POST helper */
+/** tiny https JSON POST helper with timeout */
 function postJSON(url, headers, body) {
   return new Promise((resolve, reject) => {
     const u = new URL(url);
@@ -71,6 +71,13 @@ function postJSON(url, headers, body) {
       });
     });
     req.on('error', reject);
+    
+    // Add 10s timeout for the request
+    req.setTimeout(10000, () => {
+      req.destroy();
+      reject(new Error('KonfHub API timeout (10s)'));
+    });
+    
     req.write(body);
     req.end();
   });
