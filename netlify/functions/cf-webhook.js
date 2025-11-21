@@ -11,6 +11,10 @@ console.log('[cf-webhook-BOOT] Module loaded at', new Date().toISOString());
 // Maps order_id -> { timestamp, fulfilled_status }
 const issuanceCache = new Map();
 
+// Webhook deduplication registry in memory (survives Lambda execution context reuse)
+// Maps webhookKey -> timestamp (last seen)
+const webhookRegistry = new Map();
+
 exports.handler = async (event) => {
   console.log('\n\n==============================================');
   console.log('[cf-webhook] ===== WEBHOOK INVOKED =====');
@@ -96,6 +100,22 @@ exports.handler = async (event) => {
     
     if (status !== 'SUCCESS' && ALLOW_TEST_PING) return respond(200, 'Test ping accepted');
     if (status !== 'SUCCESS') return respond(200, 'Ignoring non-success');
+
+    // --- WEBHOOK DEDUPLICATION CHECK (immediate, before any processing) ---
+    // Build unique webhook key from timestamp + signature (Cashfree's unique identifier for this webhook)
+    const webhookKey = `${order_id}:${ts}:${sig}`;
+    const lastSeen = webhookRegistry.get(webhookKey);
+    if (lastSeen) {
+      const timeSince = Date.now() - lastSeen;
+      console.log(`[cf-webhook] ⚠️  DUPLICATE WEBHOOK DETECTED: ${webhookKey}`);
+      console.log(`[cf-webhook] Last processed ${timeSince}ms ago`);
+      console.log(`[cf-webhook] RESPONDING: 200 Duplicate webhook (already processed)`);
+      return respond(200, `Duplicate webhook (last seen ${timeSince}ms ago)`);
+    }
+    
+    // Register this webhook as seen (will survive Lambda execution context)
+    webhookRegistry.set(webhookKey, Date.now());
+    console.log(`[cf-webhook] ✓ Webhook registered: ${webhookKey.slice(0, 30)}...`);
 
     // ⚠️  EMERGENCY KILL SWITCH: Check if GitHub config is complete
     // If not configured, block all issuances to prevent duplicate tickets
