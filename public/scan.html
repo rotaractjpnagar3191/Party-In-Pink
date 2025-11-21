@@ -1,28 +1,183 @@
-<!DOCTYPE html><html lang="en"><head>
-<meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-<meta http-equiv="Pragma" content="no-cache" />
-<meta http-equiv="Expires" content="0" />
-<title>Check‑in — PiP</title><link rel="stylesheet" href="/styles.css?v=20251120-002" />
-</head><body>
-<main class="wrap narrow">
-  <h1>Check‑in</h1>
-  <p>Paste Order ID or scan QR with your phone’s QR app and open the link.</p>
-  <input id="oid" placeholder="Order ID" />
-  <button class="btn" id="check">Mark Checked‑in</button>
-  <p id="out"></p>
-</main>
-<script>
-function qp(k){ return new URLSearchParams(location.search).get(k) }
-const oid = document.getElementById('oid');
-const fromQR = qp('order_id'); if(fromQR) oid.value = fromQR;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>Check-In • Party In Pink</title>
+  <link rel="stylesheet" href="/styles.css?v=20251121" />
+  <style>
+    body { background: #0F0F12; color: #ECEFF1; font-family: Inter, system-ui, sans-serif; }
+    main { max-width: 600px; margin: 2rem auto; padding: 1rem; }
+    .admin-section { background: linear-gradient(135deg, #1a1a1e 0%, #2d2d35 100%); padding: 2rem; border-radius: 16px; border: 1px solid rgba(233, 30, 99, 0.2); margin-bottom: 2rem; }
+    .admin-section h1 { color: #E91E63; margin-top: 0; }
+    .form-group { margin-bottom: 1.5rem; }
+    .form-label { display: block; font-weight: 600; color: #ddd; margin-bottom: 0.5rem; font-size: 0.95rem; }
+    .form-input { width: 100%; padding: 12px 14px; background: #121216; border: 2px solid #333; border-radius: 8px; color: #fff; font-size: 0.95rem; font-family: inherit; transition: all 0.3s; }
+    .form-input:focus { outline: none; border-color: #E91E63; box-shadow: 0 0 0 3px rgba(233, 30, 99, 0.1); }
+    .btn-primary { padding: 12px 24px; background: #E91E63; border: none; border-radius: 8px; color: white; font-weight: 600; cursor: pointer; transition: all 0.3s; font-size: 1rem; }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(233, 30, 99, 0.4); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .status-message { padding: 1rem; border-radius: 8px; margin-bottom: 1rem; font-weight: 600; }
+    .status-success { background: rgba(0, 200, 83, 0.15); color: #00C853; border-left: 4px solid #00C853; }
+    .status-error { background: rgba(244, 67, 54, 0.15); color: #FF5252; border-left: 4px solid #F44336; }
+    .status-loading { background: rgba(255, 193, 7, 0.15); color: #FFD600; border-left: 4px solid #FFC107; }
+    .qr-input { font-size: 1.1rem; letter-spacing: 0.1em; text-align: center; }
+    .check-in-log { margin-top: 2rem; padding: 1.5rem; background: linear-gradient(135deg, #1a1a1e 0%, #2d2d35 100%); border-radius: 12px; border: 1px solid rgba(233, 30, 99, 0.2); }
+    .check-in-log h2 { color: #E91E63; margin-top: 0; font-size: 1.2rem; }
+    .log-item { padding: 0.75rem 0; border-bottom: 1px solid rgba(233, 30, 99, 0.1); display: flex; justify-content: space-between; font-size: 0.9rem; }
+    .log-item:last-child { border-bottom: none; }
+    .log-item .time { color: #bbb; }
+    .log-item .status { font-weight: 600; }
+    .log-item.success .status { color: #00C853; }
+    .log-item.error .status { color: #FF5252; }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="index.html">
+        <img src="assets/logos/PiP_Black.png" alt="Party In Pink Logo" onerror="this.style.display='none'">
+      </a>
+      <nav class="main-nav" aria-label="Primary">
+        <a href="index.html">Home</a>
+        <a href="status.html">Check Status</a>
+      </nav>
+    </div>
+  </header>
 
-document.getElementById('check').onclick = async () => {
-  const order_id = oid.value.trim();
-  const adminKey = prompt('Admin key?');
-  const r = await fetch(`/api/checkin?order_id=${encodeURIComponent(order_id)}&key=${encodeURIComponent(adminKey)}`, { method:'POST' });
-  const j = await r.json().catch(()=>({ok:false}));
-  document.getElementById('out').textContent = j.ok ? 'Checked‑in ✅' : (j.error || 'Failed');
-}
-</script>
-</body></html>
+  <main>
+    <div class="admin-section">
+      <h1>🎟 Check-In System</h1>
+      <p style="color: #bbb; margin-bottom: 1.5rem;">Scan QR code from ticket or enter Order ID to mark attendee as checked in.</p>
+
+      <div id="statusMsg" style="display: none;"></div>
+
+      <div class="form-group">
+        <label class="form-label">Admin Key (for verification)</label>
+        <input id="adminKey" type="password" class="form-input" placeholder="Enter admin key" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Order ID or Scan QR Code</label>
+        <input id="orderId" type="text" class="form-input qr-input" placeholder="Scan or paste order ID" autofocus />
+      </div>
+
+      <button id="checkInBtn" class="btn-primary" style="width: 100%; font-size: 1.1rem; padding: 14px;">Mark Checked In</button>
+
+      <div style="margin-top: 1rem; padding: 1rem; background: rgba(233, 30, 99, 0.08); border-left: 3px solid #E91E63; border-radius: 6px; color: #bbb; font-size: 0.9rem;">
+        <strong style="color: #E91E63;">Tip:</strong> Scan the QR code on the participant's ticket. The Order ID will appear automatically.
+      </div>
+    </div>
+
+    <div class="check-in-log">
+      <h2>Check-In Log</h2>
+      <div id="checkInLog" style="min-height: 100px; color: #bbb; text-align: center; padding: 1rem;">
+        No check-ins yet
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const logs = [];
+    const maxLogs = 20;
+
+    function formatTime(d) {
+      return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+
+    function addLog(orderId, status) {
+      logs.unshift({ orderId, status, time: new Date() });
+      if (logs.length > maxLogs) logs.pop();
+      renderLogs();
+    }
+
+    function renderLogs() {
+      const logDiv = document.getElementById('checkInLog');
+      if (!logs.length) {
+        logDiv.innerHTML = '<div style="color: #bbb; text-align: center; padding: 1rem;">No check-ins yet</div>';
+        return;
+      }
+      logDiv.innerHTML = logs.map(log => `
+        <div class="log-item ${log.status}">
+          <span><strong>${log.orderId.slice(0, 20)}</strong></span>
+          <span class="time">${formatTime(log.time)}</span>
+          <span class="status">${log.status === 'success' ? 'OK' : 'FAIL'}</span>
+        </div>
+      `).join('');
+    }
+
+    document.getElementById('checkInBtn').addEventListener('click', async () => {
+      const orderId = document.getElementById('orderId').value.trim();
+      const adminKey = document.getElementById('adminKey').value.trim();
+      const statusMsg = document.getElementById('statusMsg');
+      const btn = document.getElementById('checkInBtn');
+
+      if (!orderId || !adminKey) {
+        statusMsg.style.display = 'block';
+        statusMsg.innerHTML = '<div class="status-message status-error">Please enter both Order ID and Admin Key</div>';
+        return;
+      }
+
+      statusMsg.innerHTML = '<div class="status-message status-loading">Processing check-in...</div>';
+      statusMsg.style.display = 'block';
+      btn.disabled = true;
+
+      try {
+        const response = await fetch(`/api/checkin?order_id=${encodeURIComponent(orderId)}&key=${encodeURIComponent(adminKey)}`, {
+          method: 'POST'
+        });
+        const data = await response.json().catch(() => ({}));
+
+        if (data.ok) {
+          statusMsg.innerHTML = '<div class="status-message status-success">Check-in Successful!</div>';
+          addLog(orderId, 'success');
+          document.getElementById('orderId').value = '';
+          document.getElementById('orderId').focus();
+        } else {
+          statusMsg.innerHTML = `<div class="status-message status-error">Check-in Failed: ${data.error || 'Unknown error'}</div>`;
+          addLog(orderId, 'error');
+        }
+      } catch (e) {
+        statusMsg.innerHTML = `<div class="status-message status-error">Error: ${e.message}</div>`;
+        addLog(orderId, 'error');
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    document.getElementById('orderId').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') document.getElementById('checkInBtn').click();
+    });
+
+    document.getElementById('orderId').focus();
+  </script>
+
+  <footer class="site-footer" style="margin-top: 4rem;">
+    <div class="wrap">
+      <div class="footer-cols">
+        <div>
+          <h4>Party In Pink</h4>
+          <p>Rotaract Club of Bangalore JP Nagar</p>
+          <p class="muted">© <span id="year"></span> All rights reserved.</p>
+        </div>
+        <nav>
+          <h4>Quick Links</h4>
+          <a href="index.html">Home</a>
+          <a href="status.html">Check Status</a>
+        </nav>
+        <div>
+          <h4>Contact</h4>
+          <p><a href="mailto:rotaractjpnagar@gmail.com">rotaractjpnagar@gmail.com</a></p>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>

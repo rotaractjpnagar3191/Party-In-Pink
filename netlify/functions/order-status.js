@@ -4,39 +4,72 @@ const { getJson } = require('./_github');
 console.log('[order-status-BOOT] Module loaded');
 
 exports.handler = async (event) => {
-  const id = new URL(event.rawUrl).searchParams.get('id');
-  console.log('[order-status] INVOKED for id:', id);
+  const query = new URL(event.rawUrl).searchParams.get('q');
+  console.log('[order-status] INVOKED for query:', query);
   
-  if (!id) return { statusCode: 400, body: 'Missing id' };
+  if (!query) return { statusCode: 400, headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ok: false, error: 'Missing query parameter' }) };
 
   const { private: ENV } = getConfig();
-  const path = `${ENV.STORE_PATH}/orders/${id}.json`;
-  let oc = await getJson(ENV, path);
   
-  console.log('[order-status] Lookup result:', oc ? 'FOUND' : 'NOT FOUND');
-  if (oc) console.log('[order-status] Status:', oc.fulfilled?.status || 'unfulfilled');
+  let order = null;
   
-  // If not in GitHub storage, return minimal status (might be reconstructed in webhook)
-  if (!oc) {
-    console.log('[order-status] Returning PENDING (not yet processed)');
-    // Return pending status so frontend keeps polling
-    // Webhook will reconstruct and update when payment is processed
+  // Try as order_id first
+  if (query.startsWith('pip_')) {
+    const path = `${ENV.STORE_PATH}/orders/${query}.json`;
+    order = await getJson(ENV, path);
+    console.log('[order-status] Order ID lookup:', order ? 'FOUND' : 'NOT FOUND');
+  } else {
+    // Try as email - scan all orders for matching email
+    console.log('[order-status] Searching by email:', query);
+    try {
+      const listUrl = `https://api.github.com/repos/${ENV.GITHUB_OWNER}/${ENV.GITHUB_REPO}/contents/${ENV.STORE_PATH}/orders`;
+      const listRes = await fetch(listUrl, {
+        headers: { Authorization: `Bearer ${ENV.GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+      });
+      
+      if (listRes.ok) {
+        const files = await listRes.json();
+        if (Array.isArray(files)) {
+          for (const file of files) {
+            if (!file.name.endsWith('.json')) continue;
+            const o = await getJson(ENV, `${ENV.STORE_PATH}/orders/${file.name}`);
+            if (o && o.email === query) {
+              order = o;
+              console.log('[order-status] Found order by email:', order.order_id);
+              break;
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('[order-status] Email search error:', e.message);
+    }
+  }
+
+  if (!order) {
+    console.log('[order-status] Order not found');
     return { 
-      statusCode: 200, 
+      statusCode: 404, 
       headers: { 'content-type': 'application/json' }, 
       body: JSON.stringify({ 
-        order_id: id,
-        status: 'pending',
-        fulfilled: {
-          status: 'pending'
-        },
-        note: 'Order being processed - webhook may reconstruct from payment data'
+        ok: false,
+        error: 'Order not found. Please check your Order ID or email address.'
       }) 
     };
   }
 
-  // Redact secrets
-  const safe = { ...oc };
-  delete safe.cashfree?.order?.payment_link;
-  return { statusCode: 200, headers: { 'content-type': 'application/json' }, body: JSON.stringify(safe) };
+  // Redact sensitive data
+  const safe = { ...order };
+  if (safe.cashfree) {
+    safe.cashfree = { env: order.cashfree.env };
+  }
+  
+  return { 
+    statusCode: 200, 
+    headers: { 'content-type': 'application/json' }, 
+    body: JSON.stringify({ 
+      ok: true,
+      order: safe
+    }) 
+  };
 };

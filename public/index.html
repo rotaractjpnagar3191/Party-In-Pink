@@ -14,10 +14,13 @@
   <meta property="og:description" content="Join us December 14, 2025 for a high-energy Zumba fundraiser supporting breast cancer care. 100% proceeds to Sri Shankara Cancer Hospital." />
   <meta property="og:type" content="event" />
   <meta property="og:url" content="https://pip.rotaractjpnagar.org" />
-  <meta property="og:image" content="https://pip.rotaractjpnagar.org/assets/logos/PiP_Black.png" />
+  <meta property="og:image" content="https://pip.rotaractjpnagar.org/assets/images/IMG_7757.webp" />
+  <meta property="og:image:width" content="1080" />
+  <meta property="og:image:height" content="1920" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Party In Pink • Zumba Fundraiser" />
   <meta name="twitter:description" content="Dance for a cause! Support breast cancer awareness at our Zumba fundraiser on December 14, 2025 in Bangalore." />
+  <meta name="twitter:image" content="https://pip.rotaractjpnagar.org/assets/images/IMG_7757.webp" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
@@ -26,6 +29,62 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="preload" as="image" href="assets/images/IMG_7757.webp" fetchpriority="high">
   <link rel="stylesheet" href="styles.css?v=20251120-003" />
+  
+  <!-- Schema.org Event Markup -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Event",
+    "name": "Party In Pink 4.0 - Zumba Fundraiser",
+    "description": "A high-energy Zumba fundraiser supporting breast cancer awareness and treatment. 100% of proceeds go to Sri Shankara Cancer Hospital.",
+    "startDate": "2025-12-14T07:30:00+05:30",
+    "endDate": "2025-12-14T10:00:00+05:30",
+    "eventStatus": "https://schema.org/EventScheduled",
+    "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
+    "location": {
+      "@type": "Place",
+      "name": "SSMRV College",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Jayanagar",
+        "addressRegion": "Karnataka",
+        "addressCountry": "IN",
+        "streetAddress": "Jayanagar"
+      }
+    },
+    "organizer": {
+      "@type": "Organization",
+      "name": "Rotaract Club of Bangalore JP Nagar",
+      "url": "https://www.rotaractjpnagar.org",
+      "email": "rotaractjpnagar@gmail.com"
+    },
+    "offers": [
+      {
+        "@type": "Offer",
+        "name": "Single Registration",
+        "url": "https://pip.rotaractjpnagar.org/register.html",
+        "price": "199",
+        "priceCurrency": "INR"
+      },
+      {
+        "@type": "Offer",
+        "name": "Bulk Registration",
+        "url": "https://pip.rotaractjpnagar.org/bulk.html",
+        "price": "199",
+        "priceCurrency": "INR"
+      },
+      {
+        "@type": "Offer",
+        "name": "Donation",
+        "url": "https://pip.rotaractjpnagar.org/donate.html",
+        "price": "1000",
+        "priceCurrency": "INR"
+      }
+    ],
+    "image": "https://pip.rotaractjpnagar.org/assets/logos/PiP_Black.png",
+    "url": "https://pip.rotaractjpnagar.org"
+  }
+  </script>
 </head>
 
 <body class="theme-pip">
@@ -215,8 +274,33 @@
     </div>
   </section>
 
-  <!-- Sticky CTA -->
-  <section class="cta-sticky">
+  <!-- Event Countdown Timer -->
+  <section class="section section-alt">
+    <div class="wrap" style="text-align: center;">
+      <div style="background: linear-gradient(135deg, rgba(233, 30, 99, 0.15) 0%, rgba(156, 39, 176, 0.1) 100%); border: 2px solid rgba(233, 30, 99, 0.3); padding: 3rem 2rem; border-radius: 16px; margin-bottom: 2rem;">
+        <h2 style="color: #E91E63; margin-top: 0; margin-bottom: 1.5rem; font-size: 1.8rem;">⏰ Event Countdown</h2>
+        <div id="countdownTimer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
+          <div style="background: linear-gradient(135deg, #1a1a1e 0%, #2d2d35 100%); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(233, 30, 99, 0.2);">
+            <div id="days" style="font-size: 2.5rem; font-weight: 800; color: #E91E63;">0</div>
+            <div style="font-size: 0.85rem; color: #bbb; margin-top: 0.5rem;">Days</div>
+          </div>
+          <div style="background: linear-gradient(135deg, #1a1a1e 0%, #2d2d35 100%); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(233, 30, 99, 0.2);">
+            <div id="hours" style="font-size: 2.5rem; font-weight: 800; color: #E91E63;">0</div>
+            <div style="font-size: 0.85rem; color: #bbb; margin-top: 0.5rem;">Hours</div>
+          </div>
+          <div style="background: linear-gradient(135deg, #1a1a1e 0%, #2d2d35 100%); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(233, 30, 99, 0.2);">
+            <div id="minutes" style="font-size: 2.5rem; font-weight: 800; color: #E91E63;">0</div>
+            <div style="font-size: 0.85rem; color: #bbb; margin-top: 0.5rem;">Minutes</div>
+          </div>
+          <div style="background: linear-gradient(135deg, #1a1a1e 0%, #2d2d35 100%); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(233, 30, 99, 0.2);">
+            <div id="seconds" style="font-size: 2.5rem; font-weight: 800; color: #E91E63;">0</div>
+            <div style="font-size: 0.85rem; color: #bbb; margin-top: 0.5rem;">Seconds</div>
+          </div>
+        </div>
+        <p style="color: #bbb; margin: 0; font-size: 0.95rem;">Sunday, December 14, 2025 at 7:30 AM</p>
+      </div>
+    </div>
+  </section>
     <div class="wrap">
       <div><strong>Join the movement.</strong> Dance for a cause and make an impact.</div>
       <div class="cta-row">

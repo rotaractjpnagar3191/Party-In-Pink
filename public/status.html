@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Check Order Status • Party In Pink</title>
+  <meta name="description" content="Check the status of your Party In Pink order, registration, or donation. View your tickets and next steps." />
+  <meta name="theme-color" content="#E91E63" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=20251120-004" />
+  <style>
+    .status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2rem; }
+    @media (max-width: 768px) { .status-grid { grid-template-columns: 1fr; } }
+    .status-card { background: linear-gradient(135deg, #1a1a1e 0%, #2d2d35 100%); padding: 2rem; border-radius: 16px; border: 1px solid rgba(233, 30, 99, 0.2); }
+    .status-badge { display: inline-block; padding: 0.5rem 1rem; border-radius: 20px; font-weight: 600; font-size: 0.85rem; margin: 0.5rem 0; }
+    .status-badge.success { background: rgba(0, 200, 83, 0.2); color: #00C853; }
+    .status-badge.pending { background: rgba(255, 193, 7, 0.2); color: #FFD600; }
+    .status-badge.failed { background: rgba(244, 67, 54, 0.2); color: #FF5252; }
+    .order-detail { margin: 1rem 0; padding: 1rem; background: rgba(233, 30, 99, 0.08); border-left: 3px solid #E91E63; border-radius: 6px; }
+    .order-detail strong { color: #E91E63; }
+    .ticket-box { background: rgba(233, 30, 99, 0.15); border: 2px dashed #E91E63; padding: 1.5rem; border-radius: 12px; text-align: center; margin: 1rem 0; }
+    .ticket-download { display: inline-block; margin-top: 1rem; padding: 0.75rem 1.5rem; background: #E91E63; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; transition: all 0.3s; }
+    .ticket-download:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(233, 30, 99, 0.4); }
+  </style>
+</head>
+
+<body class="theme-pip">
+  <div id="app-preloader" aria-hidden="true"><div class="spinner"></div></div>
+
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="index.html">
+        <img src="assets/logos/PiP_Black.png" alt="Party In Pink Logo" onerror="this.style.display='none'">
+      </a>
+      <nav class="main-nav" aria-label="Primary">
+        <a href="about.html">About Us</a>
+        <a href="register.html">Single Registration</a>
+        <a href="bulk.html">Bulk Registration</a>
+        <a href="donate.html" class="btn btn-primary btn-sm">Donate</a>
+      </nav>
+      <button id="navToggle" class="nav-toggle" aria-label="Toggle Menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <main class="section">
+    <div class="wrap" style="max-width: 900px;">
+      <div class="card">
+        <h1>Check Order Status</h1>
+        <p class="muted">Enter your Order ID or email to see your registration, ticket download links, and next steps.</p>
+
+        <div class="form" id="statusSearchForm" novalidate>
+          <label>Order ID or Email</label>
+          <div style="display: flex; gap: 10px; margin: 1rem 0;">
+            <input id="statusInput" type="text" placeholder="e.g., pip_1234567890_abc123 or your@email.com" class="form-input" style="flex: 1;" />
+            <button id="statusSearchBtn" type="button" class="btn btn-primary" style="flex-shrink: 0;">Search</button>
+          </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="statusLoading" style="display: none; text-align: center; padding: 2rem;">
+          <div class="spinner" style="margin: 0 auto;"></div>
+          <p style="color: #bbb; margin-top: 1rem;">Fetching your order details...</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="statusError" style="display: none; background: rgba(244, 67, 54, 0.15); border-left: 4px solid #F44336; padding: 1.5rem; border-radius: 8px; color: #FF5252;"></div>
+
+        <!-- Success State -->
+        <div id="statusResult" style="display: none;">
+          <div class="status-grid">
+            <!-- Order Info Card -->
+            <div class="status-card">
+              <h2 style="color: #E91E63; margin-top: 0; font-size: 1.3rem;">Order Information</h2>
+              <div class="order-detail">
+                <strong>Order ID:</strong><br>
+                <code id="resultOrderId" style="color: #bbb; font-family: monospace; background: #0F0F12; padding: 0.5rem; border-radius: 4px; display: inline-block; margin-top: 0.3rem;"></code>
+              </div>
+              <div class="order-detail">
+                <strong>Type:</strong><br>
+                <span id="resultType" style="color: #bbb;"></span>
+              </div>
+              <div class="order-detail">
+                <strong>Name:</strong><br>
+                <span id="resultName" style="color: #bbb;"></span>
+              </div>
+              <div class="order-detail">
+                <strong>Email:</strong><br>
+                <span id="resultEmail" style="color: #bbb;"></span>
+              </div>
+              <div class="order-detail">
+                <strong>Amount:</strong><br>
+                <span id="resultAmount" style="color: #bbb;"></span>
+              </div>
+              <div class="order-detail">
+                <strong>Created:</strong><br>
+                <span id="resultCreated" style="color: #bbb;"></span>
+              </div>
+            </div>
+
+            <!-- Fulfillment Card -->
+            <div class="status-card">
+              <h2 style="color: #E91E63; margin-top: 0; font-size: 1.3rem;">Fulfillment Status</h2>
+              
+              <div id="fulfillmentNotReady" style="padding: 1.5rem; text-align: center; color: #bbb;">
+                <p>⏳ Processing your order...</p>
+              </div>
+
+              <div id="fulfillmentReady" style="display: none;">
+                <div style="margin-bottom: 1.5rem;">
+                  <span id="statusBadge" class="status-badge"></span>
+                </div>
+
+                <div id="ticketsIssued" style="display: none;">
+                  <div class="order-detail">
+                    <strong>✅ Passes Issued:</strong><br>
+                    <span id="resultPassCount" style="color: #00C853; font-weight: 600; font-size: 1.2rem;"></span>
+                  </div>
+
+                  <div class="order-detail">
+                    <strong>✅ Issued At:</strong><br>
+                    <span id="resultFulfilledAt" style="color: #bbb;"></span>
+                  </div>
+
+                  <div class="ticket-box">
+                    <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🎟️</div>
+                    <div style="color: #E91E63; font-weight: 600; margin-bottom: 0.75rem;">Your Tickets are Ready!</div>
+                    <p style="color: #bbb; font-size: 0.9rem; margin: 0.75rem 0;">
+                      Check your email (including spam folder) for your ticket PDFs and KonfHub registration confirmation.
+                    </p>
+                    <a href="mailto:rotaractjpnagar@gmail.com?subject=Ticket%20Help" class="ticket-download">📧 Didn't Receive? Contact Us</a>
+                  </div>
+
+                  <div class="order-detail" style="background: rgba(0, 200, 83, 0.1); border-left: 3px solid #00C853;">
+                    <strong style="color: #00C853;">✓ What's Next?</strong>
+                    <ul style="margin: 0.5rem 0 0 0; padding-left: 1.5rem; color: #bbb;">
+                      <li>Check your email for registration confirmation</li>
+                      <li>Download your ticket PDF</li>
+                      <li>Mark December 14, 2025 on your calendar (7:30 AM)</li>
+                      <li>Bring your ticket to the venue</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div id="ticketsPartial" style="display: none;">
+                  <div class="order-detail">
+                    <strong>⚠️ Partially Fulfilled:</strong><br>
+                    <span id="resultPartialCount" style="color: #FFD600; font-weight: 600;"></span> passes issued
+                  </div>
+                  <p style="color: #bbb; font-size: 0.9rem;">Some of your passes may still be processing. Please check your email or contact us if you don't receive all tickets within 24 hours.</p>
+                </div>
+
+                <div id="ticketsFailed" style="display: none;">
+                  <div class="order-detail" style="background: rgba(244, 67, 54, 0.1); border-left: 3px solid #F44336;">
+                    <strong style="color: #FF5252;">❌ Issuance Failed:</strong><br>
+                    <span id="resultError" style="color: #bbb; font-size: 0.9rem;"></span>
+                  </div>
+                  <p style="color: #bbb; font-size: 0.9rem;">Please contact our support team immediately.</p>
+                  <a href="https://wa.me/918310398636?text=My%20order%20failed%20to%20process" target="_blank" rel="noopener noreferrer" class="ticket-download" style="background: #555;">💬 Contact Support</a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Contact Support -->
+          <div style="margin-top: 2rem; padding: 1.5rem; background: linear-gradient(135deg, rgba(233, 30, 99, 0.1) 0%, rgba(156, 39, 176, 0.05) 100%); border-left: 4px solid #E91E63; border-radius: 8px;">
+            <strong style="color: #E91E63;">Need help?</strong>
+            <p style="color: #bbb; margin: 0.5rem 0 0 0;">
+              <a href="https://wa.me/918310398636" target="_blank" rel="noopener noreferrer" style="color: #E91E63; text-decoration: none; font-weight: 600;">WhatsApp: 8310398636</a> • 
+              <a href="mailto:rotaractjpnagar@gmail.com" style="color: #E91E63; text-decoration: none; font-weight: 600;">Email</a> • 
+              <a href="tel:+918310398636" style="color: #E91E63; text-decoration: none; font-weight: 600;">Call Us</a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="footer-cols">
+        <div>
+          <h4>Party In Pink</h4>
+          <p>Rotaract Club of Bangalore JP Nagar</p>
+          <p class="muted">© <span id="year"></span> All rights reserved.</p>
+        </div>
+        <nav>
+          <h4>Quick Links</h4>
+          <a href="register.html">Single Registration</a>
+          <a href="bulk.html">Bulk Registration</a>
+          <a href="donate.html">Donate</a>
+        </nav>
+        <div>
+          <h4>Contact</h4>
+          <p><a href="mailto:rotaractjpnagar@gmail.com">rotaractjpnagar@gmail.com</a></p>
+          <p><a href="https://www.rotaractjpnagar.org/pip" target="_blank" rel="noopener noreferrer">rotaractjpnagar.org/pip</a></p>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js?v=2025-11-21" defer></script>
+  <script>
+    function formatDate(isoString) {
+      try {
+        const d = new Date(isoString);
+        return d.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+      } catch (e) {
+        return isoString;
+      }
+    }
+
+    function rupee(amt) {
+      return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(amt);
+    }
+
+    document.getElementById('statusSearchBtn').addEventListener('click', async () => {
+      const input = document.getElementById('statusInput').value.trim();
+      if (!input) {
+        alert('Please enter an Order ID or Email');
+        return;
+      }
+
+      const loading = document.getElementById('statusLoading');
+      const error = document.getElementById('statusError');
+      const result = document.getElementById('statusResult');
+
+      loading.style.display = 'block';
+      error.style.display = 'none';
+      result.style.display = 'none';
+
+      try {
+        const response = await fetch(`/api/order-status?q=${encodeURIComponent(input)}`);
+        const data = await response.json();
+
+        loading.style.display = 'none';
+
+        if (!response.ok || !data.ok) {
+          error.style.display = 'block';
+          error.innerHTML = `<strong>Order Not Found</strong><br>${data.error || 'Could not find an order matching that ID or email. Please check and try again.'}`;
+          return;
+        }
+
+        // Populate result
+        const order = data.order;
+        document.getElementById('resultOrderId').textContent = order.order_id;
+        document.getElementById('resultType').textContent = order.type.charAt(0).toUpperCase() + order.type.slice(1);
+        document.getElementById('resultName').textContent = order.name;
+        document.getElementById('resultEmail').textContent = order.email;
+        document.getElementById('resultAmount').textContent = rupee(order.amount);
+        document.getElementById('resultCreated').textContent = formatDate(order.created_at);
+
+        // Fulfillment status
+        const fulfillmentReady = document.getElementById('fulfillmentReady');
+        const fulfillmentNotReady = document.getElementById('fulfillmentNotReady');
+        const ticketsIssued = document.getElementById('ticketsIssued');
+        const ticketsPartial = document.getElementById('ticketsPartial');
+        const ticketsFailed = document.getElementById('ticketsFailed');
+
+        fulfillmentNotReady.style.display = 'none';
+        fulfillmentReady.style.display = 'block';
+        ticketsIssued.style.display = 'none';
+        ticketsPartial.style.display = 'none';
+        ticketsFailed.style.display = 'none';
+
+        if (order.fulfilled) {
+          const status = order.fulfilled.status;
+          const badge = document.getElementById('statusBadge');
+
+          if (status === 'ok') {
+            badge.classList.remove('pending', 'failed');
+            badge.classList.add('success');
+            badge.innerHTML = '✅ Tickets Issued';
+            document.getElementById('resultPassCount').textContent = `${order.fulfilled.count} pass${order.fulfilled.count === 1 ? '' : 'es'}`;
+            document.getElementById('resultFulfilledAt').textContent = formatDate(order.fulfilled.at);
+            ticketsIssued.style.display = 'block';
+          } else if (status === 'partial') {
+            badge.classList.remove('success', 'failed');
+            badge.classList.add('pending');
+            badge.innerHTML = '⏳ Partially Issued';
+            document.getElementById('resultPartialCount').textContent = order.fulfilled.count || 0;
+            ticketsPartial.style.display = 'block';
+          } else if (status === 'failed') {
+            badge.classList.remove('success', 'pending');
+            badge.classList.add('failed');
+            badge.innerHTML = '❌ Issuance Failed';
+            document.getElementById('resultError').textContent = order.fulfilled.error || 'Unknown error';
+            ticketsFailed.style.display = 'block';
+          }
+        } else {
+          const badge = document.getElementById('statusBadge');
+          badge.classList.remove('success', 'failed');
+          badge.classList.add('pending');
+          badge.innerHTML = '⏳ Processing';
+        }
+
+        result.style.display = 'block';
+      } catch (err) {
+        loading.style.display = 'none';
+        error.style.display = 'block';
+        error.innerHTML = `<strong>Error</strong><br>${err.message || 'Could not fetch order status. Please try again.'}`;
+      }
+    });
+
+    document.getElementById('statusInput').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') document.getElementById('statusSearchBtn').click();
+    });
+  </script>
+</body>
+
+</html>
