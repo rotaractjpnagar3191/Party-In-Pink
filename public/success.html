@@ -125,6 +125,122 @@
     })();
   </script>
 
+  <!-- SUCCESS PAGE POLLING -->
+  <script>
+    (function() {
+      const qs = new URLSearchParams(location.search);
+      const orderId = qs.get('order');
+      const type = (qs.get('type') || '').toLowerCase();
+
+      if (!orderId) {
+        return;
+      }
+
+      const successCard = document.querySelector('.success-card');
+      const badge = document.getElementById('statusBadge');
+      const detail = document.getElementById('statusDetail');
+
+      // Create overlay with progress
+      const ov = document.createElement('div');
+      ov.className = 'loader-overlay';
+      ov.setAttribute('aria-busy', 'true');
+      ov.innerHTML = `
+        <div class="card" style="background:#16161A;border:1px solid var(--border);padding:20px;border-radius:14px;min-width:280px;text-align:center">
+          <div class="spinner" style="margin:0 auto 10px"></div>
+          <div id="issueTitle" style="font-weight:700;margin-bottom:6px">Dispatching passes…</div>
+          <div id="issueSub" class="muted tiny">Contacting ticketing partner…</div>
+        </div>`;
+      document.body.appendChild(ov);
+
+      const issueTitle = ov.querySelector('#issueTitle');
+      const issueSub = ov.querySelector('#issueSub');
+
+      // Poll for completion
+      let tries = 0;
+      let done = false;
+
+      async function poll() {
+        if (done) return;
+        tries++;
+
+        try {
+          const abortController = new AbortController();
+          const timeoutId = setTimeout(() => abortController.abort(), 10000);
+          
+          let r;
+          try {
+            r = await fetch(`/api/order-status?id=${encodeURIComponent(orderId)}`, {
+              cache: 'no-store',
+              signal: abortController.signal
+            });
+          } finally {
+            clearTimeout(timeoutId);
+          }
+
+          if (r.ok) {
+            const resp = await r.json();
+            const oc = resp.order || resp;
+            
+            // Update progress display
+            if (oc?.passes) {
+              issueTitle.textContent = `Dispatching passes… ${Math.min(oc.passes, oc.passes)}/${oc.passes}`;
+            }
+
+            // Update status with attempt number
+            if (issueSub) {
+              issueSub.textContent = `Attempt ${tries}... ${oc?.fulfilled ? '(fulfillment detected)' : 'waiting'}`;
+            }
+
+            // Check if fulfilled
+            const ok = oc?.fulfilled?.status === 'ok';
+            const partial = oc?.fulfilled?.status === 'partial';
+
+            if (ok || partial) {
+              done = true;
+              
+              // Update UI
+              if (badge) badge.textContent = ok ? '✓ Tickets issued' : '⚠ Partially issued';
+              if (detail) {
+                detail.innerHTML = ok
+                  ? `All passes queued for delivery${oc.recipients ? ': ' + oc.recipients.join(', ') : ''}`
+                  : 'Some passes could not be issued. We\'ll fix this manually.';
+              }
+              
+              // Remove overlay after short delay
+              setTimeout(() => {
+                ov.setAttribute('aria-busy', 'false');
+                ov.remove();
+              }, 500);
+              return;
+            }
+          }
+        } catch (e) {
+          if (issueSub) {
+            issueSub.textContent = `Attempt ${tries}... error: ${e.message.slice(0, 20)}`;
+          }
+        }
+
+        // Keep polling
+        if (tries < 40) {
+          if (issueTitle) issueTitle.textContent = `Dispatching passes… (${tries * 2}s)`;
+          setTimeout(poll, 2000);
+        } else {
+          // Timeout - show manual fallback
+          done = true;
+          if (badge) badge.textContent = 'Processing...';
+          if (detail) detail.textContent = 'Your passes are being prepared. Check your email within a few minutes, or visit the status page.';
+          setTimeout(() => {
+            ov.setAttribute('aria-busy', 'false');
+            ov.remove();
+          }, 1000);
+        }
+      }
+
+      // Start polling immediately
+      poll();
+    })();
+  </script>
+
   <script src="app.js?v=2025-11-20" defer></script>
 </body>
 </html>
