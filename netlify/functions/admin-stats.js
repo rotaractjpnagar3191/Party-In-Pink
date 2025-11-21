@@ -270,9 +270,9 @@ exports.handler = async (event) => {
   try {
     const env = cfg();
 
-    // auth
+    // auth - accept both 'k' and 'key' query parameters, or 'x-admin-key' header
     const supplied =
-      (event.queryStringParameters && event.queryStringParameters.k) ||
+      (event.queryStringParameters && (event.queryStringParameters.k || event.queryStringParameters.key)) ||
       event.headers["x-admin-key"] ||
       "";
     if (!env.ADMIN_KEY || supplied !== env.ADMIN_KEY) {
