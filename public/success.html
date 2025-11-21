@@ -147,6 +147,7 @@
 
         // Create overlay with progress
         const ov = document.createElement('div');
+        ov.id = 'polling-overlay'; // Add ID for debugging
         ov.className = 'loader-overlay';
         ov.setAttribute('aria-busy', 'true');
         ov.innerHTML = `
@@ -156,6 +157,7 @@
             <div id="issueSub" class="muted tiny">Contacting ticketing partner…</div>
           </div>`;
         document.body.appendChild(ov);
+        console.log('[poll-init] Overlay created with ID:', ov.id);
 
         const issueTitle = ov.querySelector('#issueTitle');
         const issueSub = ov.querySelector('#issueSub');
@@ -208,14 +210,17 @@
                 
                 // Remove overlay - try multiple methods to ensure it's gone
                 console.log('[poll] Removing overlay...');
+                console.log('[poll] All overlays in DOM:', document.querySelectorAll('.loader-overlay').length);
                 ov.classList.add('hidden');
                 ov.removeAttribute('aria-busy');
+                console.log('[poll] After adding hidden class, overlay visibility:', window.getComputedStyle(ov).display);
                 setTimeout(() => {
                   try {
                     if (ov.parentNode) {
                       ov.parentNode.removeChild(ov);
+                      console.log('[poll] Overlay removed from DOM');
+                      console.log('[poll] Remaining overlays:', document.querySelectorAll('.loader-overlay').length);
                     }
-                    console.log('[poll] Overlay removed from DOM');
                   } catch (e) {
                     console.log('[poll] Error removing overlay:', e.message);
                     ov.style.display = 'none';
