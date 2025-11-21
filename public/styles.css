@@ -838,6 +838,15 @@ textarea:focus {
   padding: 0 6px;
 }
 
+/* Hero CTA row animation */
+.slide-overlay .cta-row {
+  animation: heroFadeUp .7s ease-out .2s both;
+}
+
+.slide-overlay .cta-row .btn {
+  animation: heroFadeUp .7s ease-out .3s both;
+}
+
 @media (max-width:420px) {
   .cta-row .btn {
     padding: 12px 16px;
