@@ -128,6 +128,22 @@ exports.handler = async (event) => {
       console.log(`[cf-webhook] GitHub path: ${ENV.GITHUB_OWNER}/${ENV.GITHUB_REPO}/${path}`);
     } else {
       console.log(`[cf-webhook] ✓ Order ${order_id} loaded from GitHub`);
+      
+      // CHECK: If order was already fulfilled, don't re-issue
+      if (oc.fulfilled?.status === 'ok' || oc.fulfilled?.status === 'partial') {
+        console.log('[cf-webhook] ✓ Order already fulfilled (GitHub source of truth)');
+        console.log('[cf-webhook] Fulfilled at:', oc.fulfilled.at);
+        console.log('[cf-webhook] RESPONDING: 200 Already fulfilled');
+        return respond(200, 'Already fulfilled');
+      }
+      
+      // CHECK: If konfhub registrations already exist, don't re-issue
+      if (oc.konfhub?.registrations?.length > 0) {
+        console.log('[cf-webhook] ⚠️  KonfHub registrations already exist for this order');
+        console.log('[cf-webhook] Registrations:', oc.konfhub.registrations.length, 'groups');
+        console.log('[cf-webhook] RESPONDING: 200 Tickets already issued');
+        return respond(200, 'Tickets already issued');
+      }
     }
     
     // If order not found in storage, reconstruct from webhook payload
@@ -163,12 +179,6 @@ exports.handler = async (event) => {
       };
       
       console.log(`[cf-webhook] Reconstructed order:`, { type: oc.type, passes: oc.passes, meta: oc.meta });
-    }
-
-    if (oc.fulfilled) {
-      // idempotent
-      console.log('[cf-webhook] Order already fulfilled, returning 200');
-      return respond(200, 'Already fulfilled');
     }
 
     // Prevent webhook replays: track this webhook invocation
