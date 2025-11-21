@@ -225,9 +225,9 @@ async function initIndex() {
   if (!document.querySelector(".hero")) return;
 
   const EVENT = {
-    date: "09 Nov 2025 (Sun)",
-    time: "8:00 AM – 10:00 AM",
-    venue: "Bangalore Institute of Technology",
+    date: "Sunday, December 14, 2025",
+    time: "7:30 AM onwards",
+    venue: "SSMRV College, Jayanagar, Bengaluru",
   };
   try {
     await loadConfig();
