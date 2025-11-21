@@ -8,6 +8,72 @@ const json = (s, b) => ({
   body: JSON.stringify(b),
 });
 
+// Verify an existing payment from Cashfree (for reused orders)
+async function verifyExistingPayment(ENV, cfOrderData) {
+  try {
+    if (!cfOrderData?.payment_session_id && !cfOrderData?.order_id) {
+      console.log('[create-order] No payment session to verify');
+      return { verified: false, reason: 'No payment session' };
+    }
+
+    const cfEnv = (ENV.CASHFREE_ENV || "sandbox").toLowerCase();
+    const cfBase = cfEnv === "production" 
+      ? "https://api.cashfree.com" 
+      : "https://sandbox.cashfree.com";
+    
+    const apiVersion = ENV.CASHFREE_API_VERSION && /^\d{4}-\d{2}-\d{2}$/.test(ENV.CASHFREE_API_VERSION)
+      ? ENV.CASHFREE_API_VERSION
+      : "2025-01-01";
+
+    const order_id = cfOrderData.order_id || cfOrderData.payment_session_id;
+
+    // Create AbortController with 8s timeout (don't block order creation too long)
+    const abortController = new AbortController();
+    const timeoutId = setTimeout(() => abortController.abort(), 8000);
+
+    let response;
+    try {
+      response = await fetch(`${cfBase}/pg/orders/${order_id}`, {
+        method: "GET",
+        headers: {
+          'x-client-id': ENV.CASHFREE_APP_ID,
+          'x-client-secret': ENV.CASHFREE_SECRET_KEY,
+          'x-api-version': apiVersion,
+          'content-type': 'application/json',
+        },
+        signal: abortController.signal,
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
+
+    if (!response.ok) {
+      console.log('[create-order] Could not verify payment:', response.status);
+      return { verified: false, reason: `API error ${response.status}` };
+    }
+
+    const orderData = await response.json();
+    
+    // Check if there's a successful payment
+    const hasSuccessfulPayment = orderData.payments?.some(p => 
+      p.payment_status === 'SUCCESS' || p.payment_status === 'success'
+    );
+
+    if (hasSuccessfulPayment) {
+      console.log('[create-order] ✓ Existing payment verified for reuse');
+      return { verified: true };
+    }
+
+    console.log('[create-order] No successful payment found for reused order');
+    return { verified: false, reason: 'No successful payment' };
+
+  } catch (err) {
+    console.log('[create-order] Payment verification error (non-blocking):', err.message);
+    // Don't fail - let webhook handle verification
+    return { verified: false, reason: err.message };
+  }
+}
+
 // Parse "5000:2,10000:5,15000:7,..." -> Map( amount -> passes )
 function parseSlabs(str) {
   const m = new Map();
@@ -152,15 +218,24 @@ exports.handler = async (event) => {
     // ---------- IDEMPOTENCY CHECK: Find existing unfulfilled order ----------
     const existingOrder = await findExistingOrder(ENV, email, type, amount);
     if (existingOrder && existingOrder.cashfree?.data?.payment_session_id) {
-      // Only reuse if it has a valid payment session
-      console.log(`[create-order] Reusing existing order with valid payment: ${existingOrder.order_id}`);
-      return json(200, {
-        order_id: existingOrder.order_id,
-        cf_env: (ENV.CASHFREE_ENV || "sandbox").toLowerCase(),
-        payment_link: existingOrder.cashfree?.data?.payment_link || existingOrder.cashfree?.payment_link,
-        payment_session_id: existingOrder.cashfree?.data?.payment_session_id || existingOrder.cashfree?.payment_session_id,
-        reused: true,
-      });
+      // Verify payment before reusing
+      console.log(`[create-order] Found existing order: ${existingOrder.order_id}, verifying payment...`);
+      const paymentVerified = await verifyExistingPayment(ENV, existingOrder.cashfree?.data || {});
+      
+      if (paymentVerified.verified) {
+        console.log(`[create-order] ✓ Reusing existing order with verified payment: ${existingOrder.order_id}`);
+        return json(200, {
+          order_id: existingOrder.order_id,
+          cf_env: (ENV.CASHFREE_ENV || "sandbox").toLowerCase(),
+          payment_link: existingOrder.cashfree?.data?.payment_link || existingOrder.cashfree?.payment_link,
+          payment_session_id: existingOrder.cashfree?.data?.payment_session_id || existingOrder.cashfree?.payment_session_id,
+          reused: true,
+          payment_verified: true,
+        });
+      } else {
+        console.log(`[create-order] ⚠️  Existing order payment verification failed: ${paymentVerified.reason}`);
+        // Fall through to create a new order
+      }
     }
 
     // ---------- create Cashfree order ----------

@@ -110,6 +110,40 @@ exports.handler = async (event) => {
       return respond(200, `Payment not successful (status=${status}), no tickets issued`);
     }
 
+    // --- VERIFY PAYMENT with Cashfree API ---
+    // Double-check with Cashfree's /orders/:order_id/payments endpoint
+    // This adds extra security against webhook spoofing/replay attacks
+    console.log('[cf-webhook] Verifying payment with Cashfree API...');
+    const paymentVerified = await verifyPaymentWithCashfree(ENV, order_id, paidAmt, data?.payment?.cf_payment_id);
+    
+    if (!paymentVerified.verified) {
+      console.error(`[cf-webhook] ❌ PAYMENT VERIFICATION FAILED:`, paymentVerified.reason);
+      // Do NOT issue tickets if verification fails
+      // Return 200 to stop Cashfree retries, but mark order as failed
+      oc = oc || { order_id, type: 'unknown', created_at: new Date().toISOString() };
+      oc.fulfilled = {
+        at: new Date().toISOString(),
+        status: 'failed',
+        error: `Payment verification failed: ${paymentVerified.reason}`
+      };
+      if (ENV.GITHUB_TOKEN) {
+        try {
+          await putJson(ENV, `${ENV.STORE_PATH}/orders/${order_id}.json`, oc);
+        } catch (e) {
+          console.error('[cf-webhook] Failed to save verification failure:', e.message);
+        }
+      }
+      return respond(200, `Payment verification failed: ${paymentVerified.reason}`);
+    }
+    
+    console.log('[cf-webhook] ✓ Payment verified successfully');
+    console.log('[cf-webhook] Verified details:', {
+      order_id: paymentVerified.order_id,
+      amount_verified: paymentVerified.amount,
+      payment_status: paymentVerified.payment_status,
+      settlement_status: paymentVerified.settlement_status
+    });
+
     // --- WEBHOOK DEDUPLICATION CHECK (immediate, before any processing) ---
     // Build unique webhook key from timestamp + signature (Cashfree's unique identifier for this webhook)
     const webhookKey = `${order_id}:${ts}:${sig}`;
@@ -410,3 +444,152 @@ const respond = (statusCode, body) => {
   console.log('[cf-webhook] RESPONDING:', statusCode, body);
   return response;
 };
+
+// ========== PAYMENT VERIFICATION WITH CASHFREE API ==========
+// Verify payment by querying Cashfree's API directly
+// This prevents webhook spoofing and ensures payment was actually received
+async function verifyPaymentWithCashfree(ENV, order_id, expectedAmount, cf_payment_id) {
+  try {
+    const cfEnv = (ENV.CASHFREE_ENV || 'sandbox').toLowerCase();
+    const cfBase = cfEnv === 'production' 
+      ? 'https://api.cashfree.com' 
+      : 'https://sandbox.cashfree.com';
+    
+    const apiVersion = ENV.CASHFREE_API_VERSION && /^\d{4}-\d{2}-\d{2}$/.test(ENV.CASHFREE_API_VERSION)
+      ? ENV.CASHFREE_API_VERSION
+      : '2025-01-01';
+
+    console.log('[verify-payment] Querying Cashfree API:', { order_id, cfBase, apiVersion });
+
+    // Create AbortController with 10s timeout
+    const abortController = new AbortController();
+    const timeoutId = setTimeout(() => abortController.abort(), 10000);
+
+    let response;
+    try {
+      response = await fetch(`${cfBase}/pg/orders/${order_id}`, {
+        method: 'GET',
+        headers: {
+          'x-client-id': ENV.CASHFREE_APP_ID,
+          'x-client-secret': ENV.CASHFREE_SECRET_KEY,
+          'x-api-version': apiVersion,
+          'content-type': 'application/json',
+        },
+        signal: abortController.signal,
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
+
+    if (!response.ok) {
+      console.error('[verify-payment] API error:', response.status, response.statusText);
+      return {
+        verified: false,
+        reason: `API error: ${response.status}`
+      };
+    }
+
+    const orderData = await response.json();
+    console.log('[verify-payment] Cashfree order data received');
+    console.log('[verify-payment] Order:', {
+      order_id: orderData.order_id,
+      order_amount: orderData.order_amount,
+      order_status: orderData.order_status
+    });
+
+    // ⚠️  VALIDATION CHECKS
+    
+    // 1. Check order exists and matches
+    if (orderData.order_id !== order_id) {
+      console.error('[verify-payment] Order ID mismatch:', orderData.order_id, '!==', order_id);
+      return {
+        verified: false,
+        reason: 'Order ID mismatch'
+      };
+    }
+
+    // 2. Check amount matches (within 1 paisa tolerance for rounding)
+    const amountDiff = Math.abs(Number(orderData.order_amount || 0) - expectedAmount);
+    if (amountDiff > 0.01) {
+      console.error('[verify-payment] Amount mismatch:', orderData.order_amount, '!==', expectedAmount);
+      return {
+        verified: false,
+        reason: `Amount mismatch: expected ₹${expectedAmount}, got ₹${orderData.order_amount}`
+      };
+    }
+
+    // 3. Check if order has successful payments
+    if (!orderData.payments || orderData.payments.length === 0) {
+      console.error('[verify-payment] No payments found for order');
+      return {
+        verified: false,
+        reason: 'No payments recorded for this order'
+      };
+    }
+
+    // 4. Find a successful payment
+    const successfulPayment = orderData.payments.find(p => 
+      p.payment_status === 'SUCCESS' || p.payment_status === 'success'
+    );
+
+    if (!successfulPayment) {
+      console.error('[verify-payment] No successful payment found');
+      console.log('[verify-payment] Payments:', orderData.payments.map(p => ({
+        payment_id: p.cf_payment_id,
+        status: p.payment_status,
+        amount: p.payment_amount
+      })));
+      return {
+        verified: false,
+        reason: 'No successful payment found'
+      };
+    }
+
+    console.log('[verify-payment] ✓ Successful payment found:', {
+      cf_payment_id: successfulPayment.cf_payment_id,
+      payment_amount: successfulPayment.payment_amount,
+      payment_time: successfulPayment.payment_time,
+      payment_method: successfulPayment.payment_method,
+      utr: successfulPayment.utr || 'N/A'
+    });
+
+    // 5. Verify the payment amount matches order amount
+    const paymentAmountDiff = Math.abs(Number(successfulPayment.payment_amount || 0) - expectedAmount);
+    if (paymentAmountDiff > 0.01) {
+      console.error('[verify-payment] Payment amount mismatch:', successfulPayment.payment_amount, '!==', expectedAmount);
+      return {
+        verified: false,
+        reason: `Payment amount mismatch: expected ₹${expectedAmount}, got ₹${successfulPayment.payment_amount}`
+      };
+    }
+
+    // 6. All checks passed - payment is verified
+    console.log('[verify-payment] ✅ PAYMENT VERIFIED');
+    return {
+      verified: true,
+      order_id: orderData.order_id,
+      amount: orderData.order_amount,
+      payment_status: orderData.order_status,
+      settlement_status: orderData.settlement_status,
+      payment_method: successfulPayment.payment_method,
+      payment_time: successfulPayment.payment_time,
+      cf_payment_id: successfulPayment.cf_payment_id
+    };
+
+  } catch (err) {
+    console.error('[verify-payment] Verification error:', err?.message);
+    console.error('[verify-payment] Stack:', err?.stack);
+    
+    if (err.name === 'AbortError') {
+      return {
+        verified: false,
+        reason: 'Verification request timeout'
+      };
+    }
+
+    return {
+      verified: false,
+      reason: err?.message || 'Verification failed'
+    };
+  }
+}
