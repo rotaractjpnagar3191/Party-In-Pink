@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Party In Pink</title>
+    <meta property="og:title" content="Admin Dashboard - Party In Pink">
+    <meta property="og:description" content="Manage orders, check-ins, and event statistics">
+    <meta property="og:image" content="/assets/images/pip-event.jpg">
+    <meta property="og:url" content="https://pip.rotaractjpnagar.org/admin.html">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Admin Dashboard - Party In Pink">
+    <meta name="twitter:description" content="Manage orders, check-ins, and event statistics">
+    <meta name="twitter:image" content="/assets/images/pip-event.jpg">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .admin-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid rgba(255, 105, 180, 0.3);
+        }
+
+        .admin-header h1 {
+            font-size: 32px;
+            margin: 0;
+            color: #ff69b4;
+        }
+
+        .admin-logout {
+            background-color: #ff69b4;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .admin-logout:hover {
+            background-color: #ff1493;
+        }
+
+        .auth-section {
+            background: linear-gradient(135deg, rgba(255, 105, 180, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%);
+            border: 1px solid rgba(255, 105, 180, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .auth-input-group {
+            display: flex;
+            gap: 10px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .auth-input-group input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid rgba(255, 105, 180, 0.3);
+            border-radius: 5px;
+            background-color: rgba(255, 255, 255, 0.05);
+            color: white;
+            font-size: 14px;
+        }
+
+        .auth-input-group input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .auth-input-group button {
+            padding: 10px 20px;
+            background-color: #ff69b4;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .auth-input-group button:hover {
+            background-color: #ff1493;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, rgba(255, 105, 180, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%);
+            border: 1px solid rgba(255, 105, 180, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #ff69b4;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .admin-section {
+            background: linear-gradient(135deg, rgba(255, 105, 180, 0.05) 0%, rgba(147, 51, 234, 0.05) 100%);
+            border: 1px solid rgba(255, 105, 180, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .admin-section h2 {
+            color: #ff69b4;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .section-controls button {
+            padding: 10px 15px;
+            background-color: #ff69b4;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .section-controls button:hover {
+            background-color: #ff1493;
+        }
+
+        .section-controls button:disabled {
+            background-color: rgba(255, 105, 180, 0.5);
+            cursor: not-allowed;
+        }
+
+        .tier-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tier-badge {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 105, 180, 0.3);
+            border-radius: 5px;
+            padding: 10px;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        .tier-badge strong {
+            display: block;
+            color: #ff69b4;
+            font-size: 16px;
+            margin-bottom: 3px;
+        }
+
+        .orders-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            margin-top: 15px;
+        }
+
+        .orders-table thead {
+            background: rgba(255, 105, 180, 0.1);
+        }
+
+        .orders-table th {
+            padding: 12px;
+            text-align: left;
+            color: #ff69b4;
+            font-weight: 600;
+            border-bottom: 1px solid rgba(255, 105, 180, 0.2);
+        }
+
+        .orders-table td {
+            padding: 12px;
+            border-bottom: 1px solid rgba(255, 105, 180, 0.1);
+        }
+
+        .orders-table tr:hover {
+            background: rgba(255, 105, 180, 0.05);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-ok {
+            background-color: rgba(76, 175, 80, 0.3);
+            color: #4caf50;
+        }
+
+        .status-failed {
+            background-color: rgba(244, 67, 54, 0.3);
+            color: #f44336;
+        }
+
+        .status-pending {
+            background-color: rgba(255, 193, 7, 0.3);
+            color: #ffc107;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+
+        .action-buttons button {
+            padding: 4px 8px;
+            font-size: 12px;
+            background-color: rgba(255, 105, 180, 0.3);
+            border: 1px solid #ff69b4;
+            color: #ff69b4;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        .action-buttons button:hover {
+            background-color: #ff69b4;
+            color: white;
+        }
+
+        .search-filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .search-filters input,
+        .search-filters select {
+            padding: 8px;
+            border: 1px solid rgba(255, 105, 180, 0.3);
+            border-radius: 5px;
+            background-color: rgba(255, 255, 255, 0.05);
+            color: white;
+            font-size: 13px;
+        }
+
+        .search-filters input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #ff69b4;
+        }
+
+        .error-message {
+            background-color: rgba(244, 67, 54, 0.2);
+            border: 1px solid #f44336;
+            color: #ff6f6f;
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .success-message {
+            background-color: rgba(76, 175, 80, 0.2);
+            border: 1px solid #4caf50;
+            color: #81c784;
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: #1a1a2e;
+            border: 1px solid rgba(255, 105, 180, 0.3);
+            border-radius: 10px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 105, 180, 0.2);
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            color: #ff69b4;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: #ff69b4;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .order-detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 105, 180, 0.1);
+        }
+
+        .order-detail-label {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 13px;
+        }
+
+        .order-detail-value {
+            color: #ff69b4;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .admin-header {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .orders-table {
+                font-size: 12px;
+            }
+
+            .orders-table th,
+            .orders-table td {
+                padding: 8px;
+            }
+
+            .search-filters {
+                flex-direction: column;
+            }
+
+            .search-filters input,
+            .search-filters select {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Authentication Section -->
+        <div id="authSection" class="auth-section">
+            <h2>Admin Access Required</h2>
+            <div class="auth-input-group">
+                <input type="password" id="adminKey" placeholder="Enter admin key...">
+                <button onclick="authenticate()">Login</button>
+            </div>
+            <p id="authError" style="color: #f44336; margin: 10px 0 0 0; display: none;"></p>
+        </div>
+
+        <!-- Admin Dashboard (hidden until authenticated) -->
+        <div id="dashboard" style="display: none;">
+            <div class="admin-header">
+                <h1>📊 Admin Dashboard</h1>
+                <button class="admin-logout" onclick="logout()">Logout</button>
+            </div>
+
+            <!-- Statistics Section -->
+            <div id="statsSection">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="statTotalOrders">-</div>
+                        <div class="stat-label">Total Orders</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statTotalRaised">-</div>
+                        <div class="stat-label">Amount Raised</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statFulfilled">-</div>
+                        <div class="stat-label">Passes Issued</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statFailed">-</div>
+                        <div class="stat-label">Failed</div>
+                    </div>
+                </div>
+
+                <!-- Tier Breakdown -->
+                <div class="admin-section" style="margin-top: 20px;">
+                    <h2>🎯 Tier Breakdown</h2>
+                    <div class="tier-summary">
+                        <div class="tier-badge">
+                            <strong id="tierSupporterCount">0</strong>
+                            <span>Supporter</span>
+                        </div>
+                        <div class="tier-badge">
+                            <strong id="tierWellwisherCount">0</strong>
+                            <span>Wellwisher</span>
+                        </div>
+                        <div class="tier-badge">
+                            <strong id="tierSilverCount">0</strong>
+                            <span>Silver</span>
+                        </div>
+                        <div class="tier-badge">
+                            <strong id="tierGoldCount">0</strong>
+                            <span>Gold</span>
+                        </div>
+                        <div class="tier-badge">
+                            <strong id="tierPlatinumCount">0</strong>
+                            <span>Platinum</span>
+                        </div>
+                        <div class="tier-badge">
+                            <strong id="tierDiamondCount">0</strong>
+                            <span>Diamond</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Orders Management Section -->
+            <div class="admin-section">
+                <h2>📋 Order Management</h2>
+                <div class="section-controls">
+                    <button onclick="loadAllOrders()">🔄 Refresh Orders</button>
+                    <button onclick="exportToCSV()">📥 Export to CSV</button>
+                    <button onclick="clearFilters()">✖️ Clear Filters</button>
+                </div>
+
+                <!-- Search & Filters -->
+                <div class="search-filters">
+                    <input type="text" id="searchQuery" placeholder="Search by Order ID or Email...">
+                    <select id="filterStatus">
+                        <option value="">All Status</option>
+                        <option value="ok">Fulfilled</option>
+                        <option value="failed">Failed</option>
+                        <option value="pending">Pending</option>
+                    </select>
+                    <select id="filterType">
+                        <option value="">All Types</option>
+                        <option value="bulk">Bulk Registration</option>
+                        <option value="donation">Donation</option>
+                    </select>
+                    <button onclick="applyFilters()" style="background-color: #ff69b4; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer;">Search</button>
+                </div>
+
+                <div id="ordersContainer">
+                    <div class="loading">Loading orders...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Detail Modal -->
+    <div id="orderModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Order Details</h2>
+                <button class="modal-close" onclick="closeOrderModal()">×</button>
+            </div>
+            <div id="orderDetailContent"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentAdminKey = null;
+        let allOrders = [];
+        let filteredOrders = [];
+
+        function authenticate() {
+            const key = document.getElementById('adminKey').value;
+            if (!key) {
+                showAuthError('Please enter admin key');
+                return;
+            }
+
+            // In production, validate against server
+            // For now, store locally
+            currentAdminKey = key;
+            document.getElementById('authSection').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+            loadStats();
+            loadAllOrders();
+        }
+
+        function logout() {
+            currentAdminKey = null;
+            document.getElementById('authSection').style.display = 'block';
+            document.getElementById('dashboard').style.display = 'none';
+            document.getElementById('adminKey').value = '';
+            allOrders = [];
+            filteredOrders = [];
+        }
+
+        function showAuthError(message) {
+            const errorEl = document.getElementById('authError');
+            errorEl.textContent = message;
+            errorEl.style.display = 'block';
+        }
+
+        async function loadStats() {
+            try {
+                const response = await fetch(`/api/admin-stats?key=${currentAdminKey}`);
+                if (!response.ok) throw new Error('Failed to load stats');
+                
+                const data = await response.json();
+                
+                // Update stat cards
+                document.getElementById('statTotalOrders').textContent = data.total_orders;
+                document.getElementById('statTotalRaised').textContent = `₹${(data.total_raised || 0).toLocaleString('en-IN')}`;
+                document.getElementById('statFulfilled').textContent = data.passed;
+                document.getElementById('statFailed').textContent = data.failed;
+
+                // Update tier breakdown
+                document.getElementById('tierSupporterCount').textContent = data.by_tier?.supporter || 0;
+                document.getElementById('tierWellwisherCount').textContent = data.by_tier?.wellwisher || 0;
+                document.getElementById('tierSilverCount').textContent = data.by_tier?.silver || 0;
+                document.getElementById('tierGoldCount').textContent = data.by_tier?.gold || 0;
+                document.getElementById('tierPlatinumCount').textContent = data.by_tier?.platinum || 0;
+                document.getElementById('tierDiamondCount').textContent = data.by_tier?.diamond || 0;
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        async function loadAllOrders() {
+            const container = document.getElementById('ordersContainer');
+            container.innerHTML = '<div class="loading">Loading orders...</div>';
+
+            try {
+                // In production, fetch from /api/admin-orders endpoint
+                // For now, show placeholder
+                container.innerHTML = `
+                    <p style="color: rgba(255, 255, 255, 0.7); text-align: center;">
+                        Orders will be displayed here. Implement /api/admin-orders endpoint to fetch all orders.
+                    </p>
+                    <div class="section-controls" style="margin-top: 20px;">
+                        <button onclick="loadSampleOrders()">📦 Load Sample Orders (Demo)</button>
+                    </div>
+                `;
+            } catch (error) {
+                container.innerHTML = `<div class="error-message">Error loading orders: ${error.message}</div>`;
+            }
+        }
+
+        function loadSampleOrders() {
+            allOrders = [
+                {
+                    order_id: 'pip_1234567890_abc123',
+                    type: 'bulk',
+                    name: 'XYZ Club',
+                    email: 'club@example.com',
+                    amount: 2388,
+                    passes: 12,
+                    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+                    fulfilled: { status: 'ok', count: 12, at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString() }
+                },
+                {
+                    order_id: 'pip_1234567891_def456',
+                    type: 'donation',
+                    name: 'Rajesh Kumar',
+                    email: 'rajesh@example.com',
+                    amount: 10000,
+                    passes: 5,
+                    created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+                    fulfilled: { status: 'ok', count: 5, at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString() }
+                },
+                {
+                    order_id: 'pip_1234567892_ghi789',
+                    type: 'donation',
+                    name: 'Priya Sharma',
+                    email: 'priya@example.com',
+                    amount: 25000,
+                    passes: 10,
+                    created_at: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+                    fulfilled: { status: 'ok', count: 10, at: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString() }
+                },
+                {
+                    order_id: 'pip_1234567893_jkl012',
+                    type: 'bulk',
+                    name: 'ABC Corporation',
+                    email: 'hr@abc.com',
+                    amount: 3980,
+                    passes: 20,
+                    created_at: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+                    fulfilled: { status: 'failed', count: 0 }
+                },
+                {
+                    order_id: 'pip_1234567894_mno345',
+                    type: 'donation',
+                    name: 'Anonymous Donor',
+                    email: 'anon@example.com',
+                    amount: 5000,
+                    passes: 2,
+                    created_at: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
+                    fulfilled: { status: 'pending' }
+                }
+            ];
+            filteredOrders = [...allOrders];
+            renderOrdersTable();
+        }
+
+        function renderOrdersTable() {
+            const container = document.getElementById('ordersContainer');
+            
+            if (filteredOrders.length === 0) {
+                container.innerHTML = '<p style="color: rgba(255, 255, 255, 0.7); text-align: center;">No orders found</p>';
+                return;
+            }
+
+            let html = '<table class="orders-table"><thead><tr>';
+            html += '<th>Order ID</th>';
+            html += '<th>Type</th>';
+            html += '<th>Name / Email</th>';
+            html += '<th>Amount</th>';
+            html += '<th>Passes</th>';
+            html += '<th>Status</th>';
+            html += '<th>Actions</th>';
+            html += '</tr></thead><tbody>';
+
+            filteredOrders.forEach(order => {
+                const statusClass = order.fulfilled.status === 'ok' ? 'status-ok' : 
+                                   order.fulfilled.status === 'failed' ? 'status-failed' : 'status-pending';
+                const createdDate = new Date(order.created_at).toLocaleDateString();
+                
+                html += `<tr>
+                    <td><strong>${order.order_id}</strong></td>
+                    <td>${order.type === 'bulk' ? '👥 Bulk' : '💳 Donation'}</td>
+                    <td>
+                        <div>${order.name}</div>
+                        <small style="color: rgba(255, 255, 255, 0.6);">${order.email}</small>
+                    </td>
+                    <td>₹${order.amount.toLocaleString('en-IN')}</td>
+                    <td>${order.passes}</td>
+                    <td><span class="status-badge ${statusClass}">${order.fulfilled.status}</span></td>
+                    <td>
+                        <div class="action-buttons">
+                            <button onclick="viewOrderDetail('${order.order_id}')">👁️ View</button>
+                            <button onclick="resendOrder('${order.order_id}')">📧 Resend</button>
+                            <button onclick="checkOrder('${order.order_id}')">🔄 Check</button>
+                        </div>
+                    </td>
+                </tr>`;
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        function applyFilters() {
+            const searchQuery = document.getElementById('searchQuery').value.toLowerCase();
+            const statusFilter = document.getElementById('filterStatus').value;
+            const typeFilter = document.getElementById('filterType').value;
+
+            filteredOrders = allOrders.filter(order => {
+                const matchSearch = !searchQuery || 
+                    order.order_id.toLowerCase().includes(searchQuery) ||
+                    order.email.toLowerCase().includes(searchQuery);
+                
+                const matchStatus = !statusFilter || order.fulfilled.status === statusFilter;
+                const matchType = !typeFilter || order.type === typeFilter;
+
+                return matchSearch && matchStatus && matchType;
+            });
+
+            renderOrdersTable();
+        }
+
+        function clearFilters() {
+            document.getElementById('searchQuery').value = '';
+            document.getElementById('filterStatus').value = '';
+            document.getElementById('filterType').value = '';
+            filteredOrders = [...allOrders];
+            renderOrdersTable();
+        }
+
+        function viewOrderDetail(orderId) {
+            const order = allOrders.find(o => o.order_id === orderId);
+            if (!order) return;
+
+            const modal = document.getElementById('orderModal');
+            const content = document.getElementById('orderDetailContent');
+            
+            const createdDate = new Date(order.created_at).toLocaleString();
+            const fulfilledDate = order.fulfilled.at ? new Date(order.fulfilled.at).toLocaleString() : 'N/A';
+            
+            content.innerHTML = `
+                <div class="order-detail-row">
+                    <span class="order-detail-label">Order ID</span>
+                    <span class="order-detail-value">${order.order_id}</span>
+                </div>
+                <div class="order-detail-row">
+                    <span class="order-detail-label">Type</span>
+                    <span class="order-detail-value">${order.type === 'bulk' ? '👥 Bulk Registration' : '💳 Donation'}</span>
+                </div>
+                <div class="order-detail-row">
+                    <span class="order-detail-label">Name</span>
+                    <span class="order-detail-value">${order.name}</span>
+                </div>
+                <div class="order-detail-row">
+                    <span class="order-detail-label">Email</span>
+                    <span class="order-detail-value">${order.email}</span>
+                </div>
+                <div class="order-detail-row">
+                    <span class="order-detail-label">Amount</span>
+                    <span class="order-detail-value">₹${order.amount.toLocaleString('en-IN')}</span>
+                </div>
+                <div class="order-detail-row">
+                    <span class="order-detail-label">Passes Allocated</span>
+                    <span class="order-detail-value">${order.passes}</span>
+                </div>
+                <div class="order-detail-row">
+                    <span class="order-detail-label">Created</span>
+                    <span class="order-detail-value">${createdDate}</span>
+                </div>
+                <div class="order-detail-row">
+                    <span class="order-detail-label">Status</span>
+                    <span class="order-detail-value">${order.fulfilled.status.toUpperCase()}</span>
+                </div>
+                <div class="order-detail-row">
+                    <span class="order-detail-label">Passes Issued</span>
+                    <span class="order-detail-value">${order.fulfilled.count || 0}</span>
+                </div>
+                <div class="order-detail-row">
+                    <span class="order-detail-label">Issued At</span>
+                    <span class="order-detail-value">${fulfilledDate}</span>
+                </div>
+            `;
+            
+            modal.classList.add('show');
+        }
+
+        function closeOrderModal() {
+            document.getElementById('orderModal').classList.remove('show');
+        }
+
+        async function resendOrder(orderId) {
+            if (!confirm('Resend email for order ' + orderId + '?')) return;
+
+            try {
+                const response = await fetch(`/api/admin-resend?key=${currentAdminKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ order_id: orderId })
+                });
+
+                if (response.ok) {
+                    alert('Email resent successfully!');
+                } else {
+                    alert('Failed to resend email');
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function checkOrder(orderId) {
+            try {
+                const response = await fetch(`/api/order-status?q=${orderId}`);
+                const data = await response.json();
+
+                if (data.ok) {
+                    alert(`Status: ${data.order.fulfilled.status}\nPasses: ${data.order.fulfilled.count}`);
+                } else {
+                    alert('Order not found');
+                }
+            } catch (error) {
+                alert('Error checking order');
+            }
+        }
+
+        function exportToCSV() {
+            if (filteredOrders.length === 0) {
+                alert('No orders to export');
+                return;
+            }
+
+            let csv = 'Order ID,Type,Name,Email,Amount,Passes,Status,Created At\n';
+            
+            filteredOrders.forEach(order => {
+                const row = [
+                    order.order_id,
+                    order.type,
+                    `"${order.name}"`,
+                    order.email,
+                    order.amount,
+                    order.passes,
+                    order.fulfilled.status,
+                    order.created_at
+                ].join(',');
+                csv += row + '\n';
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `orders_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('orderModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeOrderModal();
+            }
+        });
+
+        // Load sample data on first load (demo mode)
+        window.addEventListener('load', function() {
+            // In production, this will be automatic after auth
+        });
+    </script>
+</body>
+</html>
