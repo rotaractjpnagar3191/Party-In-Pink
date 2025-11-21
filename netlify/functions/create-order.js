@@ -1,5 +1,5 @@
 // create-order.js
-const { getConfig, normalizeINPhone, isValidINMobile, mapAmountToPasses } = require("./_config");
+const { getConfig, normalizeINPhone, isValidINMobile, mapAmountToPasses, getTierName } = require("./_config");
 const { putJson, getJson } = require("./_github");
 
 const json = (s, b) => ({
@@ -133,7 +133,7 @@ exports.handler = async (event) => {
         if (!slabMap.has(amt)) return json(400, { error: "Invalid tier or amount" });
         amount = amt;
         passes = slabMap.get(amt) || 0;
-        meta = { tier: amt };
+        meta = { tier: getTierName(amt) };
       } else if (custom && custom > 0) {
         amount = custom;
         // Map custom amount to passes using slabs
@@ -143,7 +143,7 @@ exports.handler = async (event) => {
           1,  // below minimum gets 1 complimentary pass
           ENV.SLAB_ABOVE_MAX || 'TOP'
         );
-        meta = { tier: custom, amount: custom };
+        meta = { tier: getTierName(custom), amount: custom };
       } else {
         return json(400, { error: "Invalid tier or amount" });
       }

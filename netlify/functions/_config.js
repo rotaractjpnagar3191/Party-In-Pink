@@ -93,4 +93,17 @@ function mapAmountToPasses(amount, slabs, belowMin = 0, aboveMaxPolicy = 'TOP') 
   return chosen;
 }
 
-module.exports = { getConfig, normalizeINPhone, isValidINMobile, mapAmountToPasses };
+// Map donation amount to tier name based on ranges
+function getTierName(amount) {
+  const amt = Number(amount) || 0;
+  
+  if (amt >= 25000) return 'Diamond';
+  if (amt >= 20000) return 'Platinum';
+  if (amt >= 15000) return 'Gold';
+  if (amt >= 10000) return 'Silver';
+  if (amt >= 5000) return 'Wellwisher';
+  if (amt >= 1000) return 'Supporter';
+  return 'Supporter';
+}
+
+module.exports = { getConfig, normalizeINPhone, isValidINMobile, mapAmountToPasses, getTierName };
