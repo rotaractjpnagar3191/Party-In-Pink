@@ -99,7 +99,16 @@ exports.handler = async (event) => {
     }
     
     if (status !== 'SUCCESS' && ALLOW_TEST_PING) return respond(200, 'Test ping accepted');
-    if (status !== 'SUCCESS') return respond(200, 'Ignoring non-success');
+    
+    // ⚠️  CRITICAL: PAYMENT MUST BE SUCCESSFUL TO PROCEED
+    // If status is not SUCCESS, log and reject WITHOUT issuing tickets
+    if (status !== 'SUCCESS') {
+      console.log(`[cf-webhook] ⚠️  PAYMENT FAILED OR PENDING: status=${status}`);
+      console.log(`[cf-webhook] order_id=${order_id}, amount=${paidAmt}`);
+      console.log('[cf-webhook] NOT issuing tickets for non-successful payment');
+      console.log('[cf-webhook] Returning 200 to prevent Cashfree retries');
+      return respond(200, `Payment not successful (status=${status}), no tickets issued`);
+    }
 
     // --- WEBHOOK DEDUPLICATION CHECK (immediate, before any processing) ---
     // Build unique webhook key from timestamp + signature (Cashfree's unique identifier for this webhook)
@@ -187,34 +196,35 @@ exports.handler = async (event) => {
     
     // If order not found in storage, reconstruct from webhook payload
     if (!oc) {
+      console.log(`[cf-webhook] ⚠️  Order ${order_id} NOT created yet in system`);
+      console.log(`[cf-webhook] This webhook may have arrived before create-order.js completed`);
       console.log(`[cf-webhook] Reconstructing order from webhook...`);
       
       // Try to extract type from order_note (format: "type|tier|quantity" or "type|club_type|quantity")
       const note = data?.order?.order_note || '';
       const noteParts = String(note).split('|');
       const noteType = noteParts[0];
-      const noteMetaField = noteParts[1]; // tier or club_type
-      const noteQuantity = noteParts[2];  // for bulk
       
-      const inferredType = ['bulk', 'donation'].includes(String(noteType).toLowerCase()) 
-        ? String(noteType).toLowerCase() 
-        : 'donation';
-      
-      console.log(`[cf-webhook] Order note parsed: type=${noteType}, meta=${noteMetaField}, qty=${noteQuantity}`);
+      // ⚠️  VALIDATION: Can only reconstruct if we have minimum info
+      if (!noteType || !['bulk', 'donation'].includes(noteType)) {
+        console.error('[cf-webhook] ❌ Cannot reconstruct order: missing or invalid type in order_note');
+        console.error('[cf-webhook] order_note:', note);
+        console.error('[cf-webhook] This order will be skipped');
+        return respond(200, 'Order reconstruction failed: missing type in order_note');
+      }
       
       oc = {
         order_id,
-        type: inferredType,  // CRITICAL: must be 'bulk' or 'donation'
-        amount: paidAmt,
-        passes: noteQuantity ? parseInt(noteQuantity, 10) : 1,  // For bulk: quantity, else: 1 (recalc below)
+        type: noteType,
+        name: data?.customer_details?.customer_name || 'Unknown',
         email: data?.customer_details?.customer_email || 'unknown@example.com',
         phone: data?.customer_details?.customer_phone || '',
-        name: data?.customer_details?.customer_name || 'Guest',
+        amount: paidAmt,
+        passes: 0,
         recipients: [data?.customer_details?.customer_email || 'unknown@example.com'],
+        meta: { tier: noteType === 'donation' ? 'WEBHOOK_RECONSTRUCTED' : undefined },
         created_at: new Date().toISOString(),
-        reconstructed_from_webhook: true,
-        note: `Reconstructed from webhook: ${note}`,
-        meta: noteType === 'bulk' ? { quantity: parseInt(noteQuantity, 10), club_type: noteMetaField } : { tier: noteMetaField }
+        cashfree: { env: (ENV.CASHFREE_ENV || 'sandbox').toLowerCase(), order: data?.order || {} },
       };
       
       console.log(`[cf-webhook] Reconstructed order:`, { type: oc.type, passes: oc.passes, meta: oc.meta });
@@ -277,6 +287,23 @@ exports.handler = async (event) => {
     
     console.log('[cf-webhook] Computed passes:', oc.passes, 'Type:', oc.type, 'Amount:', oc.amount);
     console.log('[cf-webhook] Recipient emails:', oc.recipients);
+
+    // ⚠️  VALIDATION: Must have passes > 0 to issue tickets
+    if (!oc.passes || Number(oc.passes) <= 0) {
+      console.error(`[cf-webhook] ❌ VALIDATION FAILED: passes must be > 0`);
+      console.error(`[cf-webhook] Computed passes: ${oc.passes}, Type: ${oc.type}, Amount: ${oc.amount}`);
+      oc.fulfilled = { at: new Date().toISOString(), status: 'failed', error: 'Invalid passes count' };
+      await putJson(ENV, path, oc);
+      return respond(400, `Invalid order: passes must be > 0 (got ${oc.passes})`);
+    }
+
+    // ⚠️  VALIDATION: Must have recipients to issue tickets
+    if (!oc.recipients || oc.recipients.length === 0) {
+      console.error(`[cf-webhook] ❌ VALIDATION FAILED: no recipients`);
+      oc.fulfilled = { at: new Date().toISOString(), status: 'failed', error: 'No recipients' };
+      await putJson(ENV, path, oc);
+      return respond(400, 'Invalid order: no recipients');
+    }
 
     // --- Issue via KonfHub (KonfHub sends attendee emails) ---
     let issued;
