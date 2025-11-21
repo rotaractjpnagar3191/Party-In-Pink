@@ -534,11 +534,17 @@
                 return;
             }
 
-            // In production, validate against server
-            // For now, store locally
+            // Validate against hardcoded password
+            if (key !== 'pass123') {
+                showAuthError('Invalid admin key');
+                document.getElementById('adminKey').value = '';
+                return;
+            }
+
             currentAdminKey = key;
             document.getElementById('authSection').style.display = 'none';
             document.getElementById('dashboard').style.display = 'block';
+            document.getElementById('authError').style.display = 'none';
             loadStats();
             loadAllOrders();
         }
@@ -588,17 +594,67 @@
             container.innerHTML = '<div class="loading">Loading orders...</div>';
 
             try {
-                // In production, fetch from /api/admin-orders endpoint
-                // For now, show placeholder
+                // Fetch all orders from the GitHub storage via API
+                // We'll use the config endpoint to get API details, then fetch orders
+                const response = await fetch('config/event.json');
+                const config = await response.json();
+                
+                // Fetch order data - use admin-stats which already aggregates
+                const statsResponse = await fetch(`/api/admin-stats?key=${currentAdminKey}`);
+                if (!statsResponse.ok) throw new Error('Failed to load stats');
+                
+                const statsData = await statsResponse.json();
+                
+                // For now, show aggregated data and button to load demo
                 container.innerHTML = `
-                    <p style="color: rgba(255, 255, 255, 0.7); text-align: center;">
-                        Orders will be displayed here. Implement /api/admin-orders endpoint to fetch all orders.
-                    </p>
-                    <div class="section-controls" style="margin-top: 20px;">
-                        <button onclick="loadSampleOrders()">📦 Load Sample Orders (Demo)</button>
+                    <div style="background: linear-gradient(135deg, rgba(255, 105, 180, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%); border: 1px solid rgba(255, 105, 180, 0.3); border-radius: 10px; padding: 20px; margin-bottom: 20px;">
+                        <h3 style="color: #ff69b4; margin-top: 0;">Consolidated Data</h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                            <div style="background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 8px; border-left: 3px solid #ff69b4;">
+                                <div style="font-size: 24px; font-weight: 800; color: #ff69b4;" id="consolBulkTickets">-</div>
+                                <div style="font-size: 13px; color: rgba(255, 255, 255, 0.7);">Bulk Tickets Sold</div>
+                            </div>
+                            <div style="background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 8px; border-left: 3px solid #ff69b4;">
+                                <div style="font-size: 24px; font-weight: 800; color: #ff69b4;" id="consolDonationAmount">-</div>
+                                <div style="font-size: 13px; color: rgba(255, 255, 255, 0.7);">Donation Amount</div>
+                            </div>
+                            <div style="background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 8px; border-left: 3px solid #ff69b4;">
+                                <div style="font-size: 24px; font-weight: 800; color: #ff69b4;" id="consolTotalBulkOrders">-</div>
+                                <div style="font-size: 13px; color: rgba(255, 255, 255, 0.7);">Bulk Orders</div>
+                            </div>
+                            <div style="background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 8px; border-left: 3px solid #ff69b4;">
+                                <div style="font-size: 24px; font-weight: 800; color: #ff69b4;" id="consolTotalDonationOrders">-</div>
+                                <div style="font-size: 13px; color: rgba(255, 255, 255, 0.7);">Donation Orders</div>
+                            </div>
+                        </div>
                     </div>
                 `;
+                
+                if (statsData.ok && statsData.recent_orders) {
+                    // Calculate consolidated metrics
+                    let bulkTicketCount = 0;
+                    let totalDonationAmount = 0;
+                    let bulkOrderCount = 0;
+                    let donationOrderCount = 0;
+                    
+                    statsData.recent_orders.forEach(order => {
+                        if (order.type === 'bulk') {
+                            bulkTicketCount += (order.passes || 0);
+                            bulkOrderCount++;
+                        } else if (order.type === 'donation') {
+                            totalDonationAmount += (order.amount || 0);
+                            donationOrderCount++;
+                        }
+                    });
+                    
+                    document.getElementById('consolBulkTickets').textContent = bulkTicketCount.toLocaleString('en-IN');
+                    document.getElementById('consolDonationAmount').textContent = '₹' + totalDonationAmount.toLocaleString('en-IN');
+                    document.getElementById('consolTotalBulkOrders').textContent = bulkOrderCount;
+                    document.getElementById('consolTotalDonationOrders').textContent = donationOrderCount;
+                }
+                
             } catch (error) {
+                console.error('Error loading orders:', error);
                 container.innerHTML = `<div class="error-message">Error loading orders: ${error.message}</div>`;
             }
         }
