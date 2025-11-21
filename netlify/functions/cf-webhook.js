@@ -346,6 +346,9 @@ exports.handler = async (event) => {
       count: issued.total
     };
 
+    // Clear processing lock now that we're done
+    oc.processing = null;
+
     console.log('[cf-webhook] About to save order to GitHub:');
     console.log('[cf-webhook] Path:', path);
     console.log('[cf-webhook] Order fulfilled:', oc.fulfilled);
