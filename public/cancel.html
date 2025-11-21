@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Payment Cancelled · Party In Pink</title>
+  <meta name="theme-color" content="#E91E63" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css?v=20251120-004" />
+</head>
+<body class="theme-pip">
+  <div id="app-preloader" aria-hidden="true"><div class="spinner"></div></div>
+
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="index.html">
+        <img src="assets/logos/PiP_Black.png" alt="Party In Pink Logo" onerror="this.style.display='none'">
+      </a>
+      <nav class="main-nav" aria-label="Primary">
+        <a href="about.html">About Us</a>
+        <a href="register.html">Single Registration</a>
+        <a href="bulk.html">Bulk Registration</a>
+        <a href="donate.html" class="btn btn-primary btn-sm">Donate</a>
+      </nav>
+      <button id="navToggle" class="nav-toggle" aria-label="Toggle Menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <main class="section">
+    <div class="wrap">
+      <div class="card success-card center" id="cancelStatus">
+        <div class="checkmark" style="color: #FF6B6B; font-size: 3rem;">✕</div>
+        <h1 id="cancelLine">Payment Cancelled</h1>
+        <p id="cancelMsg" class="muted"></p>
+        <div id="statusBadge" style="margin-top: 10px; font-weight: 600; color: #FF6B6B;"></div>
+        <div id="statusDetail" class="muted tiny" style="margin-top: 5px;"></div>
+
+        <div id="orderIdBox" style="margin-top: 2rem; padding: 1rem; background: rgba(255, 107, 107, 0.1); border-left: 3px solid #FF6B6B; border-radius: 8px; display: none;">
+          <strong style="color: #FF6B6B; display: block; margin-bottom: 0.5rem;">Order ID:</strong>
+          <code id="orderId" style="background: #0F0F12; color: #bbb; padding: 0.5rem; border-radius: 4px; display: inline-block; font-family: monospace; word-break: break-all;"></code>
+        </div>
+
+        <div id="nextSteps" style="margin-top: 2rem; padding: 1rem; background: rgba(255, 193, 7, 0.1); border-left: 3px solid #FFC107; border-radius: 8px; display: none;">
+          <strong style="color: #FFC107; display: block; margin-bottom: 0.75rem;">What Now?</strong>
+          <ul style="margin: 0; padding-left: 1.5rem; color: #bbb; line-height: 1.8;">
+            <li>Your payment was cancelled or failed</li>
+            <li>No charges have been made to your account</li>
+            <li>You can try registering again at any time</li>
+            <li>If you have questions, contact us at rotaractjpnagar@gmail.com</li>
+          </ul>
+        </div>
+
+        <div class="cta-row mt-lg">
+          <a href="index.html" class="btn btn-ghost">Home</a>
+          <a href="register.html" id="retryBtn" class="btn btn-primary">Try Again</a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="footer-cols">
+        <div>
+          <h4>Party In Pink</h4>
+          <p>Rotaract Club of Bangalore JP Nagar</p>
+          <p class="muted">© <span id="year"></span> All rights reserved.</p>
+        </div>
+        <nav>
+          <h4>Quick Links</h4>
+          <a href="register.html">Single Registration</a>
+          <a href="bulk.html">Bulk Registration</a>
+          <a href="donate.html">Donate</a>
+        </nav>
+        <div>
+          <h4>Contact</h4>
+          <p><a href="mailto:rotaractjpnagar@gmail.com">rotaractjpnagar@gmail.com</a></p>
+          <p><a href="https://www.rotaractjpnagar.org/pip" target="_blank" rel="noopener noreferrer">rotaractjpnagar.org/pip</a></p>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Lightweight fill for title/message
+    (function () {
+      const qs = new URLSearchParams(location.search);
+      const type = (qs.get('type') || qs.get('t') || '').toLowerCase();
+      const order = qs.get('order') || qs.get('o') || '';
+      const email = qs.get('email') || qs.get('e') || localStorage.getItem('pip_last_email') || '';
+
+      const title = document.getElementById('cancelLine');
+      const msg = document.getElementById('cancelMsg');
+      const orderBox = document.getElementById('orderIdBox');
+      const orderIdEl = document.getElementById('orderId');
+      const nextSteps = document.getElementById('nextSteps');
+      const retryBtn = document.getElementById('retryBtn');
+
+      let headline = 'Payment Cancelled';
+      if (type.includes('bulk')) headline = 'Bulk Registration Cancelled';
+      else if (type.includes('donation')) headline = 'Donation Cancelled';
+      else if (type.includes('single') || type.includes('registration')) headline = 'Registration Cancelled';
+
+      title.textContent = headline;
+      msg.textContent = email
+        ? `Payment for ${email} was cancelled.`
+        : 'Your payment was cancelled.';
+
+      // Show order ID
+      if (order) {
+        orderBox.style.display = 'block';
+        orderIdEl.textContent = order;
+      }
+
+      // Show next steps
+      if (order || email) {
+        nextSteps.style.display = 'block';
+      }
+
+      // Redirect retry button to appropriate page
+      if (retryBtn) {
+        if (type.includes('bulk')) {
+          retryBtn.href = 'bulk.html';
+          retryBtn.textContent = 'Try Bulk Registration Again';
+        } else if (type.includes('donation')) {
+          retryBtn.href = 'donate.html';
+          retryBtn.textContent = 'Try Donating Again';
+        } else {
+          retryBtn.href = 'register.html';
+          retryBtn.textContent = 'Try Registration Again';
+        }
+      }
+    })();
+  </script>
+
+  <script src="app.js?v=2025-11-20" defer></script>
+</body>
+</html>
