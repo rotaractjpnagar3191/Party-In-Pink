@@ -151,8 +151,9 @@ exports.handler = async (event) => {
 
     // ---------- IDEMPOTENCY CHECK: Find existing unfulfilled order ----------
     const existingOrder = await findExistingOrder(ENV, email, type, amount);
-    if (existingOrder) {
-      console.log(`[create-order] Returning existing order for idempotency: ${existingOrder.order_id}`);
+    if (existingOrder && existingOrder.cashfree?.data?.payment_session_id) {
+      // Only reuse if it has a valid payment session
+      console.log(`[create-order] Reusing existing order with valid payment: ${existingOrder.order_id}`);
       return json(200, {
         order_id: existingOrder.order_id,
         cf_env: (ENV.CASHFREE_ENV || "sandbox").toLowerCase(),
