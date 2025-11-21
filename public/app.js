@@ -696,16 +696,25 @@ async function initDonate() {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
+    // Prevent double submission
+    if (form.__submitting) {
+      console.warn("Form submission already in progress, ignoring duplicate submit");
+      return;
+    }
+    form.__submitting = true;
+
     const phone = normalizeINPhone(phoneEl?.value);
     if (!isValidINMobile(phone)) {
       alert("Please enter a valid Indian mobile (10 digits starting 6–9).");
       phoneEl?.focus();
+      form.__submitting = false;
       return;
     }
 
     const amt = Number(amountEl?.value || 0);
     if (amt < 100) {
       alert("Minimum donation amount is ₹100.");
+      form.__submitting = false;
       return;
     }
 
@@ -724,12 +733,16 @@ async function initDonate() {
       if (!resp || !resp.order_id) {
         alert("Server error: Invalid response. Please try again.");
         console.error("Invalid response:", resp);
+        form.__submitting = false;
         return;
       }
+      // Keep form locked during payment redirect (don't clear __submitting flag)
+      console.log(`[donate] Order created: ${resp.order_id}${resp.reused ? ' (reused)' : ''}, redirecting to payment...`);
       goToPayment(resp);
     } catch (err) {
       alert("Could not create donation: " + err.message);
       console.error(err);
+      form.__submitting = false;
     }
   });
 }

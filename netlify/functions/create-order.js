@@ -1,6 +1,6 @@
 // create-order.js
 const { getConfig, normalizeINPhone, isValidINMobile, mapAmountToPasses } = require("./_config");
-const { putJson } = require("./_github");
+const { putJson, getJson } = require("./_github");
 
 const json = (s, b) => ({
   statusCode: s,
@@ -20,6 +20,58 @@ function parseSlabs(str) {
       if (Number.isFinite(a)) m.set(a, Number.isFinite(p) ? p : 0);
     });
   return m;
+}
+
+// Check for existing order with same email+type+amount (idempotency)
+async function findExistingOrder(ENV, email, type, amount) {
+  if (!ENV.GITHUB_TOKEN) return null;
+  
+  try {
+    // List files in storage/orders/ folder
+    const resp = await fetch(
+      `https://api.github.com/repos/${ENV.GITHUB_OWNER}/${ENV.GITHUB_REPO}/contents/${ENV.STORE_PATH}/orders`,
+      {
+        headers: {
+          Authorization: `token ${ENV.GITHUB_TOKEN}`,
+          Accept: "application/vnd.github.v3+json",
+        },
+      }
+    );
+
+    if (!resp.ok) {
+      console.log(`[create-order] Could not list orders folder (404 or error): ${resp.status}`);
+      return null;
+    }
+
+    const files = await resp.json();
+    if (!Array.isArray(files)) return null;
+
+    // Scan each order file for matching email+type+amount
+    for (const file of files) {
+      if (!file.name.endsWith(".json")) continue;
+
+      const orderData = await getJson(ENV, `${ENV.STORE_PATH}/orders/${file.name}`);
+      if (!orderData) continue;
+
+      // Match: same email, type, and amount
+      if (
+        orderData.email === email &&
+        orderData.type === type &&
+        orderData.amount === amount
+      ) {
+        // Check if NOT already fulfilled (so we can reuse it)
+        const fulfilled = orderData.fulfilled?.status === "ok" || orderData.fulfilled?.status === "partial";
+        if (!fulfilled) {
+          console.log(`[create-order] ✓ Found existing unfullfilled order: ${orderData.order_id}`);
+          return orderData;
+        }
+      }
+    }
+  } catch (err) {
+    console.error(`[create-order] Error checking for existing orders: ${err.message}`);
+  }
+
+  return null;
 }
 
 exports.handler = async (event) => {
@@ -95,6 +147,19 @@ exports.handler = async (event) => {
       } else {
         return json(400, { error: "Invalid tier or amount" });
       }
+    }
+
+    // ---------- IDEMPOTENCY CHECK: Find existing unfulfilled order ----------
+    const existingOrder = await findExistingOrder(ENV, email, type, amount);
+    if (existingOrder) {
+      console.log(`[create-order] Returning existing order for idempotency: ${existingOrder.order_id}`);
+      return json(200, {
+        order_id: existingOrder.order_id,
+        cf_env: (ENV.CASHFREE_ENV || "sandbox").toLowerCase(),
+        payment_link: existingOrder.cashfree?.data?.payment_link || existingOrder.cashfree?.payment_link,
+        payment_session_id: existingOrder.cashfree?.data?.payment_session_id || existingOrder.cashfree?.payment_session_id,
+        reused: true,
+      });
     }
 
     // ---------- create Cashfree order ----------
