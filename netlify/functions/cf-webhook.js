@@ -69,6 +69,10 @@ exports.handler = async (event) => {
     
     if (expected !== sig) {
       console.warn('[cf-webhook] ⚠️  SIGNATURE MISMATCH');
+      console.warn('[cf-webhook] Expected:', expected);
+      console.warn('[cf-webhook] Received:', sig);
+      console.warn('[cf-webhook] Secret key set:', !!SECRET);
+      console.warn('[cf-webhook] Secret key length:', String(SECRET).length);
       // Allow test pings through regardless of signature
       if (!ALLOW_TEST_PING) {
         return respond(401, 'Invalid signature');

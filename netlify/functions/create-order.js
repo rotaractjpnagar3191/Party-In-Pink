@@ -262,6 +262,12 @@ exports.handler = async (event) => {
         notify_url: `${PUB.SITE_URL}/api/cf-webhook`,
         cancel_url: `${PUB.SITE_URL}/cancel.html?order=${order_id}&type=${type}`,
       },
+      // Enable verify_pay feature for fraud prevention
+      products: {
+        verify_pay: {
+          enabled: true
+        }
+      }
     };
 
     // Create AbortController with 10s timeout
