@@ -71,28 +71,53 @@ exports.handler = async (event) => {
 
     const orderData = await response.json();
     console.log('[verify-payment-api] Order status:', orderData.order_status);
+    console.log('[verify-payment-api] Full response:', JSON.stringify(orderData, null, 2));
 
-    // Extract payment status
-    const successfulPayment = orderData.payments?.find(p => 
-      p.payment_status === 'SUCCESS' || p.payment_status === 'success'
-    );
+    // Cashfree response structure varies - check multiple possible payment status fields
+    // Primary: order_status (Cashfree v2 API)
+    // Fallback: payment_status, or find successful payment in payments array
+    
+    let hasSuccessfulPayment = false;
+    let paymentMethod = null;
+    
+    // Check 1: order_status = PAID or SUCCESS
+    if (orderData.order_status === 'PAID' || orderData.order_status === 'SUCCESS') {
+      hasSuccessfulPayment = true;
+      console.log('[verify-payment-api] ✓ Payment verified: order_status=PAID');
+    }
+    // Check 2: payment_status field exists and is SUCCESS
+    else if (orderData.payment_status === 'SUCCESS' || orderData.payment_status === 'PAID') {
+      hasSuccessfulPayment = true;
+      console.log('[verify-payment-api] ✓ Payment verified: payment_status=SUCCESS');
+    }
+    // Check 3: Look for successful payment in payments array
+    else if (Array.isArray(orderData.payments)) {
+      const successfulPayment = orderData.payments.find(p => 
+        p.payment_status === 'SUCCESS' || 
+        p.payment_status === 'success' ||
+        p.cf_payment_status === 'SUCCESS'
+      );
+      if (successfulPayment) {
+        hasSuccessfulPayment = true;
+        paymentMethod = successfulPayment.payment_method;
+        console.log('[verify-payment-api] ✓ Payment verified: found in payments array');
+      }
+    }
+
+    console.log(`[verify-payment-api] Final result: has_successful_payment=${hasSuccessfulPayment}`);
 
     return json(200, {
       ok: true,
       order_id: orderData.order_id,
       order_status: orderData.order_status,
       order_amount: orderData.order_amount,
-      has_successful_payment: !!successfulPayment,
-      payment_details: successfulPayment ? {
-        cf_payment_id: successfulPayment.cf_payment_id,
-        payment_method: successfulPayment.payment_method,
-        payment_time: successfulPayment.payment_time,
-        settlement_status: successfulPayment.settlement_status,
-      } : null,
-      payments_count: orderData.payments?.length || 0,
+      has_successful_payment: hasSuccessfulPayment,
+      payment_status: orderData.payment_status,
+      payment_method: paymentMethod,
       settlement_status: orderData.settlement_status,
       created_at: orderData.created_at,
       updated_at: orderData.updated_at,
+      cf_env: cfEnv,
     });
 
   } catch (err) {
