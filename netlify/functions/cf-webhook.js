@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const { getConfig, mapAmountToPasses } = require('./_config');
 const { getJson, putJson } = require('./_github');
 const { issueComplimentaryPasses } = require('./_konfhub');
+const { sendMail, sendMailFromGmail, emailTemplates } = require('./_mail');
 
 // CRITICAL: Log immediately on invocation
 console.log('[cf-webhook-BOOT] Module loaded at', new Date().toISOString());
@@ -400,6 +401,25 @@ exports.handler = async (event) => {
       passes_issued: oc.passes
     });
     console.log('[cf-webhook] ✓ Cached issuance for 10 seconds');
+
+    // Send confirmation email to purchaser (async, non-blocking)
+    (async () => {
+      try {
+        console.log('[cf-webhook] Sending confirmation email to:', oc.email);
+        const templates = emailTemplates();
+        const { subject, html, text } = templates.purchaser(oc);
+        await sendMail(ENV, {
+          to: oc.email,
+          subject,
+          html,
+          text
+        });
+        console.log('[cf-webhook] ✓ Confirmation email sent to:', oc.email);
+      } catch (emailErr) {
+        console.warn('[cf-webhook] ⚠️  Failed to send confirmation email:', emailErr?.message);
+        // Don't fail the webhook for email issues - tickets are issued
+      }
+    })();
 
     // No emails from webhook — KonfHub handles attendee mails.
     // Admin notifications can be checked in the dashboard/logs.

@@ -4,6 +4,7 @@
 const { getConfig, mapAmountToPasses } = require('./_config');
 const { getJson, putJson } = require('./_github');
 const { issueComplimentaryPasses } = require('./_konfhub');
+const { sendMail, emailTemplates } = require('./_mail');
 
 console.log('[finalize-order-BOOT] Module loaded');
 
@@ -147,6 +148,25 @@ exports.handler = async (event) => {
 
       await putJson(ENV, path, oc);
       console.log('[finalize-order] Order updated and saved');
+
+      // Send confirmation email to purchaser (async, non-blocking)
+      (async () => {
+        try {
+          console.log('[finalize-order] Sending confirmation email to:', oc.email);
+          const templates = emailTemplates();
+          const { subject, html, text } = templates.purchaser(oc);
+          await sendMail(ENV, {
+            to: oc.email,
+            subject,
+            html,
+            text
+          });
+          console.log('[finalize-order] ✓ Confirmation email sent to:', oc.email);
+        } catch (emailErr) {
+          console.warn('[finalize-order] ⚠️  Failed to send confirmation email:', emailErr?.message);
+          // Don't fail the request for email issues - tickets are issued
+        }
+      })();
 
       return {
         statusCode: 200,
