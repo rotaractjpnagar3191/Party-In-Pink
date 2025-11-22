@@ -67,6 +67,39 @@ exports.handler = async (event) => {
       };
     }
 
+    // ⚠️  CRITICAL: Check if payment was actually successful before issuing tickets
+    // This prevents fraudulent ticket dispatch if someone calls finalize-order without paying
+    const paymentStatus = oc.cashfree?.webhook?.payment?.payment_status;
+    const orderStatus = oc.cashfree?.webhook?.order?.order_status;
+    
+    console.log('[finalize-order] Payment validation:');
+    console.log('[finalize-order]   - Payment status from webhook:', paymentStatus);
+    console.log('[finalize-order]   - Order status from webhook:', orderStatus);
+    console.log('[finalize-order]   - Has webhook data:', !!oc.cashfree?.webhook);
+    
+    // If we have webhook data, payment status must be SUCCESS
+    if (oc.cashfree?.webhook && paymentStatus !== 'SUCCESS') {
+      console.error('[finalize-order] ❌ PAYMENT VALIDATION FAILED: Payment not successful');
+      console.error('[finalize-order] Payment status:', paymentStatus);
+      oc.fulfilled = {
+        at: new Date().toISOString(),
+        status: 'failed',
+        error: `Payment validation failed: status=${paymentStatus}`,
+        triggered_by: 'finalize-order'
+      };
+      await putJson(ENV, `${ENV.STORE_PATH}/orders/${order_id}.json`, oc);
+      
+      return {
+        statusCode: 402,
+        body: JSON.stringify({
+          error: 'Payment not successful',
+          payment_status: paymentStatus,
+          message: 'Cannot issue tickets without successful payment',
+          order_id
+        })
+      };
+    }
+
     // Check if recently issued (within last 5 seconds) to prevent rapid re-issuance
     if (oc.konfhub?.registrations) {
       const lastIssuanceTime = new Date(oc.konfhub.last_issued_at || 0).getTime();

@@ -17,9 +17,13 @@ function parseSlabs(raw) {
 function getConfig() {
   const {
     SITE_URL = 'http://localhost:8888',
-    BULK_PRICE = '149',
+    BULK_PRICE = '199',
+    COMM_PRICE = '199',
     COMM_MIN = '12',
+    UNIV_PRICE = '199',
     UNIV_MIN = '20',
+    CORP_PRICE = '300',
+    CORP_MIN = '15',
     SLABS = '5000:2,10000:5,15000:7,20000:7,25000:10',
     SLAB_BELOW_MIN = '0',
     SLAB_ABOVE_MAX = 'TOP',
@@ -41,9 +45,13 @@ function getConfig() {
   return {
     public: {
       SITE_URL,
-      BULK_PRICE: Number(BULK_PRICE),
+      BULK_PRICE: Number(BULK_PRICE), // legacy, use type-specific prices
+      COMM_PRICE: Number(COMM_PRICE),
       COMM_MIN: Number(COMM_MIN),
+      UNIV_PRICE: Number(UNIV_PRICE),
       UNIV_MIN: Number(UNIV_MIN),
+      CORP_PRICE: Number(CORP_PRICE),
+      CORP_MIN: Number(CORP_MIN),
       SLABS: slabs
     },
     private: {

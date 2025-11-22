@@ -102,8 +102,23 @@ exports.handler = async (event) => {
 
     if (type === "bulk") {
       const clubTypeRaw = String(body.club_type || body.clubType || "").toUpperCase();
-      const club_type = ["COMMUNITY", "UNIVERSITY"].includes(clubTypeRaw) ? clubTypeRaw : "COMMUNITY";
-      const min = club_type === "UNIVERSITY" ? parseInt(PUB.UNIV_MIN || "20", 10) : parseInt(PUB.COMM_MIN || "12", 10);
+      let club_type, min, price;
+
+      // Determine club type, minimum passes, and price per pass
+      if (clubTypeRaw === "CORPORATE") {
+        club_type = "CORPORATE";
+        min = parseInt(PUB.CORP_MIN || "15", 10);
+        price = parseInt(PUB.CORP_PRICE || "300", 10);
+      } else if (clubTypeRaw === "UNIVERSITY") {
+        club_type = "UNIVERSITY";
+        min = parseInt(PUB.UNIV_MIN || "20", 10);
+        price = parseInt(PUB.UNIV_PRICE || "199", 10);
+      } else {
+        club_type = "COMMUNITY";
+        min = parseInt(PUB.COMM_MIN || "12", 10);
+        price = parseInt(PUB.COMM_PRICE || "199", 10);
+      }
+
       const quantity = Math.max(min, parseInt(body.quantity || body.count || "0", 10) || 0);
 
       // enforce min
@@ -111,7 +126,6 @@ exports.handler = async (event) => {
         return json(400, { error: `Minimum ${min} passes for ${club_type.toLowerCase()} clubs` });
       }
 
-      const price = parseInt(PUB.BULK_PRICE || "199", 10);
       amount = quantity * price;
       passes = quantity;
       meta = {
