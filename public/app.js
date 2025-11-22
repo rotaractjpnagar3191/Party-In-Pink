@@ -197,57 +197,89 @@ async function loadConfig() {
   return CFG;
 }
 
-// ---------- Cashfree ----------
-let CF_READY = false;
-function loadCashfree(env) {
+// ---------- Razorpay Payment Gateway ----------
+let RAZORPAY_READY = false;
+
+function loadRazorpay() {
   return new Promise((resolve, reject) => {
-    if (CF_READY) return resolve();
+    if (RAZORPAY_READY) return resolve();
     const s = document.createElement("script");
-    s.id = "cf-sdk";
-    s.src =
-      env === "production"
-        ? "https://sdk.cashfree.com/js/ui/2.0.0/cashfree.prod.js"
-        : "https://sdk.cashfree.com/js/ui/2.0.0/cashfree.sandbox.js";
+    s.src = "https://checkout.razorpay.com/v1/checkout.js";
     s.async = true;
     s.onload = () => {
-      CF_READY = true;
+      RAZORPAY_READY = true;
       resolve();
     };
-    s.onerror = () => reject(new Error("Failed to load Cashfree SDK"));
+    s.onerror = () => reject(new Error("Failed to load Razorpay SDK"));
     document.head.appendChild(s);
   });
 }
-async function openCashfreeCheckout(sessionId, env) {
+
+async function openRazorpayCheckout(orderData) {
   try {
-    await loadCashfree(env || "sandbox");
-    const cf = new Cashfree(sessionId);
-    cf.redirect();
+    await loadRazorpay();
+    
+    // Razorpay expects handler callbacks
+    const options = {
+      key: orderData.key_id,
+      order_id: orderData.razorpay_order_id,
+      amount: orderData.amount * 100, // Convert to paise
+      currency: "INR",
+      name: "Party In Pink",
+      description: "Registration & Ticketing",
+      image: "https://pip.rotaractjpnagar.org/assets/logos/PiP_Black.png",
+      handler: async function(response) {
+        // Payment successful - save order ID and redirect to success page
+        sessionStorage.setItem('pip_order_id', orderData.order_id);
+        sessionStorage.setItem('pip_razorpay_payment_id', response.razorpay_payment_id);
+        window.location.href = `/success.html?order=${orderData.order_id}&type=bulk`;
+      },
+      prefill: {
+        name: sessionStorage.getItem('pip_name') || '',
+        email: sessionStorage.getItem('pip_email') || '',
+        contact: sessionStorage.getItem('pip_phone') || '',
+      },
+      theme: {
+        color: "#E91E63"
+      },
+      modal: {
+        ondismiss: function() {
+          console.log('Razorpay checkout dismissed');
+          alert('Payment cancelled. Please try again.');
+        }
+      }
+    };
+
+    const rzp1 = new Razorpay(options);
+    rzp1.open();
   } catch (err) {
-    console.error("Cashfree checkout error:", err);
+    console.error("Razorpay checkout error:", err);
     alert("Payment initiation failed. Please try again or refresh the page.");
   }
 }
+
 function goToPayment(resp) {
+  // Check if this is a Razorpay response
+  if (resp.razorpay_order_id && resp.key_id) {
+    openRazorpayCheckout(resp);
+    return;
+  }
+  
+  // Fallback: check for redirect_url
   if (resp.redirect_url) {
     location.href = resp.redirect_url;
     return;
   }
+  
   const url = resp.url || resp.payment_link || resp.link;
   if (url) {
     location.href = url;
     return;
   }
-  const sid =
-    resp.payment_session_id ||
-    resp.session_id ||
-    (resp.order && resp.order.payment_session_id);
-  if (sid) {
-    openCashfreeCheckout(sid, resp.cf_env || "sandbox");
-    return;
-  }
+  
   console.error("goToPayment: No payment method found", resp);
   const debugMsg = JSON.stringify(resp, null, 2);
-  alert(`Could not start payment. Response: ${debugMsg}\n\nPlease ensure Cashfree credentials are configured in Netlify and try again, or contact support.`);
+  alert(`Could not start payment. Response: ${debugMsg}\n\nPlease ensure payment gateway is configured and try again, or contact support.`);
 }
 async function postJSON(url, data, btn) {
   let spinner = null;
@@ -593,9 +625,12 @@ async function initBulk() {
     // Save form data to session storage for recovery
     sessionStorage.setItem('pip_bulk_form', JSON.stringify(payload));
     sessionStorage.setItem('pip_last_page', 'bulk.html');
+    sessionStorage.setItem('pip_name', payload.name);
+    sessionStorage.setItem('pip_email', payload.email);
+    sessionStorage.setItem('pip_phone', payload.phone);
 
     try {
-      const resp = await postJSON("/api/create-order", payload, btn);
+      const resp = await postJSON("/api/create-order-razorpay", payload, btn);
       goToPayment(resp);
     } catch (err) {
       console.error('[bulk] Error:', err);
@@ -899,9 +934,12 @@ async function initDonate() {
     // Save form data to session storage for recovery
     sessionStorage.setItem('pip_donate_form', JSON.stringify(payload));
     sessionStorage.setItem('pip_last_page', 'donate.html');
+    sessionStorage.setItem('pip_name', payload.name);
+    sessionStorage.setItem('pip_email', payload.email);
+    sessionStorage.setItem('pip_phone', payload.phone);
 
     try {
-      const resp = await postJSON("/api/create-order", payload, $("#donor_submit"));
+      const resp = await postJSON("/api/create-order-razorpay", payload, $("#donor_submit"));
       if (!resp || !resp.order_id) {
         alert("Server error: Invalid response. Please try again.");
         console.error("Invalid response:", resp);

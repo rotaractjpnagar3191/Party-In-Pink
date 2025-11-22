@@ -151,23 +151,27 @@
         // STEP 1: Verify payment succeeded before showing anything
         async function verifyPaymentSucceeded() {
           try {
-            console.log('[verify] Checking payment status with Cashfree...');
-            const r = await fetch(`/api/verify-payment?id=${encodeURIComponent(orderId)}`, {
+            console.log('[verify] Checking payment status via webhook processing...');
+            const r = await fetch(`/api/order-status?id=${encodeURIComponent(orderId)}`, {
               cache: 'no-store'
             });
             
             if (!r.ok) {
-              console.error('[verify] Payment verification failed:', r.status);
+              console.error('[verify] Order status check failed:', r.status);
               return { verified: false, reason: 'API error' };
             }
             
             const data = await r.json();
+            const order = data.order || data;
             console.log('[verify] Response:', data);
             
+            // With Razorpay, if order has razorpay.payment_id, payment was verified by webhook
+            const paymentVerified = !!order.razorpay?.payment_id || order.razorpay_webhook_processed;
+            
             return {
-              verified: data.has_successful_payment === true,
-              order_status: data.order_status,
-              payment_status: data.payment_status,
+              verified: paymentVerified,
+              order_status: order.razorpay?.payment?.status,
+              payment_status: order.razorpay?.payment?.status,
             };
           } catch (e) {
             console.error('[verify] Exception:', e);
