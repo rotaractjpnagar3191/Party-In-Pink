@@ -56,18 +56,34 @@ exports.handler = async (event) => {
         registration_details: { [TICKET_ID]: c.map(map) }
       };
 
-      const r = await fetch('https://api.konfhub.com/event/capture/v2', {
-        method:'POST',
-        headers:{
-          'x-api-key': process.env.KONFHUB_API_KEY,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
+      // ✅ KonfHub API call with timeout (15s)
+      const abortController = new AbortController();
+      const timeoutId = setTimeout(() => abortController.abort(), 15000); // 15 second timeout for KonfHub
 
-      const text = await r.text();
-      if (!r.ok) return { statusCode: r.status, body: text };
-      results.push(text);
+      try {
+        const r = await fetch('https://api.konfhub.com/event/capture/v2', {
+          method:'POST',
+          headers:{
+            'x-api-key': process.env.KONFHUB_API_KEY,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload),
+          signal: abortController.signal
+        });
+
+        const text = await r.text();
+        if (!r.ok) return { statusCode: r.status, body: text };
+        results.push(text);
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          console.error('[konfhub-capture-bulk] ❌ KonfHub timeout - batch size:', c.length);
+          return { statusCode: 504, body: 'KonfHub service timeout' };
+        }
+        throw err;
+      } finally {
+        clearTimeout(timeoutId);
+      }
+
       await new Promise(res => setTimeout(res, 1000)); // gentle throttle
     }
 

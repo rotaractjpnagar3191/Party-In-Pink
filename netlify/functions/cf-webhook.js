@@ -16,6 +16,33 @@ const issuanceCache = new Map();
 // Maps webhookKey -> timestamp (last seen)
 const webhookRegistry = new Map();
 
+// ===== VALIDATION HELPERS =====
+function validatePayloadStructure(data) {
+  const errors = [];
+  
+  if (!data?.order?.order_id) errors.push('Missing: order.order_id');
+  if (!data?.payment?.payment_status) errors.push('Missing: payment.payment_status');
+  if (!data?.customer_details?.customer_email) errors.push('Missing: customer_details.customer_email');
+  if (data?.order?.order_amount == null) errors.push('Missing: order.order_amount');
+  
+  if (errors.length > 0) {
+    throw new Error('Payload validation failed: ' + errors.join('; '));
+  }
+  
+  return true;
+}
+
+function validateOrderAmount(declaredAmount, paymentStatus) {
+  // Only validate if payment succeeded
+  if (paymentStatus !== 'SUCCESS') return true;
+  
+  const amount = Number(declaredAmount || 0);
+  if (amount <= 0) {
+    throw new Error('Invalid order amount: must be > 0');
+  }
+  return amount;
+}
+
 exports.handler = async (event) => {
   console.log('\n\n==============================================');
   console.log('[cf-webhook] ===== WEBHOOK INVOKED =====');
@@ -79,9 +106,26 @@ exports.handler = async (event) => {
     const payload = JSON.parse(raw.toString('utf8'));
     const data = payload?.data || payload;
 
+    // ✅ VALIDATION: Payload structure
+    try {
+      validatePayloadStructure(data);
+    } catch (e) {
+      console.error('[cf-webhook] ❌ PAYLOAD VALIDATION FAILED:', e.message);
+      return respond(400, e.message);
+    }
+
     const status   = data?.payment?.payment_status || data?.payment_status || data?.status;
     const order_id = data?.order?.order_id || data?.order_id;
     const paidAmt  = Number(data?.order?.order_amount || data?.order_amount || 0);
+
+    // ✅ VALIDATION: Amount is valid
+    try {
+      validateOrderAmount(paidAmt, status);
+    } catch (e) {
+      console.error('[cf-webhook] ❌ AMOUNT VALIDATION FAILED:', e.message);
+      // Still process webhook but mark as risky
+      console.warn('[cf-webhook] Proceeding with amount validation warning');
+    }
 
     console.log('[cf-webhook] Status:', status, 'OrderID:', order_id, 'Amount:', paidAmt);
     console.log('[cf-webhook] Full payload keys:', Object.keys(data || {}));
@@ -392,6 +436,21 @@ exports.handler = async (event) => {
       console.error('[cf-webhook] ⚠️  This may cause re-issuance on webhook retries, but is better than losing tickets');
       // DON'T THROW - We successfully issued tickets, just couldn't save metadata
       // Return 200 to Cashfree to prevent retries
+    }
+
+    // Update lightweight email -> orders index (best-effort)
+    try {
+      const indexPath = `${ENV.STORE_PATH}/index_by_email.json`;
+      let index = {};
+      try { index = (await getJson(ENV, indexPath)) || {}; } catch (_) { index = {}; }
+      const e = (oc.email || '').toLowerCase();
+      if (!index[e]) index[e] = [];
+      index[e].unshift(order_id);
+      index[e] = Array.from(new Set(index[e])).slice(0, 10);
+      await putJson(ENV, indexPath, index);
+      console.log('[cf-webhook] ✓ Updated index_by_email for', e);
+    } catch (idxErr) {
+      console.warn('[cf-webhook] ⚠️  Failed to update index_by_email:', idxErr?.message || idxErr);
     }
     
     // CACHE THIS ISSUANCE TO PREVENT RACE CONDITIONS

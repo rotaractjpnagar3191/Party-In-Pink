@@ -38,6 +38,11 @@ function buildPeople(order) {
       dial_code: '+91',
       country_code: 'in',
       phone_number: String(order?.phone || '').replace(/\D/g, ''),
+      organisation: order?.organisation || 'Not Specified',
+      designation: order?.designation || 'Not Specified',
+      custom_forms: {
+        // Can be extended based on KonfHub form IDs
+      }
     });
   }
   return people;

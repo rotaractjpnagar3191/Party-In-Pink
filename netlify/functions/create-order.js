@@ -2,6 +2,45 @@
 const { getConfig, normalizeINPhone, isValidINMobile, mapAmountToPasses, getTierName } = require("./_config");
 const { putJson, getJson } = require("./_github");
 
+// ===== RATE LIMITING =====
+const rateLimitMap = new Map(); // IP -> { count, timestamp }
+const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
+const RATE_LIMIT_MAX = 10; // 10 requests per minute
+
+function checkRateLimit(ip) {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+
+  if (!entry) {
+    rateLimitMap.set(ip, { count: 1, timestamp: now });
+    return true; // Allow first request
+  }
+
+  if (now - entry.timestamp > RATE_LIMIT_WINDOW) {
+    // Window expired, reset
+    rateLimitMap.set(ip, { count: 1, timestamp: now });
+    return true;
+  }
+
+  if (entry.count >= RATE_LIMIT_MAX) {
+    console.warn(`[create-order] 🚫 RATE LIMIT EXCEEDED for IP: ${ip} (${entry.count} requests in ${Math.round((now - entry.timestamp) / 1000)}s)`);
+    return false;
+  }
+
+  entry.count++;
+  return true;
+}
+
+// ===== STANDARDIZED ERROR RESPONSES =====
+const ErrorResponse = {
+  INVALID_INPUT: { code: 400, message: 'Invalid input provided' },
+  UNAUTHORIZED: { code: 401, message: 'Unauthorized' },
+  DUPLICATE: { code: 409, message: 'Duplicate registration detected' },
+  PAYMENT_FAILED: { code: 402, message: 'Payment processing failed' },
+  SERVICE_ERROR: { code: 503, message: 'Service temporarily unavailable' },
+  INVALID_AMOUNT: { code: 400, message: 'Invalid amount or pricing' }
+};
+
 const json = (s, b) => ({
   statusCode: s,
   headers: { "content-type": "application/json" },
@@ -20,6 +59,34 @@ function parseSlabs(str) {
       if (Number.isFinite(a)) m.set(a, Number.isFinite(p) ? p : 0);
     });
   return m;
+}
+
+// ===== VALIDATION HELPERS =====
+function validateAmount(amount, type, min, max) {
+  if (!Number.isFinite(amount) || amount <= 0) {
+    throw { code: 400, error: 'Amount must be positive', type: 'INVALID_AMOUNT' };
+  }
+  if (amount < min) {
+    throw { code: 400, error: `Minimum amount ₹${min}`, type: 'AMOUNT_TOO_LOW' };
+  }
+  if (amount > max) {
+    throw { code: 400, error: `Maximum amount ₹${max}`, type: 'AMOUNT_TOO_HIGH' };
+  }
+  return amount;
+}
+
+function validatePasses(passes, type, min, max) {
+  passes = Number(passes || 0);
+  if (!Number.isFinite(passes) || passes < 0) {
+    throw { code: 400, error: 'Invalid passes count', type: 'INVALID_PASSES' };
+  }
+  if (type === 'bulk' && passes < min) {
+    throw { code: 400, error: `Bulk minimum: ${min} passes`, type: 'PASSES_BELOW_MIN' };
+  }
+  if (passes > 1000) {
+    throw { code: 400, error: 'Maximum 1000 passes per order', type: 'PASSES_TOO_HIGH' };
+  }
+  return passes;
 }
 
 // Check for existing order with same email+type+amount (idempotency)
@@ -77,6 +144,14 @@ async function findExistingOrder(ENV, email, type, amount) {
 exports.handler = async (event) => {
   try {
     if (event.httpMethod !== "POST") return json(405, { error: "Method not allowed" });
+    
+    // ✅ RATE LIMITING CHECK
+    const clientIP = event.headers['client-ip'] || event.headers['x-forwarded-for']?.split(',')[0] || event.headers['x-real-ip'] || 'unknown';
+    if (!checkRateLimit(clientIP)) {
+      console.warn(`[create-order] 🚫 Rate limit exceeded for ${clientIP}`);
+      return json(429, { error: "Too many requests. Please try again in 1 minute." });
+    }
+
     const body = JSON.parse(event.body || "{}");
 
     const CFG = getConfig();
@@ -99,6 +174,18 @@ exports.handler = async (event) => {
     let meta = {};
     let recipients = Array.isArray(body.recipients) ? body.recipients.filter(Boolean) : [];
     if (!recipients.length) recipients = [email];
+    
+    // Validate recipients
+    const validRecipients = recipients
+      .map(r => String(r).trim().toLowerCase())
+      .filter(r => r.length > 0 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(r)); // Basic email regex
+    
+    if (validRecipients.length === 0) {
+      return json(400, { 
+        error: 'At least one valid recipient email required',
+        type: 'INVALID_RECIPIENTS'
+      });
+    }
 
     if (type === "bulk") {
       const clubTypeRaw = String(body.club_type || body.clubType || "").toUpperCase();
@@ -121,17 +208,26 @@ exports.handler = async (event) => {
 
       const quantity = Math.max(min, parseInt(body.quantity || body.count || "0", 10) || 0);
 
-      // enforce min
-      if (quantity < min) {
-        return json(400, { error: `Minimum ${min} passes for ${club_type.toLowerCase()} clubs` });
+      // ✅ VALIDATION: Passes within acceptable range
+      try {
+        passes = validatePasses(quantity, 'bulk', min, 1000);
+      } catch (err) {
+        return json(err.code, { error: err.error, type: err.type });
       }
 
-      amount = quantity * price;
-      passes = quantity;
+      amount = passes * price;
+      
+      // ✅ VALIDATION: Amount matches passes * price
+      try {
+        validateAmount(amount, 'bulk', min * price, 300000); // Max ₹3L
+      } catch (err) {
+        return json(err.code, { error: err.error, type: err.type });
+      }
+
       meta = {
         club_type,
         club_name: String(body.club_name || body.clubName || "").trim(),
-        quantity,
+        quantity: passes,
         ui_club_type: String(body.ui_club_type || "").trim(),
         price_per: price,
       };
@@ -144,12 +240,20 @@ exports.handler = async (event) => {
       if (tierRaw && /^\d+$/.test(tierRaw)) {
         // tier equals the amount (e.g. "5000")
         const amt = parseInt(tierRaw, 10);
-        if (!slabMap.has(amt)) return json(400, { error: "Invalid tier or amount" });
+        if (!slabMap.has(amt)) {
+          return json(400, { error: "Invalid tier or amount", type: 'INVALID_TIER' });
+        }
         amount = amt;
         passes = slabMap.get(amt) || 0;
         meta = { tier: getTierName(amt) };
       } else if (custom && custom > 0) {
         amount = custom;
+        // ✅ VALIDATION: Custom amount within bounds
+        try {
+          validateAmount(amount, 'donation', 100, 500000); // ₹100 to ₹5L
+        } catch (err) {
+          return json(err.code, { error: err.error, type: err.type });
+        }
         // Map custom amount to passes using slabs
         passes = mapAmountToPasses(
           custom,
@@ -159,7 +263,7 @@ exports.handler = async (event) => {
         );
         meta = { tier: getTierName(custom), amount: custom };
       } else {
-        return json(400, { error: "Invalid tier or amount" });
+        return json(400, { error: "Invalid tier or amount", type: 'INVALID_AMOUNT' });
       }
     }
 
@@ -205,9 +309,10 @@ exports.handler = async (event) => {
       },
       order_meta: {
         return_url: `${PUB.SITE_URL}/success.html?order=${order_id}&type=${type}`,
-        error_url: `${PUB.SITE_URL}/error.html?order=${order_id}&type=${type}`,
         notify_url: `${PUB.SITE_URL}/api/cf-webhook`,
+        cancel_url: `${PUB.SITE_URL}/cancel.html?order=${order_id}&type=${type}`,
       },
+      order_splits: [],
     };
 
     // Create AbortController with 10s timeout
@@ -254,7 +359,7 @@ exports.handler = async (event) => {
       phone,
       amount,
       passes,
-      recipients,
+      recipients: validRecipients, // ✅ Use validated recipients
       meta,
       created_at: new Date().toISOString(),
       cashfree: { env: cfEnv, order: cfJson },
@@ -270,6 +375,22 @@ exports.handler = async (event) => {
     } catch (e) {
       console.error(`create-order: Failed to save order to GitHub: ${e.message}`);
       // Don't fail the payment - webhook will reconstruct
+    }
+
+    // Update lightweight email -> orders index to speed up lookups (best-effort)
+    try {
+      const indexPath = `${ENV.STORE_PATH}/index_by_email.json`;
+      let index = {};
+      try { index = (await getJson(ENV, indexPath)) || {}; } catch (_) { index = {}; }
+      const e = (email || '').toLowerCase();
+      if (!index[e]) index[e] = [];
+      // Keep most recent first and bounded to 10 entries
+      index[e].unshift(order_id);
+      index[e] = Array.from(new Set(index[e])).slice(0, 10);
+      await putJson(ENV, indexPath, index);
+      console.log('[create-order] ✓ Updated index_by_email for', e);
+    } catch (idxErr) {
+      console.warn('[create-order] ⚠️  Failed to update index_by_email:', idxErr?.message || idxErr);
     }
 
     return json(200, {
