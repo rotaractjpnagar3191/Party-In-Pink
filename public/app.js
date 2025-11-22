@@ -833,6 +833,19 @@ function initRegister() {
           body: JSON.stringify({ order_id: orderId }),
           signal: abortController.signal,
         });
+        
+        // CRITICAL: Handle payment validation failure (402 Payment Required)
+        // This means payment failed but user was still redirected to success page
+        if (res.status === 402) {
+          console.error('[success] ❌ PAYMENT VALIDATION FAILED: Payment not successful');
+          const data = await res.json().catch(() => ({}));
+          console.error('[success] Payment error:', data);
+          // Redirect to error page instead of showing success
+          const type = new URLSearchParams(location.search).get('type') || 'registration';
+          window.location.href = `error.html?order=${orderId}&type=${type}&reason=declined`;
+          return;
+        }
+        
         if (res.ok) {
           const data = await res.json();
           console.log('[success] finalize-order response:', data);

@@ -205,6 +205,7 @@ exports.handler = async (event) => {
       },
       order_meta: {
         return_url: `${PUB.SITE_URL}/success.html?order=${order_id}&type=${type}`,
+        error_url: `${PUB.SITE_URL}/error.html?order=${order_id}&type=${type}`,
         notify_url: `${PUB.SITE_URL}/api/cf-webhook`,
       },
     };

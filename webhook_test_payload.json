@@ -1,0 +1,11 @@
+{
+  "data": {
+    "order": {
+      "order_id": "pip_test_webhook",
+      "order_amount": 199
+    },
+    "payment": {
+      "payment_status": "SUCCESS"
+    }
+  }
+}
