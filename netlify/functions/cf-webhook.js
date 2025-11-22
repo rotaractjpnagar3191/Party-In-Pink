@@ -22,6 +22,8 @@ exports.handler = async (event) => {
   console.log('[cf-webhook] Method:', event?.httpMethod);
   console.log('[cf-webhook] Has event:', !!event);
   console.log('[cf-webhook] Headers:', event?.headers ? Object.keys(event.headers) : 'NO HEADERS');
+  console.log('[cf-webhook] Event body length:', event?.body?.length || 0);
+  console.log('[cf-webhook] Event isBase64Encoded:', event?.isBase64Encoded);
   
   try {
     if (event.httpMethod !== 'POST') return respond(405, 'Method not allowed');
