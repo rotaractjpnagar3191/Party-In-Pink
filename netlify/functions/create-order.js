@@ -152,14 +152,22 @@ exports.handler = async (event) => {
     // ---------- IDEMPOTENCY CHECK: Find existing unfulfilled order ----------
     const existingOrder = await findExistingOrder(ENV, email, type, amount);
     if (existingOrder) {
-      console.log(`[create-order] Returning existing order for idempotency: ${existingOrder.order_id}`);
-      return json(200, {
-        order_id: existingOrder.order_id,
-        cf_env: (ENV.CASHFREE_ENV || "sandbox").toLowerCase(),
-        payment_link: existingOrder.cashfree?.data?.payment_link || existingOrder.cashfree?.payment_link,
-        payment_session_id: existingOrder.cashfree?.data?.payment_session_id || existingOrder.cashfree?.payment_session_id,
-        reused: true,
-      });
+      // Only reuse if it has valid payment details
+      const existingLink = existingOrder.cashfree?.data?.payment_link || existingOrder.cashfree?.payment_link;
+      const existingSessionId = existingOrder.cashfree?.data?.payment_session_id || existingOrder.cashfree?.payment_session_id;
+      
+      if (existingLink && existingSessionId) {
+        console.log(`[create-order] Returning existing order for idempotency: ${existingOrder.order_id}`);
+        return json(200, {
+          order_id: existingOrder.order_id,
+          cf_env: (ENV.CASHFREE_ENV || "sandbox").toLowerCase(),
+          payment_link: existingLink,
+          payment_session_id: existingSessionId,
+          reused: true,
+        });
+      } else {
+        console.log(`[create-order] Found existing order but missing payment details, creating fresh one: ${existingOrder.order_id}`);
+      }
     }
 
     // ---------- create Cashfree order ----------
