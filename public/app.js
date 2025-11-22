@@ -522,6 +522,33 @@ async function initBulk() {
   }
   choose("COMMUNITY");
 
+  // Restore form data if resuming from timeout
+  function restoreFormData() {
+    if (sessionStorage.getItem('pip_resume_session') === 'true') {
+      sessionStorage.removeItem('pip_resume_session');
+      const savedData = sessionStorage.getItem('pip_bulk_form');
+      if (savedData) {
+        try {
+          const data = JSON.parse(savedData);
+          $("#bulk_name").value = data.name || '';
+          $("#bulk_email").value = data.email || '';
+          $("#bulk_phone").value = data.phone || '';
+          $("#bulk_club").value = data.meta?.club_name || '';
+          if (data.club_type) choose(data.club_type);
+          if (data.meta?.quantity) {
+            qtyEl.value = data.meta.quantity;
+            recalc();
+          }
+          alert('Your form data has been restored!');
+        } catch (e) {
+          console.log('[bulk] Could not restore form:', e.message);
+        }
+      }
+    }
+  }
+
+  restoreFormData();
+
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const btn = $("#bulk_submit");
@@ -565,6 +592,7 @@ async function initBulk() {
 
     // Save form data to session storage for recovery
     sessionStorage.setItem('pip_bulk_form', JSON.stringify(payload));
+    sessionStorage.setItem('pip_last_page', 'bulk.html');
 
     try {
       const resp = await postJSON("/api/create-order", payload, btn);
@@ -794,6 +822,30 @@ async function initDonate() {
   emailEl?.addEventListener("input", updateProceedState);
   phoneEl?.addEventListener("input", updateProceedState);
 
+  // Restore form data if resuming from timeout
+  function restoreDonateFormData() {
+    if (sessionStorage.getItem('pip_resume_session') === 'true') {
+      sessionStorage.removeItem('pip_resume_session');
+      const savedData = sessionStorage.getItem('pip_donate_form');
+      if (savedData) {
+        try {
+          const data = JSON.parse(savedData);
+          nameEl.value = data.name || '';
+          emailEl.value = data.email || '';
+          phoneEl.value = data.phone || '';
+          amountEl.value = data.custom_amount || '';
+          highlightSlab();
+          updateProceedState();
+          alert('Your donation form has been restored!');
+        } catch (e) {
+          console.log('[donate] Could not restore form:', e.message);
+        }
+      }
+    }
+  }
+
+  restoreDonateFormData();
+
   // Prefill amount with first slab and init UI
   if (amountEl && slabs.length) amountEl.value = String(slabs[0].amount);
   highlightSlab();
@@ -846,6 +898,7 @@ async function initDonate() {
 
     // Save form data to session storage for recovery
     sessionStorage.setItem('pip_donate_form', JSON.stringify(payload));
+    sessionStorage.setItem('pip_last_page', 'donate.html');
 
     try {
       const resp = await postJSON("/api/create-order", payload, $("#donor_submit"));
