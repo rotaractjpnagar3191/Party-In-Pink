@@ -232,7 +232,7 @@ exports.handler = async (event) => {
 
     // Prevent webhook replays: track this webhook invocation
     // If we've already processed this exact webhook, skip it
-    const webhookKey = `${order_id}:${ts}:${sig}`;
+    // NOTE: webhookKey already declared above, reuse it here
     if (!oc.processed_webhooks) oc.processed_webhooks = [];
     
     console.log('[cf-webhook] ⚠️  WEBHOOK DEDUPLICATION CHECK:');
