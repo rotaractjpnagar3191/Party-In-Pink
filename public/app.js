@@ -769,6 +769,15 @@ function initRegister() {
   setH();
   // keep it responsive
   window.addEventListener("resize", setH);
+
+  // Mark embed as loaded when iframe fires load (moved from inline script)
+  try {
+    const wrap = frame.parentElement;
+    if (frame.complete) wrap.classList.add('embed--loaded');
+    frame.addEventListener('load', () => wrap.classList.add('embed--loaded'));
+  } catch (e) {
+    // ignore
+  }
 }
 
 // ---------- Success page finalize + progress ----------
@@ -777,131 +786,282 @@ function initRegister() {
   if (!wrap) return;
 
   const qs = new URLSearchParams(location.search);
-  const orderId = qs.get("order");
+  const orderId = qs.get("order") || qs.get("id");
   const type = (qs.get("type") || "").toLowerCase();
+
+  if (!orderId) {
+    document.getElementById("thanksLine").textContent = "Payment Processing";
+    document.getElementById("statusBadge").textContent = "Order ID missing";
+    document.getElementById("statusDetail").textContent = "We could not read your order ID from the URL.";
+    return;
+  }
 
   const thanks = document.getElementById("thanksLine");
   const badge = document.getElementById("statusBadge");
   const detail = document.getElementById("statusDetail");
 
-  if (thanks) {
-    if (type === "bulk")
-      thanks.textContent = "Thank you for your bulk registration!";
-    else if (type === "donation")
-      thanks.textContent = "Thank you for your donation!";
-  }
-  if (!orderId) {
-    if (badge) badge.textContent = "Order id missing";
-    if (detail)
-      detail.textContent = "We could not read your order id from the URL.";
-    return;
-  }
+  // ============================================================
+  // PROFESSIONAL PAYMENT VERIFICATION STRATEGY (Redesigned)
+  // 1. Show "Verifying Payment..." overlay immediately
+  // 2. Check order status via API (direct validation)
+  // 3. If SUCCESS → Dispatch tickets
+  // 4. If FAILED/NOT_ATTEMPTED/USER_DROPPED → Redirect to error
+  // 5. If PENDING → Poll with timeout (max 60 seconds)
+  // ============================================================
 
-  // overlay
-  const ov = document.createElement("div");
-  ov.className = "loader-overlay";
-  ov.setAttribute("aria-busy", "true");
-  ov.innerHTML = `
-    <div class="card" style="background:#16161A;border:1px solid var(--border);padding:20px;border-radius:14px;min-width:280px;text-align:center">
-      <div class="spinner" style="margin:0 auto 10px"></div>
-      <div id="issueTitle" style="font-weight:700;margin-bottom:6px">Dispatching passes…</div>
-      <div id="issueSub" class="muted tiny">Starting…</div>
+  // Show verification overlay
+  const verifyOv = document.createElement("div");
+  verifyOv.className = "loader-overlay";
+  verifyOv.setAttribute("aria-busy", "true");
+  verifyOv.innerHTML = `
+    <div class="card" style="background:#16161A;border:1px solid var(--border);padding:24px;border-radius:14px;min-width:320px;text-align:center">
+      <div class="spinner" style="margin:0 auto 16px"></div>
+      <div style="font-weight:700;margin-bottom:8px;font-size:1.1rem;">Verifying Payment...</div>
+      <div class="muted tiny" style="line-height:1.6;">Confirming your payment status. This should only take a moment.</div>
     </div>`;
-  document.body.appendChild(ov);
+  document.body.appendChild(verifyOv);
 
-  const issueTitle = ov.querySelector("#issueTitle");
-  const issueSub = ov.querySelector("#issueSub");
+  const PAYMENT_CHECK_TIMEOUT = 90000; // 90 seconds max (increased from 60)
+  const PAYMENT_CHECK_INTERVAL = 2000; // Check every 2 seconds
+  const INITIAL_WAIT = 1000; // Wait 1s for webhook to arrive initially (reduced from 2s)
 
-  // try to finalize on server (works when webhook can't reach localhost)
-  let finalizeCalled = false;
-  async function finalize() {
-    // Only call finalize ONCE to prevent webhook replay
-    if (finalizeCalled) {
-      console.log('[success] finalize() already called, skipping duplicate');
+  // Helper: Fetch and validate payment status from Cashfree API
+  async function checkPaymentStatus() {
+    try {
+      const res = await fetch(`/api/order-status?id=${encodeURIComponent(orderId)}`, {
+        cache: "no-store"
+      });
+
+      if (res.status === 404) {
+        console.log('[success] Order not found yet (webhook may be pending)');
+        return { found: false };
+      }
+
+      if (!res.ok) {
+        console.error('[success] order-status API error:', res.status);
+        return { error: true };
+      }
+
+      const data = await res.json();
+      const order = data.order;
+
+      if (!order) {
+        return { found: false };
+      }
+
+      // ✅ CRITICAL FIX: Check CASHFREE ORDER STATUS (not just payment status)
+      // PAID = payment definitely successful
+      // ACTIVE = still waiting or failed
+      const orderStatus = order.order_status; // PAID | ACTIVE | EXPIRED
+      const latestPayment = order.latest_payment;
+      const paymentStatus = latestPayment?.payment_status || 'PENDING';
+
+      console.log('[success] Order status:', orderStatus, '| Payment status:', paymentStatus);
+
+      // If Cashfree says order is PAID, payment definitely succeeded
+      if (orderStatus === 'PAID') {
+        return {
+          found: true,
+          status: 'SUCCESS', // Override to SUCCESS if order_status is PAID
+          order: order,
+          payment: latestPayment,
+          definitive: true // From Cashfree, 100% reliable
+        };
+      }
+
+      // If we have payment_status, use that
+      if (paymentStatus && paymentStatus !== 'PENDING') {
+        return {
+          found: true,
+          status: paymentStatus,
+          order: order,
+          payment: latestPayment,
+          definitive: paymentStatus === 'SUCCESS' || paymentStatus === 'FAILED'
+        };
+      }
+
+      // Still pending
+      return {
+        found: true,
+        status: 'PENDING',
+        order: order,
+        payment: latestPayment,
+        definitive: false
+      };
+    } catch (err) {
+      console.error('[success] Payment status check failed:', err.message);
+      return { error: true };
+    }
+  }
+  
+  // Main verification function
+  async function verifyAndProceed() {
+    console.log('[success] Starting payment verification');
+
+    // Wait a bit for webhook to arrive
+    await new Promise(resolve => setTimeout(resolve, INITIAL_WAIT));
+
+    const startTime = Date.now();
+    let lastDefinitiveStatus = null;
+
+    // Poll until timeout or payment status determined
+    while (Date.now() - startTime < PAYMENT_CHECK_TIMEOUT) {
+      const result = await checkPaymentStatus();
+
+      if (result.error) {
+        console.error('[success] Error checking payment');
+        await new Promise(resolve => setTimeout(resolve, PAYMENT_CHECK_INTERVAL));
+        continue;
+      }
+
+      if (!result.found) {
+        console.log('[success] Order not found, waiting...');
+        await new Promise(resolve => setTimeout(resolve, PAYMENT_CHECK_INTERVAL));
+        continue;
+      }
+
+      // CRITICAL: Check payment status
+      const paymentStatus = result.status;
+
+      if (paymentStatus === 'SUCCESS') {
+        // ✅ Payment successful - proceed with ticket dispatch
+        console.log('[success] ✅ PAYMENT VERIFIED: SUCCESS (from:', result.definitive ? 'Cashfree API' : 'webhook', ')');
+        verifyOv.remove();
+        proceedWithSuccess(result.order);
+        return;
+      }
+
+      if (paymentStatus === 'FAILED' || paymentStatus === 'USER_DROPPED' || paymentStatus === 'NOT_ATTEMPTED') {
+        // ❌ Payment failed (definitive)
+        console.error('[success] ❌ PAYMENT FAILED:', paymentStatus);
+        window.location.href = `error.html?order=${orderId}&type=${type}&reason=${paymentStatus}`;
+        return;
+      }
+
+      if (paymentStatus === 'PENDING') {
+        // Still waiting - keep polling
+        const elapsed = Math.round((Date.now() - startTime) / 1000);
+        console.log('[success] Payment still pending (' + elapsed + 's), continuing to wait...');
+        await new Promise(resolve => setTimeout(resolve, PAYMENT_CHECK_INTERVAL));
+        continue;
+      }
+
+      // Unknown status - wait and retry
+      console.log('[success] Unknown payment status:', paymentStatus);
+      await new Promise(resolve => setTimeout(resolve, PAYMENT_CHECK_INTERVAL));
+    }
+
+    // Timeout reached - no confirmation received
+    // BUT: Check one more time with Cashfree API directly to be sure
+    console.warn('[success] ⏱️  Verification timeout reached (90s). Doing final Cashfree check...');
+    
+    const finalCheck = await checkPaymentStatus();
+    if (finalCheck.found && finalCheck.status === 'SUCCESS') {
+      console.log('[success] ✅ FINAL CHECK: Payment actually succeeded!');
+      verifyOv.remove();
+      proceedWithSuccess(finalCheck.order);
       return;
     }
-    finalizeCalled = true;
-    
-    try {
-      const abortController = new AbortController();
-      // Increased timeout to 15s - may need to access GitHub/KonfHub
-      const timeoutId = setTimeout(() => abortController.abort(), 15000);
-      try {
-        const res = await fetch("/api/finalize-order", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ order_id: orderId }),
-          signal: abortController.signal,
-        });
-        
-        // CRITICAL: Handle payment validation failure (402 Payment Required)
-        // This means payment failed but user was still redirected to success page
-        if (res.status === 402) {
-          console.error('[success] ❌ PAYMENT VALIDATION FAILED: Payment not successful');
-          const data = await res.json().catch(() => ({}));
-          console.error('[success] Payment error:', data);
-          // Redirect to error page instead of showing success
-          const type = new URLSearchParams(location.search).get('type') || 'registration';
-          window.location.href = `error.html?order=${orderId}&type=${type}&reason=declined`;
-          return;
-        }
-        
-        if (res.ok) {
-          const data = await res.json();
-          console.log('[success] finalize-order response:', data);
-        }
-      } finally {
-        clearTimeout(timeoutId);
-      }
-    } catch (e) {
-      console.log('[success] finalize-order error (ignoring, webhook still works):', e.message);
-      /* ignore: server may not implement; polling still works */
-    }
+
+    console.error('[success] ❌ FINAL: Payment still not confirmed after 90 seconds');
+    window.location.href = `error.html?order=${orderId}&type=${type}&reason=verification_timeout`;
   }
+  
+  // ====== PROCEED WITH SUCCESS (AFTER VERIFICATION) ======
+  function proceedWithSuccess(orderData) {
+    // Update thank you message based on type
+    if (thanks) {
+      if (type === "bulk")
+        thanks.textContent = "Thank you for your bulk registration!";
+      else if (type === "donation")
+        thanks.textContent = "Thank you for your donation!";
+      else
+        thanks.textContent = "Thank you for your payment!";
+    }
+    
+    // Show issuance overlay
+    const ov = document.createElement("div");
+    ov.className = "loader-overlay";
+    ov.setAttribute("aria-busy", "true");
+    ov.innerHTML = `
+      <div class="card" style="background:#16161A;border:1px solid var(--border);padding:20px;border-radius:14px;min-width:280px;text-align:center">
+        <div class="spinner" style="margin:0 auto 10px"></div>
+        <div id="issueTitle" style="font-weight:700;margin-bottom:6px">Dispatching passes…</div>
+        <div id="issueSub" class="muted tiny">Starting…</div>
+      </div>`;
+    document.body.appendChild(ov);
 
-  // render progress if server provides it
-  function renderProgress(oc) {
-    // flexible keys: progress.{issued,total} OR {issued,total} OR infer from recipients
-    const p = oc?.progress || oc || {};
-    const total = Number(
-      p.total ?? p.expected ?? oc?.quantity ?? oc?.passes ?? 0
-    );
-    const issued = Number(
-      p.issued ??
-        p.sent ??
-        oc?.issued ??
-        (Array.isArray(oc?.delivered) ? oc.delivered.length : 0)
-    );
+    const issueTitle = ov.querySelector("#issueTitle");
+    const issueSub = ov.querySelector("#issueSub");
 
-    if (total > 0) {
-      if (issueTitle)
-        issueTitle.textContent = `Dispatching passes… ${Math.min(
-          issued,
-          total
-        )}/${total}`;
-      if (badge)
+    // Call finalize-order endpoint
+    let finalizeCalled = false;
+    async function finalize() {
+      if (finalizeCalled) return;
+      finalizeCalled = true;
+
+      try {
+        const abortController = new AbortController();
+        const timeoutId = setTimeout(() => abortController.abort(), 15000);
+        try {
+          const res = await fetch("/api/finalize-order", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ order_id: orderId }),
+            signal: abortController.signal,
+          });
+
+          if (res.status === 402) {
+            // Payment validation failed on server
+            console.error('[success] Server rejected: Payment not successful');
+            window.location.href = `error.html?order=${orderId}&type=${type}&reason=payment_validation_failed`;
+            return;
+          }
+
+          if (res.ok) {
+            const data = await res.json();
+            console.log('[success] Tickets issued successfully:', data);
+          }
+        } finally {
+          clearTimeout(timeoutId);
+        }
+      } catch (e) {
+        console.log('[success] finalize-order error:', e.message);
+      }
+    }
+
+    // Poll for fulfillment status
+    function renderProgress(oc) {
+      const total = Number(oc?.passes ?? oc?.quantity ?? 0);
+      const issued = Number(
+        oc?.issued ?? (Array.isArray(oc?.delivered) ? oc.delivered.length : 0)
+      );
+
+      if (total > 0 && issueTitle) {
+        issueTitle.textContent = `Dispatching passes… ${Math.min(issued, total)}/${total}`;
+      }
+      if (badge && issued > 0) {
         badge.textContent = `Issuing ${Math.min(issued, total)}/${total}`;
+      }
       if (detail && Array.isArray(oc?.recipients)) {
         detail.textContent = `Delivering to: ${oc.recipients.join(", ")}`;
       }
       if (issueSub) {
-        const state = oc?.state || oc?.fulfillment || oc?.status || "";
-        issueSub.textContent = state
-          ? String(state)
-          : "Contacting ticketing partner…";
+        const state = oc?.state || oc?.fulfillment || "";
+        issueSub.textContent = state || "Contacting ticketing partner…";
       }
-    } else {
-      if (issueTitle) issueTitle.textContent = "Dispatching passes…";
-      if (issueSub) issueSub.textContent = "Contacting ticketing partner…";
     }
-  }
 
-  let tries = 0,
-    done = false;
-  async function poll() {
-    if (done) return;
-    tries++;
-    try {
+    let tries = 0;
+    let done = false;
+    async function poll() {
+      if (done) {
+        console.log('[success] Poll stopped - dispatch complete');
+        return;
+      }
+
+      tries++;
+      try {
       const abortController = new AbortController();
       // Increased timeout to 10s - may need to access GitHub
       const timeoutId = setTimeout(() => abortController.abort(), 10000);
@@ -915,7 +1075,15 @@ function initRegister() {
         clearTimeout(timeoutId);
       }
       if (r.ok) {
-        const oc = await r.json();
+        const response = await r.json();
+        const oc = response.order;  // ✅ Extract the order from response
+        
+        if (!oc) {
+          console.log('[success] Poll attempt', tries, 'got empty order');
+          await new Promise(resolve => setTimeout(resolve, PAYMENT_CHECK_INTERVAL));
+          return;
+        }
+        
         renderProgress(oc);
 
         const ok = oc.fulfilled?.status === "ok";
@@ -923,6 +1091,7 @@ function initRegister() {
 
         if (ok || partial) {
           done = true;
+          console.log('[success] Dispatch complete:', ok ? 'fully' : 'partially', 'issued');
           if (badge)
             badge.textContent = ok ? "Tickets issued" : "Partially issued";
           if (detail) {
@@ -938,33 +1107,38 @@ function initRegister() {
         }
       }
     } catch (e) {
-      /* ignore network error; keep polling */
+      console.log('[success] Poll attempt', tries, 'failed:', e.message);
     }
 
     // keep user informed
     if (badge && !done) {
       badge.textContent = `Processing…`;
     }
-    if (tries < 40) setTimeout(poll, 2000);
-    else {
-      if (!done) {
-        done = true;
-        if (badge) badge.textContent = "Processing (may take a few moments)";
-        if (detail)
-          detail.textContent =
-            "Your passes are being prepared. Check your email within a few minutes. If they don't arrive soon, reply to the confirmation email or contact us at rotaractjpnagar@gmail.com.";
-        ov.setAttribute("aria-busy", "false");
-        ov.remove();
-      }
+
+    if (tries < 40 && !done) {
+      setTimeout(poll, 2000);
+    } else if (!done) {
+      done = true;
+      console.log('[success] Max polling attempts reached (80s elapsed)');
+      if (badge) badge.textContent = "Processing (may take a few moments)";
+      if (detail)
+        detail.textContent =
+          "Your passes are being prepared. Check your email within a few minutes. If they don't arrive soon, reply to the confirmation email or contact us at rotaractjpnagar@gmail.com.";
+      ov.setAttribute("aria-busy", "false");
+      ov.remove();
     }
+    }
+
+    // Start issuance process
+    finalize();
+    poll();
   }
 
-  // Kick it off
-  // Call finalize() as fallback for local testing where webhooks can't reach localhost
-  // In production, Cashfree webhook will call finalize() via cf-webhook.js
-  // For development: call finalize() after 2s to trigger local ticket issuance
-  finalize();
-  poll();
+  // Start the payment verification
+  verifyAndProceed().catch(err => {
+    console.error('[success] Verification error:', err);
+    window.location.href = `error.html?order=${orderId}&type=${type}&reason=system_error`;
+  });
 })();
 
 // ---------- Boot ----------
@@ -1035,7 +1209,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   })();
   
-  [initIndex, initBulk, initDonate, initRegister].forEach((fn) => {
+  [initImageErrorHandlers, initIndex, initBulk, initDonate, initRegister, initStatus, initCheckin, initError].forEach((fn) => {
     try {
       fn();
     } catch (e) {
@@ -1043,3 +1217,217 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
+
+// Attach error handlers to images that should be hidden on load-error
+function initImageErrorHandlers() {
+  try {
+    const imgs = document.querySelectorAll('img[data-hide-onerror]');
+    imgs.forEach((img) => {
+      // remove any inline onerror left behind
+      img.removeAttribute('onerror');
+      img.addEventListener('error', function () {
+        try { this.style.display = 'none'; } catch (e) {}
+        const p = this.parentElement; if (p) p.classList.add('img-missing');
+      });
+    });
+  } catch (e) { console.error('initImageErrorHandlers failed', e); }
+}
+
+// ---------- STATUS PAGE (moved from inline) ----------
+function initStatus() {
+  try {
+    if (!document.querySelector('#statusSearchForm')) return;
+
+    function formatDate(isoString) {
+      try { const d = new Date(isoString); return d.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }); } catch (e) { return isoString; }
+    }
+    function rupee(amt) { return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(amt); }
+
+    document.getElementById('statusSearchBtn').addEventListener('click', async () => {
+      const input = document.getElementById('statusInput').value.trim();
+      if (!input) { alert('Please enter an Order ID or Email'); return; }
+
+      const loading = document.getElementById('statusLoading');
+      const error = document.getElementById('statusError');
+      const result = document.getElementById('statusResult');
+
+      loading.style.display = 'block'; error.style.display = 'none'; result.style.display = 'none';
+
+      try {
+        const response = await fetch(`/api/order-status?q=${encodeURIComponent(input)}`);
+        const data = await response.json();
+        loading.style.display = 'none';
+        if (!response.ok || !data.ok) {
+          error.style.display = 'block';
+          error.innerHTML = `<strong>Order Not Found</strong><br>${data.error || 'Could not find an order matching that ID or email. Please check and try again.'}`;
+          return;
+        }
+
+        const order = data.order;
+        document.getElementById('resultOrderId').textContent = order.order_id;
+        document.getElementById('resultType').textContent = (order.type || '').charAt(0).toUpperCase() + (order.type || '').slice(1);
+        document.getElementById('resultName').textContent = order.name;
+        document.getElementById('resultEmail').textContent = order.email;
+        document.getElementById('resultAmount').textContent = rupee(order.amount);
+        document.getElementById('resultCreated').textContent = formatDate(order.created_at);
+
+        const fulfillmentReady = document.getElementById('fulfillmentReady');
+        const fulfillmentNotReady = document.getElementById('fulfillmentNotReady');
+        const ticketsIssued = document.getElementById('ticketsIssued');
+        const ticketsPartial = document.getElementById('ticketsPartial');
+        const ticketsFailed = document.getElementById('ticketsFailed');
+
+        fulfillmentNotReady.style.display = 'none'; fulfillmentReady.style.display = 'block';
+        ticketsIssued.style.display = 'none'; ticketsPartial.style.display = 'none'; ticketsFailed.style.display = 'none';
+
+        if (order.fulfilled) {
+          const status = order.fulfilled.status; const badge = document.getElementById('statusBadge');
+          if (status === 'ok') {
+            badge.classList.remove('pending','failed'); badge.classList.add('success'); badge.innerHTML = '✅ Tickets Issued';
+            document.getElementById('resultPassCount').textContent = `${order.fulfilled.count} pass${order.fulfilled.count === 1 ? '' : 'es'}`;
+            document.getElementById('resultFulfilledAt').textContent = formatDate(order.fulfilled.at);
+            ticketsIssued.style.display = 'block';
+          } else if (status === 'partial') {
+            badge.classList.remove('success','failed'); badge.classList.add('pending'); badge.innerHTML = '⏳ Partially Issued';
+            document.getElementById('resultPartialCount').textContent = order.fulfilled.count || 0; ticketsPartial.style.display = 'block';
+          } else if (status === 'failed') {
+            badge.classList.remove('success','pending'); badge.classList.add('failed'); badge.innerHTML = '❌ Issuance Failed';
+            document.getElementById('resultError').textContent = order.fulfilled.error || 'Unknown error'; ticketsFailed.style.display = 'block';
+          }
+        } else {
+          const badge = document.getElementById('statusBadge'); badge.classList.remove('success','failed'); badge.classList.add('pending'); badge.innerHTML = '⏳ Processing';
+        }
+
+        result.style.display = 'block';
+      } catch (err) {
+        loading.style.display = 'none'; error.style.display = 'block'; error.innerHTML = `<strong>Error</strong><br>${err.message || 'Could not fetch order status. Please try again.'}`;
+      }
+    });
+
+    document.getElementById('statusInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') document.getElementById('statusSearchBtn').click(); });
+  } catch (e) { console.error('initStatus failed', e); }
+}
+
+// ---------- CHECK-IN / SCAN PAGE (moved from inline) ----------
+function initCheckin() {
+  try {
+    const orderInput = document.getElementById('orderId');
+    if (!orderInput) return;
+    const btn = document.getElementById('checkInBtn');
+    const statusMsg = document.getElementById('statusMsg');
+
+    btn.addEventListener('click', async () => {
+      const orderId = orderInput.value.trim();
+      const adminKey = document.getElementById('adminKey').value.trim();
+      if (!orderId || !adminKey) {
+        statusMsg.style.display = 'block'; statusMsg.innerHTML = '<div class="status-message status-error">Please enter both Order ID and Admin Key</div>'; return;
+      }
+      statusMsg.innerHTML = '<div class="status-message status-loading">Processing check-in...</div>'; statusMsg.style.display = 'block'; btn.disabled = true;
+      try {
+        const response = await fetch(`/api/checkin?order_id=${encodeURIComponent(orderId)}&key=${encodeURIComponent(adminKey)}`, { method: 'POST' });
+        const data = await response.json().catch(() => ({}));
+        if (data.ok) {
+          statusMsg.innerHTML = '<div class="status-message status-success">Check-in Successful!</div>';
+          // add log UI if present
+          const logDiv = document.getElementById('checkInLog');
+          if (logDiv) { const item = document.createElement('div'); item.className = 'log-item success'; item.innerHTML = `<span><strong>${orderId.slice(0,20)}</strong></span><span class="time">${new Date().toLocaleTimeString()}</span><span class="status">OK</span>`; logDiv.prepend(item); }
+          orderInput.value = '';
+          orderInput.focus();
+        } else {
+          statusMsg.innerHTML = `<div class="status-message status-error">Check-in Failed: ${data.error || 'Unknown error'}</div>`;
+          const logDiv = document.getElementById('checkInLog'); if (logDiv) { const item = document.createElement('div'); item.className = 'log-item error'; item.innerHTML = `<span><strong>${orderId.slice(0,20)}</strong></span><span class="time">${new Date().toLocaleTimeString()}</span><span class="status">FAIL</span>`; logDiv.prepend(item); }
+        }
+      } catch (e) {
+        statusMsg.innerHTML = `<div class="status-message status-error">Error: ${e.message}</div>`;
+      } finally { btn.disabled = false; }
+    });
+
+    orderInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') btn.click(); });
+    orderInput.focus();
+  } catch (e) { console.error('initCheckin failed', e); }
+}
+
+// ---------- ERROR PAGE (moved from inline) ----------
+function initError() {
+  try {
+    const wrap = document.getElementById('errorStatus');
+    if (!wrap) return;
+    
+    const qs = new URLSearchParams(location.search);
+    const type = (qs.get('type') || qs.get('t') || '').toLowerCase();
+    const order = qs.get('order') || qs.get('o') || '';
+    const reason = qs.get('reason') || qs.get('r') || '';
+
+    const title = document.getElementById('errorLine');
+    const msg = document.getElementById('errorMsg');
+    const orderBox = document.getElementById('orderIdBox');
+    const orderIdEl = document.getElementById('orderId');
+    const whyFailed = document.getElementById('whyFailed');
+    const nextSteps = document.getElementById('nextSteps');
+
+    let headline = 'Payment Failed';
+    let message = 'Your payment could not be processed. Please try again with a different payment method.';
+    
+    // Customize headline based on type
+    if (type.includes('bulk')) {
+      headline = 'Bulk Registration Payment Failed';
+    } else if (type.includes('donation')) {
+      headline = 'Donation Payment Failed';
+    } else if (type.includes('single') || type.includes('registration')) {
+      headline = 'Registration Payment Failed';
+    }
+
+    // Detailed reason messages with actionable guidance
+    if (reason) {
+      const reasonMap = {
+        'declined': 'Your payment was declined by your bank or card issuer. Please verify your card details and try again, or use a different payment method.',
+        'timeout': 'Payment verification timed out. We couldn\'t confirm your payment status within the expected timeframe. Please check with your bank if money was deducted, then contact us.',
+        'verification_timeout': 'We couldn\'t verify your payment status after multiple attempts. No tickets have been issued to prevent double-charging. Please contact us with your order ID to resolve this.',
+        'verification_error': 'An error occurred while verifying your payment. For your security, no tickets have been issued. Please contact support with your order ID.',
+        'cancelled': 'You cancelled the payment at the gateway. No charges were made to your account.',
+        'invalid': 'The payment details provided were invalid. Please check your card number, expiry date, CVV, and billing information.',
+        'insufficient': 'Your bank reported insufficient funds. Please check your account balance and try again.',
+        'network': 'A network error occurred during payment processing. Please check your internet connection and try again.',
+        'failed': 'The payment was not successful. Please try again with a different payment method or contact your bank.',
+        'USER_DROPPED': 'You left the payment page before completing the transaction. No charges were made.',
+        'FAILED': 'Payment failed at the gateway. Please try again or use a different payment method.',
+        'CANCELLED': 'Payment was cancelled. No charges were made to your account.',
+        'EXPIRED': 'The payment session expired. Please create a new order and try again.',
+        'system_error': 'A system error occurred while processing your request. Our team has been notified. Please try again in a few minutes.'
+      };
+      message = reasonMap[reason] || reasonMap[reason.toLowerCase()] || message;
+    }
+
+    if (title) title.textContent = headline;
+    if (msg) msg.textContent = message;
+    
+    // Show additional information if order ID is available
+    if (order) {
+      if (orderBox) orderBox.style.display = 'block';
+      if (orderIdEl) orderIdEl.textContent = order;
+      if (whyFailed) whyFailed.style.display = 'block';
+      if (nextSteps) nextSteps.style.display = 'block';
+    }
+
+    // Attach retry button handler (replaces inline onclick)
+    const retry = document.getElementById('retryBtn');
+    if (retry) {
+      retry.removeAttribute('onclick');
+      retry.addEventListener('click', () => {
+        // Smart retry: go back to appropriate page based on type
+        if (type.includes('bulk')) {
+          window.location.href = 'bulk.html';
+        } else if (type.includes('donation')) {
+          window.location.href = 'donate.html';
+        } else {
+          window.location.href = 'register.html';
+        }
+      });
+    }
+
+    const yearEl = document.getElementById('year');
+    if (yearEl) yearEl.textContent = new Date().getFullYear();
+  } catch (e) {
+    console.error('initError failed', e);
+  }
+}
