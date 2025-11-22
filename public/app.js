@@ -223,7 +223,7 @@ async function openRazorpayCheckout(orderData) {
     const options = {
       key: orderData.key_id,
       order_id: orderData.razorpay_order_id,
-      amount: orderData.amount * 100, // Convert to paise
+      amount: orderData.amount * 100, // amount is in INR from backend, need paise for Razorpay
       currency: "INR",
       name: "Party In Pink",
       description: "Registration & Ticketing",
