@@ -234,10 +234,19 @@ exports.handler = async (event) => {
       console.log(`[cf-webhook] This webhook may have arrived before create-order.js completed`);
       console.log(`[cf-webhook] Reconstructing order from webhook...`);
       
-      // Try to extract type from order_note (format: "type|tier|quantity" or "type|club_type|quantity")
+      // Try to extract type from order_note (format: "type|tier/club_type|quantity")
       const note = data?.order?.order_note || '';
       const noteParts = String(note).split('|');
       const noteType = noteParts[0];
+      const noteTierOrClub = noteParts[1] || '';
+      const noteQuantity = parseInt(noteParts[2] || '0', 10) || 0;
+      
+      console.log('[cf-webhook] 🔍 RECONSTRUCTION DETAILS:');
+      console.log('[cf-webhook]   - order_note:', note);
+      console.log('[cf-webhook]   - noteParts:', noteParts);
+      console.log('[cf-webhook]   - noteType:', noteType);
+      console.log('[cf-webhook]   - noteTierOrClub:', noteTierOrClub);
+      console.log('[cf-webhook]   - noteQuantity:', noteQuantity);
       
       // ⚠️  VALIDATION: Can only reconstruct if we have minimum info
       if (!noteType || !['bulk', 'donation'].includes(noteType)) {
@@ -254,14 +263,25 @@ exports.handler = async (event) => {
         email: data?.customer_details?.customer_email || 'unknown@example.com',
         phone: data?.customer_details?.customer_phone || '',
         amount: paidAmt,
-        passes: 0,
+        passes: noteType === 'bulk' ? noteQuantity : 0, // Extract quantity from order_note for bulk orders
         recipients: [data?.customer_details?.customer_email || 'unknown@example.com'],
-        meta: { tier: noteType === 'donation' ? 'WEBHOOK_RECONSTRUCTED' : undefined },
+        meta: noteType === 'bulk' 
+          ? { 
+              club_type: noteTierOrClub || 'COMMUNITY',
+              quantity: noteQuantity 
+            }
+          : { tier: noteTierOrClub || 'WEBHOOK_RECONSTRUCTED' },
         created_at: new Date().toISOString(),
         cashfree: { env: (ENV.CASHFREE_ENV || 'sandbox').toLowerCase(), order: data?.order || {} },
       };
       
-      console.log(`[cf-webhook] Reconstructed order:`, { type: oc.type, passes: oc.passes, meta: oc.meta });
+      console.log(`[cf-webhook] ✓ Reconstructed order:`, { 
+        type: oc.type, 
+        passes: oc.passes, 
+        recipients: oc.recipients, 
+        meta: oc.meta,
+        amount: oc.amount
+      });
     }
 
     // Prevent webhook replays: track this webhook invocation
@@ -304,12 +324,19 @@ exports.handler = async (event) => {
       // Don't abort - try to proceed
     }
 
-    // --- Compute passes/amount (server as source of truth) ---
+    // Compute passes/amount (server as source of truth)
     if (oc.type === "bulk") {
       oc.passes = Number(oc.meta?.quantity || oc.passes || 0);
+      console.log('[cf-webhook] 🔍 BULK ORDER - Computing passes:');
+      console.log('[cf-webhook]   - oc.meta.quantity:', oc.meta?.quantity);
+      console.log('[cf-webhook]   - oc.passes (before):', Number(oc.passes));
+      console.log('[cf-webhook]   - Result:', oc.passes);
       // amount usually pre-set during create-order; keep as-is
     } else {
       oc.amount = paidAmt;
+      console.log('[cf-webhook] 🔍 DONATION ORDER - Computing passes:');
+      console.log('[cf-webhook]   - paidAmt:', paidAmt);
+      console.log('[cf-webhook]   - CFG.public.SLABS:', CFG.public.SLABS);
       // Below-minimum now grants 1 complimentary pass
       oc.passes = mapAmountToPasses(
         paidAmt,
@@ -317,12 +344,19 @@ exports.handler = async (event) => {
         1,
         ENV.SLAB_ABOVE_MAX
       );
+      console.log('[cf-webhook]   - Computed passes:', oc.passes);
     }
     
     console.log('[cf-webhook] Computed passes:', oc.passes, 'Type:', oc.type, 'Amount:', oc.amount);
     console.log('[cf-webhook] Recipient emails:', oc.recipients);
 
     // ⚠️  VALIDATION: Must have passes > 0 to issue tickets
+    console.log('[cf-webhook] 🔍 VALIDATION CHECK - Passes:');
+    console.log('[cf-webhook]   - oc.passes:', oc.passes);
+    console.log('[cf-webhook]   - oc.meta?.quantity:', oc.meta?.quantity);
+    console.log('[cf-webhook]   - oc.type:', oc.type);
+    console.log('[cf-webhook]   - oc.amount:', oc.amount);
+    
     if (!oc.passes || Number(oc.passes) <= 0) {
       console.error(`[cf-webhook] ❌ VALIDATION FAILED: passes must be > 0`);
       console.error(`[cf-webhook] Computed passes: ${oc.passes}, Type: ${oc.type}, Amount: ${oc.amount}`);
@@ -332,8 +366,14 @@ exports.handler = async (event) => {
     }
 
     // ⚠️  VALIDATION: Must have recipients to issue tickets
+    console.log('[cf-webhook] 🔍 VALIDATION CHECK - Recipients:');
+    console.log('[cf-webhook]   - oc.recipients:', oc.recipients);
+    console.log('[cf-webhook]   - Length:', oc.recipients?.length);
+    console.log('[cf-webhook]   - Email:', oc.email);
+    
     if (!oc.recipients || oc.recipients.length === 0) {
       console.error(`[cf-webhook] ❌ VALIDATION FAILED: no recipients`);
+      console.error(`[cf-webhook] Full order object:`, oc);
       oc.fulfilled = { at: new Date().toISOString(), status: 'failed', error: 'No recipients' };
       await putJson(ENV, path, oc);
       return respond(400, 'Invalid order: no recipients');
@@ -342,25 +382,45 @@ exports.handler = async (event) => {
     // --- Issue via KonfHub (KonfHub sends attendee emails) ---
     let issued;
     try {
-      console.log(`[cf-webhook] About to issue ${oc.passes} passes for order ${order_id}`);
-      console.log(`[cf-webhook] ENV KONFHUB keys:`, {
-        API_KEY: !!ENV.KONFHUB_API_KEY,
-        EVENT_ID: ENV.KONFHUB_EVENT_ID,
-        EVENT_ID_INTERNAL: ENV.KONFHUB_EVENT_ID_INTERNAL,
-        FREE_TICKET: ENV.KONFHUB_FREE_TICKET_ID,
-        INTERNAL_FREE_TICKET: ENV.KONFHUB_INTERNAL_FREE_TICKET_ID,
-        ACCESS_CODE_FREE: ENV.KONFHUB_ACCESS_CODE_FREE
-      });
+      console.log(`[cf-webhook] ===== ABOUT TO CALL KONFHUB =====`);
+      console.log(`[cf-webhook] Order ID: ${order_id}`);
+      console.log(`[cf-webhook] Type: ${oc.type}`);
+      console.log(`[cf-webhook] Passes: ${oc.passes}`);
+      console.log(`[cf-webhook] Recipients: ${JSON.stringify(oc.recipients)}`);
+      console.log(`[cf-webhook] Email: ${oc.email}`);
+      console.log(`[cf-webhook] Name: ${oc.name}`);
+      console.log(`[cf-webhook] Phone: ${oc.phone}`);
+      console.log(`[cf-webhook] Meta: ${JSON.stringify(oc.meta)}`);
+      console.log('[cf-webhook] ENV KONFHUB keys:');
+      console.log('[cf-webhook]   - API_KEY:', !!ENV.KONFHUB_API_KEY);
+      console.log('[cf-webhook]   - EVENT_ID:', ENV.KONFHUB_EVENT_ID);
+      console.log('[cf-webhook]   - EVENT_ID_INTERNAL:', ENV.KONFHUB_EVENT_ID_INTERNAL);
+      console.log('[cf-webhook]   - BULK_TICKET_ID:', ENV.KONFHUB_BULK_TICKET_ID);
+      console.log('[cf-webhook]   - INTERNAL_BULK_TICKET_ID:', ENV.KONFHUB_INTERNAL_BULK_TICKET_ID);
+      console.log('[cf-webhook]   - FREE_TICKET_ID:', ENV.KONFHUB_FREE_TICKET_ID);
+      console.log('[cf-webhook]   - INTERNAL_FREE_TICKET_ID:', ENV.KONFHUB_INTERNAL_FREE_TICKET_ID);
+      console.log('[cf-webhook]   - ACCESS_CODE_BULK:', ENV.KONFHUB_ACCESS_CODE_BULK);
+      console.log('[cf-webhook]   - ACCESS_CODE_FREE:', ENV.KONFHUB_ACCESS_CODE_FREE);
       
       issued = await issueComplimentaryPasses(ENV, oc);
       
-      console.log(`[cf-webhook] Issuance succeeded:`, { total: issued.total, created: issued.created?.length, errors: issued.errors?.length });
+      console.log(`[cf-webhook] ✓ KonfHub issuance succeeded:`);
+      console.log('[cf-webhook]   - Total:', issued.total);
+      console.log('[cf-webhook]   - Created groups:', issued.created?.length);
+      console.log('[cf-webhook]   - Errors:', issued.errors?.length);
+      console.log('[cf-webhook]   - Tickets used:', issued.tickets_used);
+      if (issued.created?.length > 0) {
+        console.log('[cf-webhook]   - First created group:', issued.created[0]);
+      }
     } catch (e) {
       oc.fulfilled = { at: new Date().toISOString(), status: 'failed', error: String(e.message || e) };
       oc.issuance_error = String(e && e.message ? e.message : e);
       await putJson(ENV, path, oc);
-      console.error('[cf-webhook] Issuance FAILED:', oc.issuance_error);
-      console.error('[cf-webhook] Stack:', e.stack);
+      console.error('[cf-webhook] ❌ KonfHub issuance FAILED:');
+      console.error('[cf-webhook]   - Error message:', oc.issuance_error);
+      console.error('[cf-webhook]   - Full error:', e);
+      console.error('[cf-webhook]   - Stack:', e.stack);
+      console.error('[cf-webhook]   - Order at failure:', oc);
       return respond(500, `Issuance failed: ${oc.issuance_error}`);
     }
 

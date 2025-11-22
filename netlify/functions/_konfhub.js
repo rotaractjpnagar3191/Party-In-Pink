@@ -96,7 +96,22 @@ async function capture(env, ticketId, chunk, eventId, accessCode) {
   };
   if (accessCode) headers['x-access-code'] = accessCode;
 
-  return await postJSON('https://api.konfhub.com/event/capture/v2', headers, JSON.stringify(payload));
+  console.log('[capture] Calling KonfHub API:');
+  console.log('[capture]   - Ticket ID:', ticketId);
+  console.log('[capture]   - Event ID:', eventId);
+  console.log('[capture]   - Access Code:', !!accessCode);
+  console.log('[capture]   - Chunk size:', chunk.length);
+  console.log('[capture]   - Payload:', JSON.stringify(payload, null, 2));
+  console.log('[capture]   - Headers (sanitized):', { ...headers, 'x-api-key': '***' });
+
+  const result = await postJSON('https://api.konfhub.com/event/capture/v2', headers, JSON.stringify(payload));
+  
+  console.log('[capture] Response:');
+  console.log('[capture]   - OK:', result.ok);
+  console.log('[capture]   - Status:', result.status);
+  console.log('[capture]   - JSON:', result.json);
+  
+  return result;
 }
 
 function accessCodes(env, type) {
