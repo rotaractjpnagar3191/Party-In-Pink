@@ -204,6 +204,15 @@ exports.handler = async (event) => {
       const note = data?.order?.order_note || '';
       const noteParts = String(note).split('|');
       const noteType = noteParts[0];
+      const noteTierOrClub = noteParts[1] || '';
+      const noteQuantity = parseInt(noteParts[2] || '0', 10) || 0;
+      
+      console.log('[cf-webhook] 🔍 RECONSTRUCTION DETAILS:');
+      console.log('[cf-webhook]   - order_note:', note);
+      console.log('[cf-webhook]   - noteParts:', noteParts);
+      console.log('[cf-webhook]   - noteType:', noteType);
+      console.log('[cf-webhook]   - noteTierOrClub:', noteTierOrClub);
+      console.log('[cf-webhook]   - noteQuantity:', noteQuantity);
       
       // ⚠️  VALIDATION: Can only reconstruct if we have minimum info
       if (!noteType || !['bulk', 'donation'].includes(noteType)) {
@@ -220,14 +229,25 @@ exports.handler = async (event) => {
         email: data?.customer_details?.customer_email || 'unknown@example.com',
         phone: data?.customer_details?.customer_phone || '',
         amount: paidAmt,
-        passes: 0,
+        passes: noteType === 'bulk' ? noteQuantity : 0, // Extract quantity from order_note for bulk orders
         recipients: [data?.customer_details?.customer_email || 'unknown@example.com'],
-        meta: { tier: noteType === 'donation' ? 'WEBHOOK_RECONSTRUCTED' : undefined },
+        meta: noteType === 'bulk' 
+          ? { 
+              club_type: noteTierOrClub || 'COMMUNITY',
+              quantity: noteQuantity 
+            }
+          : { tier: noteTierOrClub || 'WEBHOOK_RECONSTRUCTED' },
         created_at: new Date().toISOString(),
         cashfree: { env: (ENV.CASHFREE_ENV || 'sandbox').toLowerCase(), order: data?.order || {} },
       };
       
-      console.log(`[cf-webhook] Reconstructed order:`, { type: oc.type, passes: oc.passes, meta: oc.meta });
+      console.log(`[cf-webhook] ✓ Reconstructed order:`, { 
+        type: oc.type, 
+        passes: oc.passes, 
+        recipients: oc.recipients, 
+        meta: oc.meta,
+        amount: oc.amount
+      });
     }
 
     // Prevent webhook replays: track this webhook invocation
