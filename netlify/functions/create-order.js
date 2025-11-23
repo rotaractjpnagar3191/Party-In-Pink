@@ -89,6 +89,68 @@ function validatePasses(passes, type, min, max) {
   return passes;
 }
 
+// ===== BOOKING ID GENERATION =====
+function generateBookingId() {
+  // Format: PIP-2025-XXXXXX (6 random alphanumeric)
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let id = 'PIP-2025-';
+  for (let i = 0; i < 6; i++) {
+    id += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return id;
+}
+
+// ===== KONFHUB PRE-VALIDATION =====
+async function validateViaKonfHub(email, phone, ENV) {
+  if (!ENV.KONFHUB_API_KEY || !ENV.KONFHUB_EVENT_ID_PUBLIC) {
+    console.log('[create-order] Skipping KonfHub pre-validation (missing config)');
+    return { valid: true }; // Don't fail if not configured
+  }
+
+  try {
+    // Check if email already registered
+    const searchResp = await fetch(
+      'https://api.konfhub.com/event/attendees/search',
+      {
+        method: 'POST',
+        headers: {
+          'x-api-key': ENV.KONFHUB_API_KEY,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          event_id: ENV.KONFHUB_EVENT_ID_PUBLIC,
+          email: email.toLowerCase()
+        }),
+        signal: AbortSignal.timeout(8000) // 8 second timeout
+      }
+    );
+
+    const searchData = await searchResp.json();
+    
+    // Check if email is already registered
+    if (searchData.attendees && Array.isArray(searchData.attendees) && searchData.attendees.length > 0) {
+      console.warn(`[create-order] 🚫 PRE-VALIDATION: Email already registered on KonfHub: ${email}`);
+      throw {
+        code: 409,
+        error: 'This email is already registered for the event',
+        type: 'DUPLICATE_EMAIL',
+        suggestion: 'Use a different email or contact support if this is incorrect'
+      };
+    }
+
+    console.log('[create-order] ✓ KonfHub pre-validation passed for', email);
+    return { valid: true };
+  } catch (err) {
+    if (err.code) throw err; // Re-throw validation errors
+    if (err.name === 'AbortError') {
+      console.warn('[create-order] ⚠️  KonfHub pre-validation timeout, proceeding anyway');
+      return { valid: true }; // Don't fail on timeout
+    }
+    console.error('[create-order] KonfHub pre-validation error:', err.message);
+    return { valid: true }; // Don't fail on other errors
+  }
+}
+
 // Check for existing order with same email+type+amount (idempotency)
 async function findExistingOrder(ENV, email, type, amount) {
   if (!ENV.GITHUB_TOKEN) return null;
@@ -167,6 +229,17 @@ exports.handler = async (event) => {
     if (!name || !email || !isValidINMobile(phone)) {
       return json(400, { error: "Invalid name/email/phone" });
     }
+
+    // ✅ CAPTURE UTM PARAMETERS FOR MARKETING ATTRIBUTION
+    const utm = {
+      source: String(body.utm_source || 'direct').trim(),
+      medium: String(body.utm_medium || '').trim() || null,
+      campaign: String(body.utm_campaign || '').trim() || null,
+      content: String(body.utm_content || '').trim() || null,
+      term: String(body.utm_term || '').trim() || null,
+      referrer: String(body.referrer || '').trim() || null
+    };
+    console.log('[create-order] UTM data captured:', utm);
 
     // ---------- compute amount + meta ----------
     let amount = 0;
@@ -267,6 +340,24 @@ exports.handler = async (event) => {
       }
     }
 
+    // ---------- KONFHUB PRE-VALIDATION: Check for duplicate email ----------
+    try {
+      const khValidation = await validateViaKonfHub(email, phone, ENV);
+      if (!khValidation.valid) {
+        return json(409, { 
+          error: 'Registration failed',
+          type: 'KONFHUB_VALIDATION_FAILED' 
+        });
+      }
+    } catch (err) {
+      console.error(`[create-order] KonfHub validation error: ${err.message}`);
+      return json(err.code || 400, { 
+        error: err.error || 'Validation failed',
+        type: err.type || 'VALIDATION_ERROR',
+        suggestion: err.suggestion
+      });
+    }
+
     // ---------- IDEMPOTENCY CHECK: Find existing unfulfilled order ----------
     const existingOrder = await findExistingOrder(ENV, email, type, amount);
     if (existingOrder) {
@@ -351,8 +442,10 @@ exports.handler = async (event) => {
     }
 
     // Save order record to GitHub (for webhook lookup)
+    const bookingId = generateBookingId(); // ✅ Generate human-readable booking ID
     const record = {
       order_id,
+      booking_id: bookingId, // ✅ NEW: Human-readable booking ID (e.g., PIP-2025-A1B2C3)
       type,
       name,
       email,
@@ -361,6 +454,7 @@ exports.handler = async (event) => {
       passes,
       recipients: validRecipients, // ✅ Use validated recipients
       meta,
+      utm, // ✅ NEW: Marketing attribution data
       created_at: new Date().toISOString(),
       cashfree: { env: cfEnv, order: cfJson },
     };
@@ -395,6 +489,7 @@ exports.handler = async (event) => {
 
     return json(200, {
       order_id,
+      booking_id: bookingId, // ✅ Include booking ID in response
       cf_env: cfEnv,
       payment_link,
       payment_session_id,

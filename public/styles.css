@@ -2095,3 +2095,590 @@ form .actions button {
     font-size: 16px;
   }
 }
+
+/* ========== PHASE 2: UI/UX IMPROVEMENTS ========== */
+
+/* Form Validation Feedback */
+.form-group {
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  margin-bottom: 8px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text);
+}
+
+.form-group label .required {
+  color: var(--warn);
+  font-weight: 700;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+  font-size: 16px;
+  transition: all 0.2s ease;
+  min-height: 44px;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: var(--pink);
+  box-shadow: 0 0 0 3px rgba(233, 30, 99, 0.1);
+  background: rgba(233, 30, 99, 0.02);
+}
+
+.form-group input:valid {
+  border-color: var(--success);
+  background: rgba(0, 200, 83, 0.03);
+}
+
+.form-group input:invalid:not(:placeholder-shown) {
+  border-color: var(--warn);
+  background: rgba(255, 193, 7, 0.03);
+}
+
+/* Validation Messages */
+.validation-feedback {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  font-size: 0.875rem;
+  color: var(--muted);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.form-group input:invalid:not(:placeholder-shown) ~ .validation-feedback.error {
+  opacity: 1;
+  color: var(--warn);
+}
+
+.form-group input:valid ~ .validation-feedback.success {
+  opacity: 1;
+  color: var(--success);
+}
+
+.validation-feedback::before {
+  content: '⚠️';
+}
+
+.validation-feedback.success::before {
+  content: '✓';
+}
+
+/* Loading States */
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.btn.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn.loading::after {
+  content: '';
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Toast Notifications */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  padding: 14px 20px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  max-width: 320px;
+  font-size: 0.95rem;
+  opacity: 0;
+  transform: translateY(100px);
+  transition: all 0.3s ease;
+  z-index: 1000;
+  box-shadow: var(--shadow);
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.toast.success {
+  border-color: var(--success);
+  color: var(--success);
+  background: rgba(0, 200, 83, 0.08);
+}
+
+.toast.error {
+  border-color: var(--warn);
+  color: var(--warn);
+  background: rgba(255, 193, 7, 0.08);
+}
+
+.toast.info {
+  border-color: var(--pink);
+  color: var(--pink);
+  background: rgba(233, 30, 99, 0.08);
+}
+
+/* Progress Indicator */
+.progress-container {
+  margin-bottom: 32px;
+}
+
+.progress-steps {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  gap: 16px;
+}
+
+.progress-steps .step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  text-align: center;
+  opacity: 0.5;
+  transition: opacity 0.3s ease;
+}
+
+.progress-steps .step.active {
+  opacity: 1;
+}
+
+.progress-steps .step.completed {
+  opacity: 1;
+}
+
+.step-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--border);
+  color: var(--text);
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+.progress-steps .step.active .step-number {
+  background: var(--pink);
+  color: white;
+  box-shadow: 0 0 0 8px rgba(233, 30, 99, 0.1);
+}
+
+.progress-steps .step.completed .step-number {
+  background: var(--success);
+  color: white;
+}
+
+.step-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.progress-steps .step.active .step-label {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.progress-bar {
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--pink), var(--pink-600));
+  transition: width 0.4s ease;
+  border-radius: 2px;
+}
+
+/* Success Page Enhancements */
+.success-icon {
+  font-size: 4rem;
+  text-align: center;
+  margin-bottom: 16px;
+  animation: successBounce 0.6s ease-out;
+}
+
+@keyframes successBounce {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.booking-card {
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  margin: 20px 0;
+  transition: all 0.3s ease;
+}
+
+.booking-card:hover {
+  border-color: var(--pink);
+  box-shadow: 0 0 0 8px rgba(233, 30, 99, 0.05);
+}
+
+.booking-card .label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.booking-id {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.booking-id code {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--pink);
+  font-family: 'Monaco', 'Courier New', monospace;
+  word-break: break-all;
+}
+
+.btn-copy {
+  padding: 8px 16px;
+  background: var(--pink);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-copy:hover {
+  background: var(--pink-600);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(233, 30, 99, 0.3);
+}
+
+.btn-copy.copied {
+  background: var(--success);
+}
+
+.help-text {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin: 0;
+}
+
+/* Order Summary */
+.order-summary {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin: 20px 0;
+}
+
+.order-summary h3 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  font-size: 1.1rem;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.summary-row:last-child {
+  border-bottom: none;
+}
+
+.summary-row strong {
+  color: var(--pink);
+  font-weight: 700;
+}
+
+/* Error Page Styling */
+.error-container {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.error-icon {
+  font-size: 3.5rem;
+  margin-bottom: 16px;
+}
+
+.error-details {
+  background: var(--card);
+  border-left: 4px solid var(--warn);
+  border-radius: 8px;
+  padding: 16px;
+  margin: 24px 0;
+  text-align: left;
+}
+
+.error-message {
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.error-code {
+  color: var(--muted);
+  font-family: monospace;
+}
+
+.recovery-options {
+  margin-top: 32px;
+  text-align: left;
+}
+
+.recovery-options > div {
+  display: none;
+}
+
+.recovery-options > div.active {
+  display: block;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Mobile Menu Improvements */
+.mobile-menu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.95);
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding-top: 64px;
+}
+
+.mobile-menu.hidden {
+  display: none;
+}
+
+.menu-content {
+  flex: 1;
+  padding: 24px 0;
+}
+
+.menu-group {
+  border-bottom: 1px solid var(--border);
+  padding: 16px 24px;
+}
+
+.menu-group h3 {
+  margin: 0 0 12px 0;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.menu-group a {
+  display: block;
+  padding: 10px 0;
+  color: var(--text);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.menu-group a:hover {
+  color: var(--pink);
+}
+
+.menu-close {
+  position: absolute;
+  top: 16px;
+  right: 24px;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 4px;
+}
+
+/* Breadcrumb Navigation */
+.breadcrumbs {
+  font-size: 0.9rem;
+  margin-bottom: 24px;
+}
+
+.breadcrumbs ol {
+  display: flex;
+  gap: 4px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.breadcrumbs li::after {
+  content: ' / ';
+  margin: 0 4px;
+  color: var(--muted);
+}
+
+.breadcrumbs li:last-child::after {
+  content: '';
+  margin: 0;
+}
+
+.breadcrumbs a {
+  color: var(--pink);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.breadcrumbs a:hover {
+  color: var(--pink-600);
+  text-decoration: underline;
+}
+
+.breadcrumbs [aria-current="page"] {
+  color: var(--muted);
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
+    min-height: 48px;
+    font-size: 16px;
+  }
+
+  .btn {
+    min-height: 48px;
+    font-size: 1rem;
+  }
+
+  .btn.btn-primary {
+    min-height: 56px;
+  }
+
+  .progress-steps {
+    gap: 8px;
+  }
+
+  .step-label {
+    display: none;
+  }
+
+  .toast {
+    bottom: 12px;
+    right: 12px;
+    left: 12px;
+    max-width: none;
+  }
+
+  .booking-card {
+    padding: 16px;
+  }
+
+  .error-details {
+    text-align: center;
+  }
+}
+
+/* Accessibility improvements */
+*:focus-visible {
+  outline: 2px solid var(--pink);
+  outline-offset: 2px;
+}
+
+@media (prefers-contrast: more) {
+  *:focus-visible {
+    outline: 3px solid var(--pink);
+  }
+
+  .form-group input:focus,
+  .form-group textarea:focus,
+  .form-group select:focus {
+    outline: 3px solid var(--pink);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
