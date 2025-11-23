@@ -6,16 +6,98 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Page Not Found — Party in Pink</title>
   <meta name="robots" content="noindex" />
-  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
-  <link rel="stylesheet" href="/styles.css" />
+  <meta name="theme-color" content="#E91E63" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css?v=20251123" />
+  <style>
+    .error-container {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      background: linear-gradient(135deg, rgba(233, 30, 99, 0.1) 0%, rgba(156, 39, 176, 0.05) 100%);
+    }
+    .error-card {
+      text-align: center;
+      max-width: 600px;
+    }
+    .error-code {
+      font-size: clamp(4rem, 15vw, 8rem);
+      font-weight: 800;
+      background: linear-gradient(135deg, #E91E63, #F06292);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 1rem;
+      line-height: 1;
+    }
+    .error-title {
+      font-size: 2rem;
+      color: #ddd;
+      margin-bottom: 1rem;
+    }
+    .error-message {
+      font-size: 1.1rem;
+      color: #bbb;
+      line-height: 1.6;
+      margin-bottom: 2rem;
+    }
+    .recovery-options {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+    }
+    .recovery-btn {
+      padding: 12px 24px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      display: inline-block;
+    }
+    .recovery-btn.primary {
+      background: #E91E63;
+      color: white;
+    }
+    .recovery-btn.primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(233, 30, 99, 0.3);
+    }
+    .recovery-btn.ghost {
+      background: transparent;
+      border: 2px solid #555;
+      color: #ddd;
+    }
+    .recovery-btn.ghost:hover {
+      border-color: #E91E63;
+      color: #E91E63;
+    }
+  </style>
 </head>
-<body>
-  <main class="section">
-    <div class="container" style="text-align:center">
-      <h1>404</h1>
-      <p>Oops! That page danced away.</p>
-      <p><a class="btn btn-pink" href="/">Back to Home</a></p>
+<body class="theme-pip">
+  <main class="error-container">
+    <div class="error-card">
+      <div class="error-code">404</div>
+      <h1 class="error-title">Oops! Page Not Found</h1>
+      <p class="error-message">That page danced away—just like us on December 14! Let's get you back on track.</p>
+      
+      <div class="recovery-options">
+        <a href="/" class="recovery-btn primary">🏠 Back to Home</a>
+        <a href="/register.html" class="recovery-btn ghost">📝 Register Now</a>
+        <a href="/donate.html" class="recovery-btn ghost">💖 Donate</a>
+      </div>
+      
+      <p style="font-size: 0.9rem; color: #999; margin-top: 2rem;">
+        Still lost? <a href="mailto:rotaractjpnagar@gmail.com" style="color: #E91E63; text-decoration: none; font-weight: 600;">Contact us</a>
+      </p>
     </div>
   </main>
+  <script src="utils.js?v=2025-11-23" defer></script>
+  <script src="app.js?v=2025-11-20" defer></script>
 </body>
 </html>

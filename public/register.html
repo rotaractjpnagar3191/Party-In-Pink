@@ -34,7 +34,7 @@
   <header class="site-header">
     <div class="wrap">
       <a class="brand" href="index.html">
-        <img src="assets/logos/PiP_Black.png" alt="Party In Pink Logo" onerror="this.style.display='none'">
+        <img src="assets/logos/PiP_Black.png" alt="Party In Pink Logo" data-hide-onerror="1">
         <!-- <span>Party In Pink</span> -->
       </a>
 
@@ -94,17 +94,9 @@
     </div>
   </footer>
 
+  <script src="utils.js?v=2025-11-23" defer></script>
   <script src="app.js?v=2025-11-20" defer></script>
-  <script>
-    // Hide skeleton once the iframe is ready
-    window.addEventListener('load', () => {
-      const iframe = document.getElementById('konfhub-widget');
-      const wrap = iframe && iframe.parentElement;
-      if (!iframe || !wrap) return;
-      if (iframe.complete) wrap.classList.add('embed--loaded');
-      iframe.addEventListener('load', () => wrap.classList.add('embed--loaded'));
-    });
-  </script>
+  <!-- Phase 2: Enhanced UX with utils.js -->
 </body>
 
 </html>

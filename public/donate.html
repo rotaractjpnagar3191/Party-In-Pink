@@ -596,7 +596,7 @@
   <header class="site-header">
     <div class="wrap">
       <a class="brand" href="index.html">
-        <img src="assets/logos/PiP_Black.png" alt="Party In Pink Logo" onerror="this.style.display='none'">
+        <img src="assets/logos/PiP_Black.png" alt="Party In Pink Logo" data-hide-onerror="1">
       </a>
       <nav class="main-nav" aria-label="Primary">
         <a href="about.html">About Us</a>
@@ -838,6 +838,135 @@
     </div>
   </footer>
 
+  <script src="utils.js?v=2025-11-23" defer></script>
   <script src="app.js?v=2025-11-20" defer></script>
+  <script>
+    // Phase 2: Donation form initialization
+    const DONATION_SLABS = [
+      { amount: 500, passes: 0, label: '₹500' },
+      { amount: 1000, passes: 1, label: '₹1,000 + 1 Pass' },
+      { amount: 2500, passes: 3, label: '₹2,500 + 3 Passes' },
+      { amount: 5000, passes: 7, label: '₹5,000 + 7 Passes' },
+      { amount: 10000, passes: 15, label: '₹10,000 + 15 Passes' }
+    ];
+    
+    document.addEventListener('DOMContentLoaded', function() {
+      const form = document.getElementById('donateForm');
+      const amountInput = document.getElementById('donor_amount');
+      const slabQuick = document.getElementById('slab_quick');
+      const slabBody = document.getElementById('slab_body');
+      const benefitPreview = document.getElementById('benefitPreview');
+      const benefitText = document.getElementById('benefitText');
+      
+      // Populate slabs
+      function populateSlabs() {
+        slabQuick.innerHTML = '';
+        slabBody.innerHTML = '';
+        
+        DONATION_SLABS.forEach(slab => {
+          // Quick chips
+          const chip = document.createElement('div');
+          chip.className = 'chip';
+          chip.textContent = slab.label;
+          chip.addEventListener('click', () => {
+            amountInput.value = slab.amount;
+            amountInput.dispatchEvent(new Event('input'));
+            updateBenefit(slab);
+          });
+          slabQuick.appendChild(chip);
+          
+          // Table rows
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${slab.label}</td>
+            <td>₹${slab.amount.toLocaleString('en-IN')}</td>
+            <td>${slab.passes ? slab.passes + ' passes' : '—'}</td>
+            <td>${slab.passes ? '✓ Digital receipt + passes' : '✓ Digital receipt'}</td>
+          `;
+          slabBody.appendChild(row);
+        });
+      }
+      
+      function updateBenefit(slab) {
+        benefitPreview.style.display = slab.passes ? 'block' : 'none';
+        if (slab.passes) {
+          benefitText.innerHTML = `✨ <strong>${slab.passes} event passes</strong> (worth ₹${(slab.passes * 199).toLocaleString('en-IN')}) + Digital receipt`;
+        }
+      }
+      
+      populateSlabs();
+      
+      // Real-time benefit update
+      amountInput?.addEventListener('input', function() {
+        const amount = parseInt(this.value) || 0;
+        const slab = DONATION_SLABS.find(s => s.amount === amount);
+        if (slab) updateBenefit(slab);
+      });
+      
+      // Form validation
+      setupFormValidation(form, {
+        donor_amount: { required: true, min: 100 },
+        donor_name: { required: true, minLength: 2 },
+        donor_email: { required: true, type: 'email' },
+        donor_phone: { required: true, pattern: /^(?:\+?91[-\s]?|0)?[6-9]\d{9}$/ }
+      });
+      
+      // Form submission
+      form?.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const utm = captureUTMParams();
+        const submitBtn = document.getElementById('donor_submit');
+        showLoadingState(submitBtn, 'Processing donation...');
+        
+        try {
+          const formData = new FormData(form);
+          const orderData = {
+            type: 'donation',
+            amount: parseInt(formData.get('donor_amount')),
+            name: formData.get('donor_name'),
+            email: formData.get('donor_email'),
+            phone: formData.get('donor_phone'),
+            utm_source: utm.utm_source,
+            utm_medium: utm.utm_medium,
+            utm_campaign: utm.utm_campaign,
+            utm_content: utm.utm_content,
+            utm_term: utm.utm_term,
+            referrer: utm.referrer
+          };
+          
+          saveFormState('donationOrder', orderData);
+          trackEvent('donation_started', { amount: orderData.amount });
+          
+          const response = await fetch('/.netlify/functions/create-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(orderData)
+          });
+          
+          const result = await response.json();
+          if (result.payment_link) {
+            saveFormState('donationOrder', null);
+            window.location.href = result.payment_link;
+          } else {
+            showToast(result.error || 'Failed to process donation', 'error');
+            hideLoadingState(submitBtn);
+          }
+        } catch (err) {
+          showToast('Network error. Please try again.', 'error');
+          hideLoadingState(submitBtn);
+        }
+      });
+      
+      // Restore form if available
+      const saved = restoreFormState('donationOrder');
+      if (saved) {
+        document.getElementById('donor_amount').value = saved.amount || '';
+        document.getElementById('donor_name').value = saved.name || '';
+        document.getElementById('donor_email').value = saved.email || '';
+        document.getElementById('donor_phone').value = saved.phone || '';
+      }
+    });
+  </script>
 </body>
 </html>

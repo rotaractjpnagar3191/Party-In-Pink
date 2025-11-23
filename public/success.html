@@ -19,7 +19,7 @@
   <header class="site-header">
     <div class="wrap">
       <a class="brand" href="index.html">
-        <img src="assets/logos/PiP_Black.png" alt="Party In Pink Logo" onerror="this.style.display='none'">
+        <img src="assets/logos/PiP_Black.png" alt="Party In Pink Logo" data-hide-onerror="1">
       </a>
       <nav class="main-nav" aria-label="Primary">
         <a href="about.html">About Us</a>
@@ -36,30 +36,54 @@
   <main class="section">
     <div class="wrap">
       <div class="card success-card center" id="successStatus">
-        <div class="checkmark">✓</div>
-        <h1 id="thanksLine">Thank you!</h1>
-        <p id="successMsg" class="muted"></p>
-        <div id="statusBadge" style="margin-top: 10px; font-weight: 600; color: var(--primary);"></div>
-        <div id="statusDetail" class="muted tiny" style="margin-top: 5px;"></div>
+        <div class="success-icon" style="animation: successBounce 0.6s ease-out;">🎉</div>
+        <h1 id="thanksLine">Thank you for your support!</h1>
+        <p id="successMsg" class="muted" style="font-size: 1.05rem; margin-bottom: 1rem;">Your registration is confirmed</p>
 
-        <div id="orderIdBox" style="margin-top: 2rem; padding: 1rem; background: rgba(233, 30, 99, 0.1); border-left: 3px solid #E91E63; border-radius: 8px; display: none;">
-          <strong style="color: #E91E63; display: block; margin-bottom: 0.5rem;">Order ID:</strong>
-          <code id="orderId" style="background: #0F0F12; color: #bbb; padding: 0.5rem; border-radius: 4px; display: inline-block; font-family: monospace; word-break: break-all;"></code>
+        <!-- Booking ID Card -->
+        <div id="bookingIdCard" class="booking-card" style="display: none; margin-top: 2rem; padding: 2rem; background: linear-gradient(135deg, rgba(233, 30, 99, 0.15) 0%, rgba(156, 39, 176, 0.08) 100%); border: 2px solid #E91E63; border-radius: 12px;">
+          <p style="margin-top: 0; margin-bottom: 0.75rem; color: #bbb; font-size: 0.9rem;">Your Booking ID</p>
+          <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+            <code id="bookingId" style="background: #0F0F12; color: #E91E63; padding: 1rem 1.5rem; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 1.3rem; font-weight: 700; letter-spacing: 0.15em; flex: 1; text-align: center; border: 1px solid #333;"></code>
+            <button id="copyBookingBtn" class="btn-copy" style="padding: 10px 16px; background: #E91E63; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.3s; white-space: nowrap;" aria-label="Copy booking ID">📋 Copy</button>
+          </div>
+          <p style="margin: 0; font-size: 0.85rem; color: #bbb;">✨ Share this to track your order or get support</p>
         </div>
 
-        <div id="nextSteps" style="margin-top: 2rem; padding: 1rem; background: rgba(0, 200, 83, 0.1); border-left: 3px solid #00C853; border-radius: 8px; display: none;">
-          <strong style="color: #00C853; display: block; margin-bottom: 0.75rem;">What's Next?</strong>
-          <ul style="margin: 0; padding-left: 1.5rem; color: #bbb; line-height: 1.8;">
-            <li>Check your email (including spam folder) for ticket confirmation</li>
-            <li>You'll receive ticket download links and event details</li>
-            <li>Event date: December 14, 2025 at 7:30 AM</li>
-            <li><a href="status.html" style="color: #E91E63; text-decoration: none; font-weight: 600;">Check order status anytime →</a></li>
+        <!-- Order Summary -->
+        <div id="orderSummary" style="display: none; margin-top: 2rem; padding: 1.5rem; background: rgba(0, 200, 83, 0.08); border-left: 3px solid #00C853; border-radius: 8px;">
+          <p style="margin-top: 0; margin-bottom: 0.75rem; color: #00C853; font-weight: 600;">✓ Order Summary</p>
+          <div style="display: grid; gap: 0.75rem; font-size: 0.95rem; color: #ddd;">
+            <div style="display: flex; justify-content: space-between;"><span>Amount Paid:</span><strong id="amountPaid"></strong></div>
+            <div style="display: flex; justify-content: space-between;"><span>Passes/Tickets:</span><strong id="passCount"></strong></div>
+            <div style="display: flex; justify-content: space-between;"><span>Email Confirmation:</span><strong id="confirmEmail" style="color: #00C853;">Sent ✓</strong></div>
+          </div>
+        </div>
+
+        <!-- Next Steps -->
+        <div id="nextSteps" style="display: none; margin-top: 2rem; padding: 1.5rem; background: rgba(233, 30, 99, 0.08); border-left: 3px solid #E91E63; border-radius: 8px;">
+          <strong style="color: #E91E63; display: block; margin-bottom: 1rem; font-size: 1rem;">📬 What's Next?</strong>
+          <ul style="margin: 0; padding-left: 1.5rem; color: #ddd; line-height: 2;">
+            <li>📧 Check your email for ticket confirmation &amp; event details</li>
+            <li>📱 Add <strong style="color: #E91E63;">December 14, 7:30 AM</strong> to your calendar</li>
+            <li>🎫 Download your passes from the email or check status link below</li>
+            <li>❓ Having issues? <a href="#" style="color: #E91E63; text-decoration: none; font-weight: 600;">Contact support</a></li>
           </ul>
         </div>
 
-        <div class="cta-row mt-lg">
-          <a href="index.html" class="btn btn-ghost">Home</a>
-          <a href="status.html" class="btn btn-primary">Check Order Status</a>
+        <!-- Share Section -->
+        <div id="shareSection" style="display: none; margin-top: 2rem; padding: 1.5rem; background: rgba(156, 39, 176, 0.08); border: 1px solid rgba(233, 30, 99, 0.2); border-radius: 8px;">
+          <p style="margin-top: 0; margin-bottom: 1rem; color: #bbb; font-size: 0.95rem;">🎉 <strong style="color: #E91E63;">Excited?</strong> Invite your friends!</p>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+            <a id="shareWhatsApp" href="#" class="btn" style="padding: 10px 16px; background: #25D366; color: white; text-decoration: none; border-radius: 6px; font-size: 0.9rem; font-weight: 600; transition: all 0.3s;" target="_blank">📱 WhatsApp</a>
+            <a id="shareInstagram" href="#" class="btn" style="padding: 10px 16px; background: #E1306C; color: white; text-decoration: none; border-radius: 6px; font-size: 0.9rem; font-weight: 600; transition: all 0.3s;" target="_blank">📸 Instagram</a>
+            <a id="shareCopy" href="#" class="btn" style="padding: 10px 16px; background: #667085; color: white; text-decoration: none; border-radius: 6px; font-size: 0.9rem; font-weight: 600; transition: all 0.3s;">🔗 Copy Link</a>
+          </div>
+        </div>
+
+        <div class="cta-row mt-lg" style="margin-top: 2rem; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+          <a href="index.html" class="btn btn-ghost" style="padding: 12px 24px; border: 2px solid #555; border-radius: 8px; color: #ddd; text-decoration: none; font-weight: 600; transition: all 0.3s;">🏠 Back Home</a>
+          <a href="status.html" class="btn btn-primary" style="padding: 12px 24px; background: #E91E63; color: white; border-radius: 8px; text-decoration: none; font-weight: 600; transition: all 0.3s;">📊 Check Status</a>
         </div>
       </div>
     </div>
@@ -88,43 +112,77 @@
     </div>
   </footer>
 
-  <script>
-    // Lightweight fill for title/message (works even if no extra data is present)
-    (function () {
-      const qs = new URLSearchParams(location.search);
-      const type = (qs.get('type') || qs.get('t') || '').toLowerCase();
-      const order = qs.get('order') || qs.get('o') || '';
-      const email = qs.get('email') || qs.get('e') || localStorage.getItem('pip_last_email') || '';
-
-      const title = document.getElementById('thanksLine');
-      const msg = document.getElementById('successMsg');
-      const orderBox = document.getElementById('orderIdBox');
-      const orderIdEl = document.getElementById('orderId');
-      const nextSteps = document.getElementById('nextSteps');
-
-      let headline = 'Thank you!';
-      if (type.includes('bulk')) headline = 'Thank you for your bulk registration!';
-      else if (type.includes('donation')) headline = 'Thank you for your donation!';
-      else if (type.includes('single') || type.includes('registration')) headline = 'Thank you for your registration!';
-
-      title.textContent = headline;
-      msg.textContent = email
-        ? `All passes have been queued for delivery to: ${email}`
-        : 'All passes have been queued for delivery.';
-
-      // Show order ID
-      if (order) {
-        orderBox.style.display = 'block';
-        orderIdEl.textContent = order;
-      }
-
-      // Show next steps
-      if (order || email) {
-        nextSteps.style.display = 'block';
-      }
-    })();
-  </script>
-
+  <script src="utils.js?v=2025-11-23" defer></script>
   <script src="app.js?v=2025-11-20" defer></script>
+  <script>
+    // Phase 2: Success page with booking ID and sharing
+    document.addEventListener('DOMContentLoaded', function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const orderId = urlParams.get('order_id');
+      const bookingId = urlParams.get('booking_id');
+      const amount = urlParams.get('amount');
+      const passes = urlParams.get('passes');
+      const email = urlParams.get('email');
+      
+      // Fetch order details from backend
+      if (orderId) {
+        fetch(`/.netlify/functions/order-status?order_id=${orderId}`)
+          .then(r => r.json())
+          .then(data => {
+            const bid = data.booking_id || bookingId;
+            const amt = data.amount || amount;
+            const pss = data.passes || passes;
+            
+            populateSuccess(bid, amt, pss, email);
+          })
+          .catch(err => {
+            console.log('Fetching from URL params...');
+            populateSuccess(bookingId, amount, passes, email);
+          });
+      } else {
+        populateSuccess(bookingId, amount, passes, email);
+      }
+      
+      function populateSuccess(bid, amt, pss, em) {
+        if (bid) {
+          document.getElementById('bookingIdCard').style.display = 'block';
+          document.getElementById('bookingId').textContent = bid;
+          
+          // Setup copy button
+          document.getElementById('copyBookingBtn').addEventListener('click', function() {
+            copyToClipboard(bid, this);
+          });
+          
+          // Setup share buttons
+          const shareUrl = `${window.location.origin}/status.html?order_id=${orderId || ''}`;
+          const shareMsg = `I just registered for Party In Pink 4.0 🎉 Join me! Booking: ${bid}`;
+          
+          document.getElementById('shareWhatsApp').href = `https://wa.me/?text=${encodeURIComponent(shareMsg + ' ' + shareUrl)}`;
+          document.getElementById('shareInstagram').href = `https://instagram.com/rotaractjpnagar`;
+          document.getElementById('shareCopy').addEventListener('click', (e) => {
+            e.preventDefault();
+            copyToClipboard(shareUrl, e.target);
+          });
+          
+          document.getElementById('shareSection').style.display = 'block';
+        }
+        
+        if (amt || pss) {
+          document.getElementById('orderSummary').style.display = 'block';
+          if (amt) document.getElementById('amountPaid').textContent = '₹' + parseInt(amt).toLocaleString('en-IN');
+          if (pss) document.getElementById('passCount').textContent = pss + ' pass' + (parseInt(pss) > 1 ? 'es' : '');
+        }
+        
+        document.getElementById('nextSteps').style.display = 'block';
+        
+        // Track success event
+        trackEvent('registration_success', {
+          booking_id: bid,
+          amount: amt,
+          passes: pss
+        });
+      }
+    });
+  </script>
 </body>
 </html>
