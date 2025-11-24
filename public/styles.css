@@ -615,7 +615,22 @@ button[disabled] {
 .form label {
   display: grid;
   gap: 6px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
+}
+
+.form-section-label {
+  margin-top: 12px !important;
+  margin-bottom: 4px !important;
+}
+
+.form-section-info {
+  margin-top: 4px !important;
+  margin-bottom: 8px !important;
+}
+
+.bulk-form-card {
+  max-width: 840px;
+  margin-inline: auto;
 }
 
 input,
@@ -628,7 +643,6 @@ textarea {
   border-radius: 12px;
   padding: 12px 12px;
   outline: none;
-  margin-bottom: 8px;
 }
 
 input:focus,

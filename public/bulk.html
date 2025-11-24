@@ -60,19 +60,19 @@
         <p>Register multiple people from your community, university, or organization.</p>
       </div>
 
-      <div class="card" style="max-width:840px;margin-inline:auto">
+      <div class="card bulk-form-card">
         <h2>Group / Club Registration</h2>
         <p class="muted">Buy multiple passes for your community, university, or corporate group.</p>
 
         <form id="bulkForm" class="form" autocomplete="off" novalidate>
           <label>Club type</label>
-          <div class="pills" style="margin-top: 6px;">
+          <div class="pills">
             <button type="button" class="pill" data-type="COMMUNITY" data-selected="true">Community</button>
             <button type="button" class="pill" data-type="UNIVERSITY">University</button>
             <button type="button" class="pill" data-type="CORPORATE">Corporate</button>
           </div>
 
-          <p id="minInfo" class="muted" style="margin-top: 8px; margin-bottom: 12px;">Minimum <span data-min-community>12</span> passes</p>
+          <p id="minInfo" class="muted form-section-info">Minimum <span data-min-community>12</span> passes</p>
 
           <label>Club or organization name
             <input id="bulk_club" type="text" placeholder="e.g., Rotaract XYZ" required />
@@ -88,8 +88,8 @@
               pattern="^(?:\+?91[\s\-]?|0)?[6-9]\d{9}$" placeholder="10-digit mobile" required />
           </label>
 
-          <label style="margin-top: 8px;">Passes</label>
-          <div class="qty-control" style="margin-top: 6px;">
+          <label class="form-section-label">Passes</label>
+          <div class="qty-control">
             <button type="button" id="minus" class="btn btn-ghost" aria-label="Decrease">−</button>
             <input id="bulk_qty" type="number" min="1" value="12" />
             <button type="button" id="plus" class="btn btn-ghost" aria-label="Increase">+</button>
