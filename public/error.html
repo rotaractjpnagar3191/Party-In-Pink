@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Payment Failed · Party In Pink</title>
+  <title>Error · Party In Pink</title>
   <meta name="theme-color" content="#E91E63" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
@@ -35,40 +35,36 @@
 
   <main class="section">
     <div class="wrap">
-      <div class="card error-card center" id="errorStatus">
-        <div class="error-icon" style="font-size: 3rem; margin-bottom: 1rem;">✕</div>
-        <h1 id="errorLine">Payment Failed</h1>
-        <p id="errorMsg" class="muted" style="max-width: 500px; margin: 0 auto;"></p>
+      <div class="card success-card center" id="errorStatus">
+        <div class="checkmark" style="color: #FF9800; font-size: 3rem;">⚠️</div>
+        <h1 id="errorLine">Something Went Wrong</h1>
+        <p id="errorMsg" class="muted"></p>
+        
+        <div id="errorBadge" style="margin-top: 10px; font-weight: 600; color: #FF9800;"></div>
+        <div id="errorDetail" class="muted tiny" style="margin-top: 5px; max-width: 500px; margin-left: auto; margin-right: auto;"></div>
 
-        <div id="orderIdBox" style="margin-top: 2rem; padding: 1rem; background: rgba(244, 67, 54, 0.1); border-left: 3px solid #F44336; border-radius: 8px; display: none;">
-          <strong style="color: #F44336; display: block; margin-bottom: 0.5rem;">Order ID:</strong>
-          <code id="orderId" style="background: #0F0F12; color: #bbb; padding: 0.5rem; border-radius: 4px; display: inline-block; font-family: monospace; word-break: break-all;"></code>
+        <div id="networkStatus" style="margin-top: 2rem; padding: 1rem; background: rgba(255, 152, 0, 0.1); border-left: 3px solid #FF9800; border-radius: 8px; display: none;">
+          <strong style="color: #FF9800; display: block; margin-bottom: 0.75rem;">Network Status</strong>
+          <div id="networkMessage" class="muted tiny">Checking connection...</div>
         </div>
 
-        <div id="whyFailed" style="margin-top: 2rem; padding: 1rem; background: rgba(255, 193, 7, 0.1); border-left: 3px solid #FFC107; border-radius: 8px; display: none;">
-          <strong style="color: #FFC107; display: block; margin-bottom: 0.75rem;">Why did this happen?</strong>
-          <ul style="margin: 0; padding-left: 1.5rem; color: #bbb; line-height: 1.8; text-align: left; max-width: 500px;">
-            <li>Payment was declined by your bank</li>
-            <li>Insufficient funds in your account</li>
-            <li>Card details didn't match</li>
-            <li>Network timeout during payment</li>
-            <li>You cancelled the payment</li>
-          </ul>
-        </div>
-
-        <div id="nextSteps" style="margin-top: 2rem; padding: 1rem; background: rgba(0, 200, 83, 0.1); border-left: 3px solid #00C853; border-radius: 8px; display: none;">
-          <strong style="color: #00C853; display: block; margin-bottom: 0.75rem;">What's Next?</strong>
-          <ul style="margin: 0; padding-left: 1.5rem; color: #bbb; line-height: 1.8; text-align: left;">
-            <li>Check your payment details and try again</li>
-            <li>Try a different payment method</li>
-            <li>Contact your bank if the issue persists</li>
-            <li>Reach out to us at: <a href="mailto:rotaractjpnagar@gmail.com" style="color: #E91E63; text-decoration: none;">rotaractjpnagar@gmail.com</a></li>
-          </ul>
+        <div id="supportBox" style="margin-top: 2rem; padding: 1rem; background: rgba(233, 30, 99, 0.1); border-left: 3px solid #E91E63; border-radius: 8px;">
+          <strong style="color: #E91E63; display: block; margin-bottom: 0.75rem;">Need Help?</strong>
+          <div class="muted tiny">
+            <p style="margin: 0.5rem 0;">If this error persists:</p>
+            <ul style="margin: 0; padding-left: 1.5rem; line-height: 1.8;">
+              <li>Try refreshing the page</li>
+              <li>Check your internet connection</li>
+              <li>Clear your browser cache (Ctrl+Shift+Delete)</li>
+              <li>Try a different browser</li>
+              <li><strong>Contact us:</strong> <a href="mailto:rotaractjpnagar@gmail.com" style="color: #E91E63;">rotaractjpnagar@gmail.com</a></li>
+            </ul>
+          </div>
         </div>
 
         <div class="cta-row mt-lg">
           <a href="index.html" class="btn btn-ghost">Home</a>
-          <button id="retryBtn" class="btn btn-primary">Retry Payment</button>
+          <button id="retryBtn" class="btn btn-primary">Retry</button>
         </div>
       </div>
     </div>
@@ -97,7 +93,110 @@
     </div>
   </footer>
 
-  <!-- error page handlers moved to app.js (initError) -->
+  <script>
+    (function() {
+      const qs = new URLSearchParams(location.search);
+      const errorCode = qs.get('code') || qs.get('error') || 'UNKNOWN';
+      const errorMsg = qs.get('msg') || qs.get('message') || '';
+      const prevPage = qs.get('from') || sessionStorage.getItem('pip_last_page') || 'register.html';
+
+      const title = document.getElementById('errorLine');
+      const msg = document.getElementById('errorMsg');
+      const badge = document.getElementById('errorBadge');
+      const detail = document.getElementById('errorDetail');
+      const retryBtn = document.getElementById('retryBtn');
+      const networkStatus = document.getElementById('networkStatus');
+      const networkMessage = document.getElementById('networkMessage');
+      const yearEl = document.getElementById('year');
+
+      if (yearEl) yearEl.textContent = new Date().getFullYear();
+
+      // Map error codes to user-friendly messages
+      const errorMap = {
+        'TIMEOUT': {
+          title: 'Request Timeout',
+          msg: 'The server took too long to respond. Your connection may be slow.',
+          badge: '⏱️ Timeout'
+        },
+        'NETWORK': {
+          title: 'Network Error',
+          msg: 'Unable to connect to the payment service. Check your internet connection.',
+          badge: '📡 Network Error'
+        },
+        'SERVER': {
+          title: 'Server Error',
+          msg: 'Our servers are experiencing issues. Please try again in a few moments.',
+          badge: '🖥️ Server Error'
+        },
+        'VALIDATION': {
+          title: 'Invalid Data',
+          msg: 'The information you provided was invalid. Please check and try again.',
+          badge: '✓ Validation Error'
+        },
+        'PAYMENT': {
+          title: 'Payment Failed',
+          msg: 'The payment gateway encountered an error. Your account was not charged.',
+          badge: '💳 Payment Error'
+        },
+        'DUPLICATE': {
+          title: 'Duplicate Request',
+          msg: 'This order already exists. Please check your email or try a different registration.',
+          badge: '⚠️ Duplicate'
+        },
+        'UNKNOWN': {
+          title: 'Something Went Wrong',
+          msg: 'An unexpected error occurred. Our team has been notified.',
+          badge: '⚠️ Error'
+        }
+      };
+
+      const errorInfo = errorMap[errorCode] || errorMap['UNKNOWN'];
+      title.textContent = errorInfo.title;
+      msg.textContent = errorMsg || errorInfo.msg;
+      badge.textContent = errorInfo.badge;
+
+      // Show detailed error code for debugging
+      if (errorCode && errorCode !== 'UNKNOWN') {
+        detail.innerHTML = `Error code: <code style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 3px;">${errorCode}</code>`;
+      }
+
+      // Check network status
+      function updateNetworkStatus() {
+        networkStatus.style.display = 'block';
+        if (navigator.onLine) {
+          networkMessage.textContent = '✓ You are online';
+          networkMessage.style.color = 'var(--muted)';
+          if (retryBtn) retryBtn.disabled = false;
+        } else {
+          networkMessage.textContent = '✗ You are offline. Reconnect to your internet and try again.';
+          networkMessage.style.color = '#FF9800';
+          if (retryBtn) retryBtn.disabled = true;
+        }
+      }
+
+      updateNetworkStatus();
+      window.addEventListener('online', updateNetworkStatus);
+      window.addEventListener('offline', updateNetworkStatus);
+
+      // Retry button
+      if (retryBtn) {
+        retryBtn.addEventListener('click', () => {
+          // Try to go back to the previous page
+          window.history.back();
+          // If history is empty, go to the referring page or home
+          setTimeout(() => {
+            if (document.location.href.includes('error.html')) {
+              window.location.href = prevPage;
+            }
+          }, 500);
+        });
+      }
+
+      // Save this page as reference point
+      sessionStorage.setItem('pip_last_page', 'error.html');
+    })();
+  </script>
+
   <script src="app.js?v=2025-11-20" defer></script>
 </body>
 </html>

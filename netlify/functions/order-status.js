@@ -208,17 +208,19 @@ exports.handler = async (event) => {
     } : undefined
   };
   
+  const responseBody = { 
+    ok: true,
+    order: safe
+  };
+  console.log('[order-status] RESPONDING with:', { 
+    ok: responseBody.ok, 
+    order_id: safe.order_id,
+    fulfilled: safe.fulfilled 
+  });
+  
   return { 
     statusCode: 200, 
-    headers: { 
-      'content-type': 'application/json',
-      'Cache-Control': 'no-cache, no-store, must-revalidate',
-      'Pragma': 'no-cache',
-      'Expires': '0'
-    }, 
-    body: JSON.stringify({ 
-      ok: true,
-      order: safe
-    }) 
+    headers: { 'content-type': 'application/json' }, 
+    body: JSON.stringify(responseBody)
   };
 };

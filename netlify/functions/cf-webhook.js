@@ -50,6 +50,8 @@ exports.handler = async (event) => {
   console.log('[cf-webhook] Method:', event?.httpMethod);
   console.log('[cf-webhook] Has event:', !!event);
   console.log('[cf-webhook] Headers:', event?.headers ? Object.keys(event.headers) : 'NO HEADERS');
+  console.log('[cf-webhook] Event body length:', event?.body?.length || 0);
+  console.log('[cf-webhook] Event isBase64Encoded:', event?.isBase64Encoded);
   
   try {
     if (event.httpMethod !== 'POST') return respond(405, 'Method not allowed');
@@ -95,6 +97,10 @@ exports.handler = async (event) => {
     
     if (expected !== sig) {
       console.warn('[cf-webhook] ⚠️  SIGNATURE MISMATCH');
+      console.warn('[cf-webhook] Expected:', expected);
+      console.warn('[cf-webhook] Received:', sig);
+      console.warn('[cf-webhook] Secret key set:', !!SECRET);
+      console.warn('[cf-webhook] Secret key length:', String(SECRET).length);
       // Allow test pings through regardless of signature
       if (!ALLOW_TEST_PING) {
         return respond(401, 'Invalid signature');
@@ -154,6 +160,40 @@ exports.handler = async (event) => {
       console.log('[cf-webhook] Returning 200 to prevent Cashfree retries');
       return respond(200, `Payment not successful (status=${status}), no tickets issued`);
     }
+
+    // --- VERIFY PAYMENT with Cashfree API ---
+    // Double-check with Cashfree's /orders/:order_id/payments endpoint
+    // This adds extra security against webhook spoofing/replay attacks
+    console.log('[cf-webhook] Verifying payment with Cashfree API...');
+    const paymentVerified = await verifyPaymentWithCashfree(ENV, order_id, paidAmt, data?.payment?.cf_payment_id);
+    
+    if (!paymentVerified.verified) {
+      console.error(`[cf-webhook] ❌ PAYMENT VERIFICATION FAILED:`, paymentVerified.reason);
+      // Do NOT issue tickets if verification fails
+      // Return 200 to stop Cashfree retries, but mark order as failed
+      oc = oc || { order_id, type: 'unknown', created_at: new Date().toISOString() };
+      oc.fulfilled = {
+        at: new Date().toISOString(),
+        status: 'failed',
+        error: `Payment verification failed: ${paymentVerified.reason}`
+      };
+      if (ENV.GITHUB_TOKEN) {
+        try {
+          await putJson(ENV, `${ENV.STORE_PATH}/orders/${order_id}.json`, oc);
+        } catch (e) {
+          console.error('[cf-webhook] Failed to save verification failure:', e.message);
+        }
+      }
+      return respond(200, `Payment verification failed: ${paymentVerified.reason}`);
+    }
+    
+    console.log('[cf-webhook] ✓ Payment verified successfully');
+    console.log('[cf-webhook] Verified details:', {
+      order_id: paymentVerified.order_id,
+      amount_verified: paymentVerified.amount,
+      payment_status: paymentVerified.payment_status,
+      settlement_status: paymentVerified.settlement_status
+    });
 
     // --- WEBHOOK DEDUPLICATION CHECK (immediate, before any processing) ---
     // Build unique webhook key from timestamp + signature (Cashfree's unique identifier for this webhook)
@@ -245,7 +285,7 @@ exports.handler = async (event) => {
       console.log(`[cf-webhook] This webhook may have arrived before create-order.js completed`);
       console.log(`[cf-webhook] Reconstructing order from webhook...`);
       
-      // Try to extract type from order_note (format: "type|tier|quantity" or "type|club_type|quantity")
+      // Try to extract type from order_note (format: "type|tier/club_type|quantity")
       const note = data?.order?.order_note || '';
       const noteParts = String(note).split('|');
       const noteType = noteParts[0];
@@ -297,21 +337,21 @@ exports.handler = async (event) => {
 
     // Prevent webhook replays: track this webhook invocation
     // If we've already processed this exact webhook, skip it
-    // NOTE: webhookKey already declared above, reuse it here
+    const webhookKeyForReplay = `${order_id}:${ts}:${sig}`;
     if (!oc.processed_webhooks) oc.processed_webhooks = [];
     
     console.log('[cf-webhook] ⚠️  WEBHOOK DEDUPLICATION CHECK:');
-    console.log('[cf-webhook] Current webhook key:', webhookKey);
+    console.log('[cf-webhook] Current webhook key:', webhookKeyForReplay);
     console.log('[cf-webhook] Previously processed webhooks:', oc.processed_webhooks);
     
-    if (oc.processed_webhooks.includes(webhookKey)) {
+    if (oc.processed_webhooks.includes(webhookKeyForReplay)) {
       console.log('[cf-webhook] ⚠️  DUPLICATE WEBHOOK - already processed this exact webhook');
-      console.log('[cf-webhook] Webhook key:', webhookKey);
+      console.log('[cf-webhook] Webhook key:', webhookKeyForReplay);
       return respond(200, 'Webhook already processed (duplicate)');
     }
 
     // Track this webhook
-    oc.processed_webhooks = [webhookKey, ...oc.processed_webhooks.slice(0, 9)]; // keep last 10
+    oc.processed_webhooks = [webhookKeyForReplay, ...oc.processed_webhooks.slice(0, 9)]; // keep last 10
 
     // Audit payload
     oc.cashfree = oc.cashfree || {};
@@ -335,12 +375,19 @@ exports.handler = async (event) => {
       // Don't abort - try to proceed
     }
 
-    // --- Compute passes/amount (server as source of truth) ---
+    // Compute passes/amount (server as source of truth)
     if (oc.type === "bulk") {
       oc.passes = Number(oc.meta?.quantity || oc.passes || 0);
+      console.log('[cf-webhook] 🔍 BULK ORDER - Computing passes:');
+      console.log('[cf-webhook]   - oc.meta.quantity:', oc.meta?.quantity);
+      console.log('[cf-webhook]   - oc.passes (before):', Number(oc.passes));
+      console.log('[cf-webhook]   - Result:', oc.passes);
       // amount usually pre-set during create-order; keep as-is
     } else {
       oc.amount = paidAmt;
+      console.log('[cf-webhook] 🔍 DONATION ORDER - Computing passes:');
+      console.log('[cf-webhook]   - paidAmt:', paidAmt);
+      console.log('[cf-webhook]   - CFG.public.SLABS:', CFG.public.SLABS);
       // Below-minimum now grants 1 complimentary pass
       oc.passes = mapAmountToPasses(
         paidAmt,
@@ -348,12 +395,19 @@ exports.handler = async (event) => {
         1,
         ENV.SLAB_ABOVE_MAX
       );
+      console.log('[cf-webhook]   - Computed passes:', oc.passes);
     }
     
     console.log('[cf-webhook] Computed passes:', oc.passes, 'Type:', oc.type, 'Amount:', oc.amount);
     console.log('[cf-webhook] Recipient emails:', oc.recipients);
 
     // ⚠️  VALIDATION: Must have passes > 0 to issue tickets
+    console.log('[cf-webhook] 🔍 VALIDATION CHECK - Passes:');
+    console.log('[cf-webhook]   - oc.passes:', oc.passes);
+    console.log('[cf-webhook]   - oc.meta?.quantity:', oc.meta?.quantity);
+    console.log('[cf-webhook]   - oc.type:', oc.type);
+    console.log('[cf-webhook]   - oc.amount:', oc.amount);
+    
     if (!oc.passes || Number(oc.passes) <= 0) {
       console.error(`[cf-webhook] ❌ VALIDATION FAILED: passes must be > 0`);
       console.error(`[cf-webhook] Computed passes: ${oc.passes}, Type: ${oc.type}, Amount: ${oc.amount}`);
@@ -363,8 +417,14 @@ exports.handler = async (event) => {
     }
 
     // ⚠️  VALIDATION: Must have recipients to issue tickets
+    console.log('[cf-webhook] 🔍 VALIDATION CHECK - Recipients:');
+    console.log('[cf-webhook]   - oc.recipients:', oc.recipients);
+    console.log('[cf-webhook]   - Length:', oc.recipients?.length);
+    console.log('[cf-webhook]   - Email:', oc.email);
+    
     if (!oc.recipients || oc.recipients.length === 0) {
       console.error(`[cf-webhook] ❌ VALIDATION FAILED: no recipients`);
+      console.error(`[cf-webhook] Full order object:`, oc);
       oc.fulfilled = { at: new Date().toISOString(), status: 'failed', error: 'No recipients' };
       await putJson(ENV, path, oc);
       return respond(400, 'Invalid order: no recipients');
@@ -373,25 +433,45 @@ exports.handler = async (event) => {
     // --- Issue via KonfHub (KonfHub sends attendee emails) ---
     let issued;
     try {
-      console.log(`[cf-webhook] About to issue ${oc.passes} passes for order ${order_id}`);
-      console.log(`[cf-webhook] ENV KONFHUB keys:`, {
-        API_KEY: !!ENV.KONFHUB_API_KEY,
-        EVENT_ID: ENV.KONFHUB_EVENT_ID,
-        EVENT_ID_INTERNAL: ENV.KONFHUB_EVENT_ID_INTERNAL,
-        FREE_TICKET: ENV.KONFHUB_FREE_TICKET_ID,
-        INTERNAL_FREE_TICKET: ENV.KONFHUB_INTERNAL_FREE_TICKET_ID,
-        ACCESS_CODE_FREE: ENV.KONFHUB_ACCESS_CODE_FREE
-      });
+      console.log(`[cf-webhook] ===== ABOUT TO CALL KONFHUB =====`);
+      console.log(`[cf-webhook] Order ID: ${order_id}`);
+      console.log(`[cf-webhook] Type: ${oc.type}`);
+      console.log(`[cf-webhook] Passes: ${oc.passes}`);
+      console.log(`[cf-webhook] Recipients: ${JSON.stringify(oc.recipients)}`);
+      console.log(`[cf-webhook] Email: ${oc.email}`);
+      console.log(`[cf-webhook] Name: ${oc.name}`);
+      console.log(`[cf-webhook] Phone: ${oc.phone}`);
+      console.log(`[cf-webhook] Meta: ${JSON.stringify(oc.meta)}`);
+      console.log('[cf-webhook] ENV KONFHUB keys:');
+      console.log('[cf-webhook]   - API_KEY:', !!ENV.KONFHUB_API_KEY);
+      console.log('[cf-webhook]   - EVENT_ID:', ENV.KONFHUB_EVENT_ID);
+      console.log('[cf-webhook]   - EVENT_ID_INTERNAL:', ENV.KONFHUB_EVENT_ID_INTERNAL);
+      console.log('[cf-webhook]   - BULK_TICKET_ID:', ENV.KONFHUB_BULK_TICKET_ID);
+      console.log('[cf-webhook]   - INTERNAL_BULK_TICKET_ID:', ENV.KONFHUB_INTERNAL_BULK_TICKET_ID);
+      console.log('[cf-webhook]   - FREE_TICKET_ID:', ENV.KONFHUB_FREE_TICKET_ID);
+      console.log('[cf-webhook]   - INTERNAL_FREE_TICKET_ID:', ENV.KONFHUB_INTERNAL_FREE_TICKET_ID);
+      console.log('[cf-webhook]   - ACCESS_CODE_BULK:', ENV.KONFHUB_ACCESS_CODE_BULK);
+      console.log('[cf-webhook]   - ACCESS_CODE_FREE:', ENV.KONFHUB_ACCESS_CODE_FREE);
       
       issued = await issueComplimentaryPasses(ENV, oc);
       
-      console.log(`[cf-webhook] Issuance succeeded:`, { total: issued.total, created: issued.created?.length, errors: issued.errors?.length });
+      console.log(`[cf-webhook] ✓ KonfHub issuance succeeded:`);
+      console.log('[cf-webhook]   - Total:', issued.total);
+      console.log('[cf-webhook]   - Created groups:', issued.created?.length);
+      console.log('[cf-webhook]   - Errors:', issued.errors?.length);
+      console.log('[cf-webhook]   - Tickets used:', issued.tickets_used);
+      if (issued.created?.length > 0) {
+        console.log('[cf-webhook]   - First created group:', issued.created[0]);
+      }
     } catch (e) {
       oc.fulfilled = { at: new Date().toISOString(), status: 'failed', error: String(e.message || e) };
       oc.issuance_error = String(e && e.message ? e.message : e);
       await putJson(ENV, path, oc);
-      console.error('[cf-webhook] Issuance FAILED:', oc.issuance_error);
-      console.error('[cf-webhook] Stack:', e.stack);
+      console.error('[cf-webhook] ❌ KonfHub issuance FAILED:');
+      console.error('[cf-webhook]   - Error message:', oc.issuance_error);
+      console.error('[cf-webhook]   - Full error:', e);
+      console.error('[cf-webhook]   - Stack:', e.stack);
+      console.error('[cf-webhook]   - Order at failure:', oc);
       return respond(500, `Issuance failed: ${oc.issuance_error}`);
     }
 
@@ -410,6 +490,9 @@ exports.handler = async (event) => {
       status: issued.errors?.length ? 'partial' : 'ok',
       count: issued.total
     };
+
+    // Clear processing lock now that we're done
+    oc.processing = null;
 
     console.log('[cf-webhook] About to save order to GitHub:');
     console.log('[cf-webhook] Path:', path);
@@ -506,3 +589,152 @@ const respond = (statusCode, body) => {
   console.log('[cf-webhook] RESPONDING:', statusCode, body);
   return response;
 };
+
+// ========== PAYMENT VERIFICATION WITH CASHFREE API ==========
+// Verify payment by querying Cashfree's API directly
+// This prevents webhook spoofing and ensures payment was actually received
+async function verifyPaymentWithCashfree(ENV, order_id, expectedAmount, cf_payment_id) {
+  try {
+    const cfEnv = (ENV.CASHFREE_ENV || 'sandbox').toLowerCase();
+    const cfBase = cfEnv === 'production' 
+      ? 'https://api.cashfree.com' 
+      : 'https://sandbox.cashfree.com';
+    
+    const apiVersion = ENV.CASHFREE_API_VERSION && /^\d{4}-\d{2}-\d{2}$/.test(ENV.CASHFREE_API_VERSION)
+      ? ENV.CASHFREE_API_VERSION
+      : '2025-01-01';
+
+    console.log('[verify-payment] Querying Cashfree API:', { order_id, cfBase, apiVersion });
+
+    // Create AbortController with 10s timeout
+    const abortController = new AbortController();
+    const timeoutId = setTimeout(() => abortController.abort(), 10000);
+
+    let response;
+    try {
+      response = await fetch(`${cfBase}/pg/orders/${order_id}`, {
+        method: 'GET',
+        headers: {
+          'x-client-id': ENV.CASHFREE_APP_ID,
+          'x-client-secret': ENV.CASHFREE_SECRET_KEY,
+          'x-api-version': apiVersion,
+          'content-type': 'application/json',
+        },
+        signal: abortController.signal,
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
+
+    if (!response.ok) {
+      console.error('[verify-payment] API error:', response.status, response.statusText);
+      return {
+        verified: false,
+        reason: `API error: ${response.status}`
+      };
+    }
+
+    const orderData = await response.json();
+    console.log('[verify-payment] Cashfree order data received');
+    console.log('[verify-payment] Order:', {
+      order_id: orderData.order_id,
+      order_amount: orderData.order_amount,
+      order_status: orderData.order_status
+    });
+
+    // ⚠️  VALIDATION CHECKS
+    
+    // 1. Check order exists and matches
+    if (orderData.order_id !== order_id) {
+      console.error('[verify-payment] Order ID mismatch:', orderData.order_id, '!==', order_id);
+      return {
+        verified: false,
+        reason: 'Order ID mismatch'
+      };
+    }
+
+    // 2. Check amount matches (within 1 paisa tolerance for rounding)
+    const amountDiff = Math.abs(Number(orderData.order_amount || 0) - expectedAmount);
+    if (amountDiff > 0.01) {
+      console.error('[verify-payment] Amount mismatch:', orderData.order_amount, '!==', expectedAmount);
+      return {
+        verified: false,
+        reason: `Amount mismatch: expected ₹${expectedAmount}, got ₹${orderData.order_amount}`
+      };
+    }
+
+    // 3. Check if order has successful payments
+    if (!orderData.payments || orderData.payments.length === 0) {
+      console.error('[verify-payment] No payments found for order');
+      return {
+        verified: false,
+        reason: 'No payments recorded for this order'
+      };
+    }
+
+    // 4. Find a successful payment
+    const successfulPayment = orderData.payments.find(p => 
+      p.payment_status === 'SUCCESS' || p.payment_status === 'success'
+    );
+
+    if (!successfulPayment) {
+      console.error('[verify-payment] No successful payment found');
+      console.log('[verify-payment] Payments:', orderData.payments.map(p => ({
+        payment_id: p.cf_payment_id,
+        status: p.payment_status,
+        amount: p.payment_amount
+      })));
+      return {
+        verified: false,
+        reason: 'No successful payment found'
+      };
+    }
+
+    console.log('[verify-payment] ✓ Successful payment found:', {
+      cf_payment_id: successfulPayment.cf_payment_id,
+      payment_amount: successfulPayment.payment_amount,
+      payment_time: successfulPayment.payment_time,
+      payment_method: successfulPayment.payment_method,
+      utr: successfulPayment.utr || 'N/A'
+    });
+
+    // 5. Verify the payment amount matches order amount
+    const paymentAmountDiff = Math.abs(Number(successfulPayment.payment_amount || 0) - expectedAmount);
+    if (paymentAmountDiff > 0.01) {
+      console.error('[verify-payment] Payment amount mismatch:', successfulPayment.payment_amount, '!==', expectedAmount);
+      return {
+        verified: false,
+        reason: `Payment amount mismatch: expected ₹${expectedAmount}, got ₹${successfulPayment.payment_amount}`
+      };
+    }
+
+    // 6. All checks passed - payment is verified
+    console.log('[verify-payment] ✅ PAYMENT VERIFIED');
+    return {
+      verified: true,
+      order_id: orderData.order_id,
+      amount: orderData.order_amount,
+      payment_status: orderData.order_status,
+      settlement_status: orderData.settlement_status,
+      payment_method: successfulPayment.payment_method,
+      payment_time: successfulPayment.payment_time,
+      cf_payment_id: successfulPayment.cf_payment_id
+    };
+
+  } catch (err) {
+    console.error('[verify-payment] Verification error:', err?.message);
+    console.error('[verify-payment] Stack:', err?.stack);
+    
+    if (err.name === 'AbortError') {
+      return {
+        verified: false,
+        reason: 'Verification request timeout'
+      };
+    }
+
+    return {
+      verified: false,
+      reason: err?.message || 'Verification failed'
+    };
+  }
+}

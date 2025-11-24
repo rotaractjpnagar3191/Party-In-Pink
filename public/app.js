@@ -1,5 +1,85 @@
 // ===== Party in Pink 4.0 — unified site JS ==================================
 
+// ========== GLOBAL ERROR HANDLING & SESSION MANAGEMENT ==========
+
+// Session timeout tracking (30 minutes of inactivity)
+const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+let sessionTimer = null;
+let lastActivityTime = Date.now();
+
+function resetSessionTimer() {
+  lastActivityTime = Date.now();
+  
+  if (sessionTimer) clearTimeout(sessionTimer);
+  
+  sessionTimer = setTimeout(() => {
+    // Mark session as expired
+    sessionStorage.setItem('pip_session_expired', 'true');
+    window.location.href = `timeout.html?from=${encodeURIComponent(window.location.pathname)}`;
+  }, SESSION_TIMEOUT);
+}
+
+function checkSessionExpiration() {
+  if (sessionStorage.getItem('pip_session_expired') === 'true') {
+    sessionStorage.removeItem('pip_session_expired');
+    window.location.href = `timeout.html?from=${encodeURIComponent(window.location.pathname)}`;
+  }
+}
+
+// Track activity to reset session timer
+['mousedown', 'keydown', 'scroll', 'touchstart'].forEach(eventType => {
+  document.addEventListener(eventType, () => {
+    // Only reset if we're not already on error/timeout/cancel pages
+    if (!window.location.pathname.match(/\/(error|timeout|cancel|success)\.html/)) {
+      resetSessionTimer();
+    }
+  }, { passive: true });
+});
+
+// Check on page load
+checkSessionExpiration();
+
+// Global error handler for uncaught exceptions
+window.addEventListener('error', (event) => {
+  console.error('[global-error] Uncaught error:', event.error?.message || event.message);
+  console.error('[global-error] Stack:', event.error?.stack);
+  
+  // Don't redirect on certain pages
+  if (!window.location.pathname.match(/\/(error|timeout|cancel|success)\.html/)) {
+    // Store error details
+    sessionStorage.setItem('pip_last_error', JSON.stringify({
+      message: event.error?.message || event.message,
+      code: 'UNCAUGHT_ERROR',
+      timestamp: new Date().toISOString()
+    }));
+  }
+});
+
+// Global rejection handler for unhandled promise rejections
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('[global-rejection] Unhandled rejection:', event.reason?.message || event.reason);
+  console.error('[global-rejection] Stack:', event.reason?.stack);
+  
+  if (!window.location.pathname.match(/\/(error|timeout|cancel|success)\.html/)) {
+    sessionStorage.setItem('pip_last_error', JSON.stringify({
+      message: event.reason?.message || String(event.reason),
+      code: 'UNHANDLED_REJECTION',
+      timestamp: new Date().toISOString()
+    }));
+  }
+});
+
+// Network status listener
+window.addEventListener('offline', () => {
+  console.warn('[network] Going offline');
+  sessionStorage.setItem('pip_offline_at', new Date().toISOString());
+});
+
+window.addEventListener('online', () => {
+  console.log('[network] Going online');
+  sessionStorage.removeItem('pip_offline_at');
+});
+
 // Cache buster: automatically reload on CSS changes
 (() => {
   const now = new Date().toISOString().split('T')[0];
@@ -179,9 +259,9 @@ async function postJSON(url, data, btn) {
       btn.prepend(spinner);
     }
     
-    // Create AbortController with 10s timeout
+    // Create AbortController with 15s timeout for payment service calls
     const abortController = new AbortController();
-    const timeoutId = setTimeout(() => abortController.abort(), 10000);
+    const timeoutId = setTimeout(() => abortController.abort(), 15000);
     
     let r;
     try {
@@ -202,16 +282,42 @@ async function postJSON(url, data, btn) {
     } catch {
       j = { raw: text };
     }
-    if (!r.ok)
-      throw new Error(
-        j?.details?.message || j?.error || text || "HTTP " + r.status
-      );
+    
+    if (!r.ok) {
+      const errorMsg = j?.details?.message || j?.error || text || "HTTP " + r.status;
+      
+      // Determine error type and code
+      let errorCode = 'UNKNOWN';
+      if (r.status === 0) {
+        errorCode = 'NETWORK';
+      } else if (r.status === 408 || r.status === 504 || r.status === 503) {
+        errorCode = 'TIMEOUT';
+      } else if (r.status >= 500) {
+        errorCode = 'SERVER';
+      } else if (r.status === 400 || r.status === 422) {
+        errorCode = 'VALIDATION';
+      } else if (r.status === 402) {
+        errorCode = 'PAYMENT';
+      }
+      
+      throw new Error(errorMsg || `Server error (${r.status})`, { cause: { code: errorCode, status: r.status } });
+    }
+    
     return j;
   } catch (err) {
-    // Handle timeout specifically
+    // Handle different error types
+    let errorCode = 'UNKNOWN';
+    
     if (err.name === 'AbortError') {
-      throw new Error('Request timeout. The payment service took too long to respond. Please try again.');
+      errorCode = 'TIMEOUT';
+      throw new Error('Request timeout. The payment service took too long to respond. Please try again.', { cause: { code: errorCode } });
+    } else if (err.cause?.code) {
+      errorCode = err.cause.code;
+    } else if (!navigator.onLine) {
+      errorCode = 'NETWORK';
+      throw new Error('You appear to be offline. Check your internet connection and try again.', { cause: { code: errorCode } });
     }
+    
     throw err;
   } finally {
     if (btn) {
@@ -416,6 +522,33 @@ async function initBulk() {
   }
   choose("COMMUNITY");
 
+  // Restore form data if resuming from timeout
+  function restoreFormData() {
+    if (sessionStorage.getItem('pip_resume_session') === 'true') {
+      sessionStorage.removeItem('pip_resume_session');
+      const savedData = sessionStorage.getItem('pip_bulk_form');
+      if (savedData) {
+        try {
+          const data = JSON.parse(savedData);
+          $("#bulk_name").value = data.name || '';
+          $("#bulk_email").value = data.email || '';
+          $("#bulk_phone").value = data.phone || '';
+          $("#bulk_club").value = data.meta?.club_name || '';
+          if (data.club_type) choose(data.club_type);
+          if (data.meta?.quantity) {
+            qtyEl.value = data.meta.quantity;
+            recalc();
+          }
+          alert('Your form data has been restored!');
+        } catch (e) {
+          console.log('[bulk] Could not restore form:', e.message);
+        }
+      }
+    }
+  }
+
+  restoreFormData();
+
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const btn = $("#bulk_submit");
@@ -457,12 +590,22 @@ async function initBulk() {
       },
     };
 
+    // Save form data to session storage for recovery
+    sessionStorage.setItem('pip_bulk_form', JSON.stringify(payload));
+    sessionStorage.setItem('pip_last_page', 'bulk.html');
+
     try {
       const resp = await postJSON("/api/create-order", payload, btn);
       goToPayment(resp);
     } catch (err) {
-      alert("Could not create order: " + err.message);
-      console.error(err);
+      console.error('[bulk] Error:', err);
+      
+      // Extract error code
+      const errorCode = err.cause?.code || 'UNKNOWN';
+      const errorMsg = encodeURIComponent(err.message);
+      
+      // Redirect to error page
+      window.location.href = `error.html?code=${errorCode}&msg=${errorMsg}&from=bulk.html`;
     }
   });
 }
@@ -679,6 +822,30 @@ async function initDonate() {
   emailEl?.addEventListener("input", updateProceedState);
   phoneEl?.addEventListener("input", updateProceedState);
 
+  // Restore form data if resuming from timeout
+  function restoreDonateFormData() {
+    if (sessionStorage.getItem('pip_resume_session') === 'true') {
+      sessionStorage.removeItem('pip_resume_session');
+      const savedData = sessionStorage.getItem('pip_donate_form');
+      if (savedData) {
+        try {
+          const data = JSON.parse(savedData);
+          nameEl.value = data.name || '';
+          emailEl.value = data.email || '';
+          phoneEl.value = data.phone || '';
+          amountEl.value = data.custom_amount || '';
+          highlightSlab();
+          updateProceedState();
+          alert('Your donation form has been restored!');
+        } catch (e) {
+          console.log('[donate] Could not restore form:', e.message);
+        }
+      }
+    }
+  }
+
+  restoreDonateFormData();
+
   // Prefill amount with first slab and init UI
   if (amountEl && slabs.length) amountEl.value = String(slabs[0].amount);
   highlightSlab();
@@ -729,6 +896,10 @@ async function initDonate() {
       amount: amt,
     };
 
+    // Save form data to session storage for recovery
+    sessionStorage.setItem('pip_donate_form', JSON.stringify(payload));
+    sessionStorage.setItem('pip_last_page', 'donate.html');
+
     try {
       const resp = await postJSON("/api/create-order", payload, $("#donor_submit"));
       if (!resp || !resp.order_id) {
@@ -741,8 +912,14 @@ async function initDonate() {
       console.log(`[donate] Order created: ${resp.order_id}${resp.reused ? ' (reused)' : ''}, redirecting to payment...`);
       goToPayment(resp);
     } catch (err) {
-      alert("Could not create donation: " + err.message);
-      console.error(err);
+      console.error('[donate] Error:', err);
+      
+      // Extract error code
+      const errorCode = err.cause?.code || 'UNKNOWN';
+      const errorMsg = encodeURIComponent(err.message);
+      
+      // Redirect to error page
+      window.location.href = `error.html?code=${errorCode}&msg=${errorMsg}&from=donate.html`;
       form.__submitting = false;
     }
   });
@@ -781,7 +958,9 @@ function initRegister() {
 }
 
 // ---------- Success page finalize + progress ----------
-(function () {
+// NOTE: Old polling code removed - now handled in success.html
+// The success.html file handles polling directly to avoid conflicts
+// if (false) {
   const wrap = document.getElementById("successStatus");
   if (!wrap) return;
 
@@ -1075,19 +1254,16 @@ function initRegister() {
         clearTimeout(timeoutId);
       }
       if (r.ok) {
-        const response = await r.json();
-        const oc = response.order;  // ✅ Extract the order from response
-        
-        if (!oc) {
-          console.log('[success] Poll attempt', tries, 'got empty order');
-          await new Promise(resolve => setTimeout(resolve, PAYMENT_CHECK_INTERVAL));
-          return;
-        }
-        
+        const resp = await r.json();
+        // API returns { ok: true, order: {...} }
+        const oc = resp.order || resp;
+        console.log('[success-poll] Got order status:', { fulfilled: oc?.fulfilled, passed: oc?.passes, qty: oc?.quantity });
+        console.log('[success-poll] Full response keys:', Object.keys(oc || {}));
         renderProgress(oc);
 
         const ok = oc.fulfilled?.status === "ok";
         const partial = oc.fulfilled?.status === "partial";
+        console.log('[success-poll] Checking fulfilled - ok:', ok, 'partial:', partial);
 
         if (ok || partial) {
           done = true;
@@ -1107,12 +1283,13 @@ function initRegister() {
         }
       }
     } catch (e) {
-      console.log('[success] Poll attempt', tries, 'failed:', e.message);
+      console.log('[success-poll] Error (continuing):', e.message);
+      /* ignore network error; keep polling */
     }
 
     // keep user informed
     if (badge && !done) {
-      badge.textContent = `Processing…`;
+      badge.textContent = `Processing… (${tries * 2}s)`;
     }
 
     if (tries < 40 && !done) {
@@ -1134,12 +1311,13 @@ function initRegister() {
     poll();
   }
 
-  // Start the payment verification
-  verifyAndProceed().catch(err => {
-    console.error('[success] Verification error:', err);
-    window.location.href = `error.html?order=${orderId}&type=${type}&reason=system_error`;
-  });
-})();
+  // Kick it off
+  // CRITICAL: Only poll. Don't call finalize() on success page.
+  // Let the Cashfree webhook handle ticket issuance.
+  // finalize() is a fallback that should NOT be called automatically.
+  // poll();
+  // }
+// end of disabled code
 
 // ---------- Boot ----------
 document.addEventListener("DOMContentLoaded", () => {

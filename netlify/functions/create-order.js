@@ -47,6 +47,72 @@ const json = (s, b) => ({
   body: JSON.stringify(b),
 });
 
+// Verify an existing payment from Cashfree (for reused orders)
+async function verifyExistingPayment(ENV, cfOrderData) {
+  try {
+    if (!cfOrderData?.payment_session_id && !cfOrderData?.order_id) {
+      console.log('[create-order] No payment session to verify');
+      return { verified: false, reason: 'No payment session' };
+    }
+
+    const cfEnv = (ENV.CASHFREE_ENV || "sandbox").toLowerCase();
+    const cfBase = cfEnv === "production" 
+      ? "https://api.cashfree.com" 
+      : "https://sandbox.cashfree.com";
+    
+    const apiVersion = ENV.CASHFREE_API_VERSION && /^\d{4}-\d{2}-\d{2}$/.test(ENV.CASHFREE_API_VERSION)
+      ? ENV.CASHFREE_API_VERSION
+      : "2025-01-01";
+
+    const order_id = cfOrderData.order_id || cfOrderData.payment_session_id;
+
+    // Create AbortController with 8s timeout (don't block order creation too long)
+    const abortController = new AbortController();
+    const timeoutId = setTimeout(() => abortController.abort(), 8000);
+
+    let response;
+    try {
+      response = await fetch(`${cfBase}/pg/orders/${order_id}`, {
+        method: "GET",
+        headers: {
+          'x-client-id': ENV.CASHFREE_APP_ID,
+          'x-client-secret': ENV.CASHFREE_SECRET_KEY,
+          'x-api-version': apiVersion,
+          'content-type': 'application/json',
+        },
+        signal: abortController.signal,
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
+
+    if (!response.ok) {
+      console.log('[create-order] Could not verify payment:', response.status);
+      return { verified: false, reason: `API error ${response.status}` };
+    }
+
+    const orderData = await response.json();
+    
+    // Check if there's a successful payment
+    const hasSuccessfulPayment = orderData.payments?.some(p => 
+      p.payment_status === 'SUCCESS' || p.payment_status === 'success'
+    );
+
+    if (hasSuccessfulPayment) {
+      console.log('[create-order] ✓ Existing payment verified for reuse');
+      return { verified: true };
+    }
+
+    console.log('[create-order] No successful payment found for reused order');
+    return { verified: false, reason: 'No successful payment' };
+
+  } catch (err) {
+    console.log('[create-order] Payment verification error (non-blocking):', err.message);
+    // Don't fail - let webhook handle verification
+    return { verified: false, reason: err.message };
+  }
+}
+
 // Parse "5000:2,10000:5,15000:7,..." -> Map( amount -> passes )
 function parseSlabs(str) {
   const m = new Map();
@@ -262,23 +328,21 @@ exports.handler = async (event) => {
 
     if (type === "bulk") {
       const clubTypeRaw = String(body.club_type || body.clubType || "").toUpperCase();
-      let club_type, min, price;
-
-      // Determine club type, minimum passes, and price per pass
-      if (clubTypeRaw === "CORPORATE") {
-        club_type = "CORPORATE";
+      const club_type = ["COMMUNITY", "UNIVERSITY", "CORPORATE"].includes(clubTypeRaw) ? clubTypeRaw : "COMMUNITY";
+      
+      // Get pricing based on club type
+      let min, price;
+      if (club_type === "UNIVERSITY") {
+        min = parseInt(PUB.UNIV_MIN || "20", 10);
+        price = parseInt(PUB.BULK_PRICE || "199", 10);
+      } else if (club_type === "CORPORATE") {
         min = parseInt(PUB.CORP_MIN || "15", 10);
         price = parseInt(PUB.CORP_PRICE || "300", 10);
-      } else if (clubTypeRaw === "UNIVERSITY") {
-        club_type = "UNIVERSITY";
-        min = parseInt(PUB.UNIV_MIN || "20", 10);
-        price = parseInt(PUB.UNIV_PRICE || "199", 10);
       } else {
-        club_type = "COMMUNITY";
         min = parseInt(PUB.COMM_MIN || "12", 10);
-        price = parseInt(PUB.COMM_PRICE || "199", 10);
+        price = parseInt(PUB.BULK_PRICE || "199", 10);
       }
-
+      
       const quantity = Math.max(min, parseInt(body.quantity || body.count || "0", 10) || 0);
 
       // ✅ VALIDATION: Passes within acceptable range
@@ -297,6 +361,8 @@ exports.handler = async (event) => {
         return json(err.code, { error: err.error, type: err.type });
       }
 
+      amount = quantity * price;
+      passes = quantity;
       meta = {
         club_type,
         club_name: String(body.club_name || body.clubName || "").trim(),
@@ -360,22 +426,24 @@ exports.handler = async (event) => {
 
     // ---------- IDEMPOTENCY CHECK: Find existing unfulfilled order ----------
     const existingOrder = await findExistingOrder(ENV, email, type, amount);
-    if (existingOrder) {
-      // Only reuse if it has valid payment details
-      const existingLink = existingOrder.cashfree?.data?.payment_link || existingOrder.cashfree?.payment_link;
-      const existingSessionId = existingOrder.cashfree?.data?.payment_session_id || existingOrder.cashfree?.payment_session_id;
+    if (existingOrder && existingOrder.cashfree?.data?.payment_session_id) {
+      // Verify payment before reusing
+      console.log(`[create-order] Found existing order: ${existingOrder.order_id}, verifying payment...`);
+      const paymentVerified = await verifyExistingPayment(ENV, existingOrder.cashfree?.data || {});
       
-      if (existingLink && existingSessionId) {
-        console.log(`[create-order] Returning existing order for idempotency: ${existingOrder.order_id}`);
+      if (paymentVerified.verified) {
+        console.log(`[create-order] ✓ Reusing existing order with verified payment: ${existingOrder.order_id}`);
         return json(200, {
           order_id: existingOrder.order_id,
           cf_env: (ENV.CASHFREE_ENV || "sandbox").toLowerCase(),
-          payment_link: existingLink,
-          payment_session_id: existingSessionId,
+          payment_link: existingOrder.cashfree?.data?.payment_link || existingOrder.cashfree?.payment_link,
+          payment_session_id: existingOrder.cashfree?.data?.payment_session_id || existingOrder.cashfree?.payment_session_id,
           reused: true,
+          payment_verified: true,
         });
       } else {
-        console.log(`[create-order] Found existing order but missing payment details, creating fresh one: ${existingOrder.order_id}`);
+        console.log(`[create-order] ⚠️  Existing order payment verification failed: ${paymentVerified.reason}`);
+        // Fall through to create a new order
       }
     }
 
@@ -403,7 +471,12 @@ exports.handler = async (event) => {
         notify_url: `${PUB.SITE_URL}/api/cf-webhook`,
         cancel_url: `${PUB.SITE_URL}/cancel.html?order=${order_id}&type=${type}`,
       },
-      order_splits: [],
+      // Enable verify_pay feature for fraud prevention
+      products: {
+        verify_pay: {
+          enabled: true
+        }
+      }
     };
 
     // Create AbortController with 10s timeout
