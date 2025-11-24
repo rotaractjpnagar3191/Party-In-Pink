@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Payment Failed · Party In Pink</title>
+  <title>Payment Cancelled · Party In Pink</title>
   <meta name="theme-color" content="#E91E63" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
@@ -19,7 +19,7 @@
   <header class="site-header">
     <div class="wrap">
       <a class="brand" href="index.html">
-        <img src="assets/logos/PiP_Black.png" alt="Party In Pink Logo" onerror="this.style.display='none'">
+        <img src="assets/logos/PiP_Black.png" alt="Party In Pink Logo" data-hide-onerror="1">
       </a>
       <nav class="main-nav" aria-label="Primary">
         <a href="about.html">About Us</a>
@@ -35,40 +35,23 @@
 
   <main class="section">
     <div class="wrap">
-      <div class="card error-card center" id="errorStatus">
-        <div class="error-icon" style="font-size: 3rem; margin-bottom: 1rem;">✕</div>
-        <h1 id="errorLine">Payment Failed</h1>
-        <p id="errorMsg" class="muted" style="max-width: 500px; margin: 0 auto;"></p>
+      <div class="card error-card center" id="cancelStatus">
+        <div class="error-icon" style="font-size: 3rem; margin-bottom: 1rem;">⊗</div>
+        <h1>Payment Cancelled</h1>
+        <p class="muted" style="max-width: 500px; margin: 0 auto;">You cancelled the payment. No charges were made to your account.</p>
 
-        <div id="orderIdBox" style="margin-top: 2rem; padding: 1rem; background: rgba(244, 67, 54, 0.1); border-left: 3px solid #F44336; border-radius: 8px; display: none;">
-          <strong style="color: #F44336; display: block; margin-bottom: 0.5rem;">Order ID:</strong>
-          <code id="orderId" style="background: #0F0F12; color: #bbb; padding: 0.5rem; border-radius: 4px; display: inline-block; font-family: monospace; word-break: break-all;"></code>
-        </div>
-
-        <div id="whyFailed" style="margin-top: 2rem; padding: 1rem; background: rgba(255, 193, 7, 0.1); border-left: 3px solid #FFC107; border-radius: 8px; display: none;">
-          <strong style="color: #FFC107; display: block; margin-bottom: 0.75rem;">Why did this happen?</strong>
-          <ul style="margin: 0; padding-left: 1.5rem; color: #bbb; line-height: 1.8; text-align: left; max-width: 500px;">
-            <li>Payment was declined by your bank</li>
-            <li>Insufficient funds in your account</li>
-            <li>Card details didn't match</li>
-            <li>Network timeout during payment</li>
-            <li>You cancelled the payment</li>
-          </ul>
-        </div>
-
-        <div id="nextSteps" style="margin-top: 2rem; padding: 1rem; background: rgba(0, 200, 83, 0.1); border-left: 3px solid #00C853; border-radius: 8px; display: none;">
-          <strong style="color: #00C853; display: block; margin-bottom: 0.75rem;">What's Next?</strong>
+        <div style="margin-top: 2rem; padding: 1rem; background: rgba(33, 150, 243, 0.1); border-left: 3px solid #2196F3; border-radius: 8px;">
+          <strong style="color: #2196F3; display: block; margin-bottom: 0.75rem;">What's Next?</strong>
           <ul style="margin: 0; padding-left: 1.5rem; color: #bbb; line-height: 1.8; text-align: left;">
-            <li>Check your payment details and try again</li>
-            <li>Try a different payment method</li>
-            <li>Contact your bank if the issue persists</li>
-            <li>Reach out to us at: <a href="mailto:rotaractjpnagar@gmail.com" style="color: #E91E63; text-decoration: none;">rotaractjpnagar@gmail.com</a></li>
+            <li>You can restart your registration at any time</li>
+            <li>No order was created for this cancelled payment</li>
+            <li>Feel free to contact us with any questions</li>
           </ul>
         </div>
 
         <div class="cta-row mt-lg">
           <a href="index.html" class="btn btn-ghost">Home</a>
-          <button id="retryBtn" class="btn btn-primary">Retry Payment</button>
+          <a href="register.html" class="btn btn-primary">Try Again</a>
         </div>
       </div>
     </div>
@@ -97,7 +80,12 @@
     </div>
   </footer>
 
-  <!-- error page handlers moved to app.js (initError) -->
-  <script src="app.js?v=2025-11-20" defer></script>
+  <script src="app.js?v=2025-11-23" defer></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const y = document.getElementById('year');
+      if (y) y.textContent = new Date().getFullYear();
+    });
+  </script>
 </body>
 </html>

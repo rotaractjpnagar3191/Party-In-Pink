@@ -97,7 +97,7 @@
   <header class="site-header">
     <div class="wrap">
       <a class="brand" href="index.html">
-        <img src="assets/logos/PiP_Black.png" alt="Party In Pink Logo" onerror="this.style.display='none'">
+        <img src="assets/logos/PiP_Black.png" alt="Party In Pink Logo" data-hide-onerror="1">
       </a>
 
       <nav class="main-nav" aria-label="Primary">
@@ -339,50 +339,7 @@
 
   <script src="app.js?v=2025-11-21" defer></script>
 
-  <!-- Carousel wiring -->
-  <script>
-    (function () {
-      const root = document.getElementById('heroCarousel');
-      if (!root) return;
-      const track = root.querySelector('.carousel-track');
-      const slides = Array.from(track.querySelectorAll('.slide'));
-      const prev = root.querySelector('.carousel-nav.prev');
-      const next = root.querySelector('.carousel-nav.next');
-      const dots = root.querySelector('.carousel-dots');
-      if (!slides.length) return;
-
-      let i = 0;
-      const AUTOPLAY = Number(root.dataset.autoplay || 0);
-      let timer = null;
-
-      function renderDots() {
-        dots.innerHTML = slides
-          .map((_, idx) => `<button role="tab" aria-label="Slide ${idx + 1}" aria-selected="${idx === 0 ? 'true' : 'false'}"></button>`)
-          .join('');
-        dots.querySelectorAll('button').forEach((b, idx) => b.addEventListener('click', () => go(idx)));
-      }
-
-      function go(n) {
-        i = (n + slides.length) % slides.length;
-        track.style.transform = `translateX(-${i * 100}%)`;
-        dots.querySelectorAll('button').forEach((b, idx) => b.setAttribute('aria-selected', idx === i ? 'true' : 'false'));
-      }
-
-      function start() { if (AUTOPLAY) { stop(); timer = setInterval(() => go(i + 1), AUTOPLAY); } }
-      function stop() { if (timer) clearInterval(timer); }
-
-      prev.addEventListener('click', () => go(i - 1));
-      next.addEventListener('click', () => go(i + 1));
-      root.addEventListener('mouseenter', stop);
-      root.addEventListener('mouseleave', start);
-      window.addEventListener('visibilitychange', () => document.hidden ? stop() : start());
-      window.addEventListener('resize', () => go(i));
-
-      renderDots();
-      go(0);
-      start();
-    })();
-  </script>
+  <!-- Carousel wiring moved to external JS (app.js) -->
 </body>
 
 </html>

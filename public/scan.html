@@ -39,7 +39,7 @@
   <header class="site-header">
     <div class="wrap">
       <a class="brand" href="index.html">
-        <img src="assets/logos/PiP_Black.png" alt="Party In Pink Logo" onerror="this.style.display='none'">
+        <img src="assets/logos/PiP_Black.png" alt="Party In Pink Logo" data-hide-onerror="1">
       </a>
       <nav class="main-nav" aria-label="Primary">
         <a href="index.html">Home</a>
@@ -80,81 +80,7 @@
     </div>
   </main>
 
-  <script>
-    const logs = [];
-    const maxLogs = 20;
-
-    function formatTime(d) {
-      return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    }
-
-    function addLog(orderId, status) {
-      logs.unshift({ orderId, status, time: new Date() });
-      if (logs.length > maxLogs) logs.pop();
-      renderLogs();
-    }
-
-    function renderLogs() {
-      const logDiv = document.getElementById('checkInLog');
-      if (!logs.length) {
-        logDiv.innerHTML = '<div style="color: #bbb; text-align: center; padding: 1rem;">No check-ins yet</div>';
-        return;
-      }
-      logDiv.innerHTML = logs.map(log => `
-        <div class="log-item ${log.status}">
-          <span><strong>${log.orderId.slice(0, 20)}</strong></span>
-          <span class="time">${formatTime(log.time)}</span>
-          <span class="status">${log.status === 'success' ? 'OK' : 'FAIL'}</span>
-        </div>
-      `).join('');
-    }
-
-    document.getElementById('checkInBtn').addEventListener('click', async () => {
-      const orderId = document.getElementById('orderId').value.trim();
-      const adminKey = document.getElementById('adminKey').value.trim();
-      const statusMsg = document.getElementById('statusMsg');
-      const btn = document.getElementById('checkInBtn');
-
-      if (!orderId || !adminKey) {
-        statusMsg.style.display = 'block';
-        statusMsg.innerHTML = '<div class="status-message status-error">Please enter both Order ID and Admin Key</div>';
-        return;
-      }
-
-      statusMsg.innerHTML = '<div class="status-message status-loading">Processing check-in...</div>';
-      statusMsg.style.display = 'block';
-      btn.disabled = true;
-
-      try {
-        const response = await fetch(`/api/checkin?order_id=${encodeURIComponent(orderId)}&key=${encodeURIComponent(adminKey)}`, {
-          method: 'POST'
-        });
-        const data = await response.json().catch(() => ({}));
-
-        if (data.ok) {
-          statusMsg.innerHTML = '<div class="status-message status-success">Check-in Successful!</div>';
-          addLog(orderId, 'success');
-          document.getElementById('orderId').value = '';
-          document.getElementById('orderId').focus();
-        } else {
-          statusMsg.innerHTML = `<div class="status-message status-error">Check-in Failed: ${data.error || 'Unknown error'}</div>`;
-          addLog(orderId, 'error');
-        }
-      } catch (e) {
-        statusMsg.innerHTML = `<div class="status-message status-error">Error: ${e.message}</div>`;
-        addLog(orderId, 'error');
-      } finally {
-        btn.disabled = false;
-      }
-    });
-
-    document.getElementById('orderId').addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') document.getElementById('checkInBtn').click();
-    });
-
-    document.getElementById('orderId').focus();
-  </script>
-
+  <!-- Check-in handlers moved to app.js (initCheckin) -->
   <footer class="site-footer" style="margin-top: 4rem;">
     <div class="wrap">
       <div class="footer-cols">
@@ -176,8 +102,6 @@
     </div>
   </footer>
 
-  <script>
-    document.getElementById('year').textContent = new Date().getFullYear();
-  </script>
+  <!-- Footer year is set in app.js -->
 </body>
 </html>

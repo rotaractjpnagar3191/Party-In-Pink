@@ -36,7 +36,7 @@
   <header class="site-header">
     <div class="wrap">
       <a class="brand" href="index.html">
-        <img src="assets/logos/PiP_Black.png" alt="Party In Pink Logo" onerror="this.style.display='none'">
+        <img src="assets/logos/PiP_Black.png" alt="Party In Pink Logo" data-hide-onerror="1">
       </a>
       <nav class="main-nav" aria-label="Primary">
         <a href="about.html">About Us</a>
@@ -207,112 +207,7 @@
   </footer>
 
   <script src="app.js?v=2025-11-21" defer></script>
-  <script>
-    function formatDate(isoString) {
-      try {
-        const d = new Date(isoString);
-        return d.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
-      } catch (e) {
-        return isoString;
-      }
-    }
-
-    function rupee(amt) {
-      return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(amt);
-    }
-
-    document.getElementById('statusSearchBtn').addEventListener('click', async () => {
-      const input = document.getElementById('statusInput').value.trim();
-      if (!input) {
-        alert('Please enter an Order ID or Email');
-        return;
-      }
-
-      const loading = document.getElementById('statusLoading');
-      const error = document.getElementById('statusError');
-      const result = document.getElementById('statusResult');
-
-      loading.style.display = 'block';
-      error.style.display = 'none';
-      result.style.display = 'none';
-
-      try {
-        const response = await fetch(`/api/order-status?q=${encodeURIComponent(input)}`);
-        const data = await response.json();
-
-        loading.style.display = 'none';
-
-        if (!response.ok || !data.ok) {
-          error.style.display = 'block';
-          error.innerHTML = `<strong>Order Not Found</strong><br>${data.error || 'Could not find an order matching that ID or email. Please check and try again.'}`;
-          return;
-        }
-
-        // Populate result
-        const order = data.order;
-        document.getElementById('resultOrderId').textContent = order.order_id;
-        document.getElementById('resultType').textContent = order.type.charAt(0).toUpperCase() + order.type.slice(1);
-        document.getElementById('resultName').textContent = order.name;
-        document.getElementById('resultEmail').textContent = order.email;
-        document.getElementById('resultAmount').textContent = rupee(order.amount);
-        document.getElementById('resultCreated').textContent = formatDate(order.created_at);
-
-        // Fulfillment status
-        const fulfillmentReady = document.getElementById('fulfillmentReady');
-        const fulfillmentNotReady = document.getElementById('fulfillmentNotReady');
-        const ticketsIssued = document.getElementById('ticketsIssued');
-        const ticketsPartial = document.getElementById('ticketsPartial');
-        const ticketsFailed = document.getElementById('ticketsFailed');
-
-        fulfillmentNotReady.style.display = 'none';
-        fulfillmentReady.style.display = 'block';
-        ticketsIssued.style.display = 'none';
-        ticketsPartial.style.display = 'none';
-        ticketsFailed.style.display = 'none';
-
-        if (order.fulfilled) {
-          const status = order.fulfilled.status;
-          const badge = document.getElementById('statusBadge');
-
-          if (status === 'ok') {
-            badge.classList.remove('pending', 'failed');
-            badge.classList.add('success');
-            badge.innerHTML = '✅ Tickets Issued';
-            document.getElementById('resultPassCount').textContent = `${order.fulfilled.count} pass${order.fulfilled.count === 1 ? '' : 'es'}`;
-            document.getElementById('resultFulfilledAt').textContent = formatDate(order.fulfilled.at);
-            ticketsIssued.style.display = 'block';
-          } else if (status === 'partial') {
-            badge.classList.remove('success', 'failed');
-            badge.classList.add('pending');
-            badge.innerHTML = '⏳ Partially Issued';
-            document.getElementById('resultPartialCount').textContent = order.fulfilled.count || 0;
-            ticketsPartial.style.display = 'block';
-          } else if (status === 'failed') {
-            badge.classList.remove('success', 'pending');
-            badge.classList.add('failed');
-            badge.innerHTML = '❌ Issuance Failed';
-            document.getElementById('resultError').textContent = order.fulfilled.error || 'Unknown error';
-            ticketsFailed.style.display = 'block';
-          }
-        } else {
-          const badge = document.getElementById('statusBadge');
-          badge.classList.remove('success', 'failed');
-          badge.classList.add('pending');
-          badge.innerHTML = '⏳ Processing';
-        }
-
-        result.style.display = 'block';
-      } catch (err) {
-        loading.style.display = 'none';
-        error.style.display = 'block';
-        error.innerHTML = `<strong>Error</strong><br>${err.message || 'Could not fetch order status. Please try again.'}`;
-      }
-    });
-
-    document.getElementById('statusInput').addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') document.getElementById('statusSearchBtn').click();
-    });
-  </script>
+  <!-- status page handlers moved to app.js -->
 </body>
 
 </html>
