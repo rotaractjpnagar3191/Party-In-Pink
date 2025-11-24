@@ -2100,13 +2100,13 @@ form .actions button {
 
 /* Form Validation Feedback */
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 12px;
   display: flex;
   flex-direction: column;
 }
 
 .form-group label {
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   font-weight: 600;
   display: flex;
   align-items: center;

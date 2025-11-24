@@ -66,15 +66,15 @@
 
         <form id="bulkForm" class="form" autocomplete="off" novalidate>
           <label>Club type</label>
-          <div class="pills mt-md">
+          <div class="pills" style="margin-top: 6px;">
             <button type="button" class="pill" data-type="COMMUNITY" data-selected="true">Community</button>
             <button type="button" class="pill" data-type="UNIVERSITY">University</button>
             <button type="button" class="pill" data-type="CORPORATE">Corporate</button>
           </div>
 
-          <p id="minInfo" class="muted mt-md">Minimum <span data-min-community>12</span> passes</p>
+          <p id="minInfo" class="muted" style="margin-top: 8px; margin-bottom: 12px;">Minimum <span data-min-community>12</span> passes</p>
 
-          <label class="mt-md">Club or organization name
+          <label>Club or organization name
             <input id="bulk_club" type="text" placeholder="e.g., Rotaract XYZ" required />
           </label>
           <label>Contact person
@@ -88,8 +88,8 @@
               pattern="^(?:\\+?91[-\\s]?|0)?[6-9]\\d{9}$" placeholder="10-digit mobile" required />
           </label>
 
-          <label>Passes</label>
-          <div class="qty-control">
+          <label style="margin-top: 8px;">Passes</label>
+          <div class="qty-control" style="margin-top: 6px;">
             <button type="button" id="minus" class="btn btn-ghost" aria-label="Decrease">−</button>
             <input id="bulk_qty" type="number" min="1" value="12" />
             <button type="button" id="plus" class="btn btn-ghost" aria-label="Increase">+</button>
