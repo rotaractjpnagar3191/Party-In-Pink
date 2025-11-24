@@ -569,8 +569,8 @@ button[disabled] {
 .logo {
   aspect-ratio: 1/1;
   border-radius: 12px;
-  background: linear-gradient(135deg, #1a1a1e 0%, #0d0d12 100%);
-  border: 1.5px solid #333333;
+  background: linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%);
+  border: 1.5px solid rgba(233, 30, 99, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -585,8 +585,9 @@ button[disabled] {
 
 .logo:hover {
   border-color: var(--pink);
-  box-shadow: 0 8px 24px rgba(233, 30, 99, 0.2);
+  box-shadow: 0 8px 24px rgba(233, 30, 99, 0.3);
   transform: translateY(-4px);
+  background: linear-gradient(135deg, #f9f9f9 0%, #ffffff 100%);
 }
 
 .logo img {
