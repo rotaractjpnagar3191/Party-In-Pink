@@ -226,7 +226,21 @@ exports.handler = async (event) => {
     const name = String(body.name || "").trim();
     const email = String(body.email || "").trim();
     const phone = normalizeINPhone(body.phone);
+    
+    // DEBUG: Log input values
+    console.log('[create-order] 📝 Input validation:', { 
+      type, 
+      name: name ? `${name.slice(0, 10)}...` : 'EMPTY',
+      email: email ? `${email.slice(0, 10)}...` : 'EMPTY',
+      phone_raw: body.phone,
+      phone_normalized: phone,
+      phone_valid: isValidINMobile(phone),
+      name_ok: !!name,
+      email_ok: !!email
+    });
+    
     if (!name || !email || !isValidINMobile(phone)) {
+      console.error('[create-order] ❌ Validation failed:', { name: !!name, email: !!email, phone: phone, phone_valid: isValidINMobile(phone) });
       return json(400, { error: "Invalid name/email/phone" });
     }
 
@@ -406,6 +420,16 @@ exports.handler = async (event) => {
       order_splits: [],
     };
 
+    // DEBUG: Log Cashfree request details
+    console.log('[create-order] 💳 Cashfree order request:', {
+      order_id,
+      amount,
+      cfEnv,
+      apiVersion,
+      hasAppId: !!ENV.CASHFREE_APP_ID,
+      hasSecretKey: !!ENV.CASHFREE_SECRET_KEY,
+    });
+
     // Create AbortController with 10s timeout
     const abortController = new AbortController();
     const timeoutId = setTimeout(() => abortController.abort(), 10000);
@@ -428,8 +452,14 @@ exports.handler = async (event) => {
     }
 
     const cfJson = await cfRes.json().catch(() => ({}));
+    console.log('[create-order] Cashfree response:', { status: cfRes.status, statusOk: cfRes.ok, errorMessage: cfJson?.error });
+    
     if (!cfRes.ok) {
-      return json(400, { error: "Cashfree create order failed", details: cfJson });
+      return json(cfRes.status, { 
+        error: "Cashfree create order failed", 
+        details: cfJson,
+        cfMessage: cfJson?.message || cfJson?.error || 'Unknown Cashfree error'
+      });
     }
 
     const payment_session_id =
