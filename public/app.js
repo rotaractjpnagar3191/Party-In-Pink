@@ -1,5 +1,33 @@
 // ===== Party in Pink 4.0 — unified site JS ==================================
 
+// Preload critical resources for payment flow
+if (document.readyState === 'loading') {
+  const link = document.createElement('link');
+  link.rel = 'preload';
+  link.as = 'script';
+  link.href = 'https://sdk.cashfree.com/js/v3/cashfree.js';
+  document.head.appendChild(link);
+}
+
+// Lazy load images with Intersection Observer
+(() => {
+  if (!('IntersectionObserver' in window)) return;
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const img = entry.target;
+        if (img.dataset.src) {
+          img.src = img.dataset.src;
+          img.removeAttribute('data-src');
+        }
+        observer.unobserve(img);
+      }
+    });
+  }, { rootMargin: '50px' });
+  
+  document.querySelectorAll('img[data-src]').forEach(img => observer.observe(img));
+})();
+
 // Cache buster: automatically reload on CSS changes
 (() => {
   const now = new Date().toISOString().split('T')[0];
@@ -131,7 +159,10 @@ function parseSlabs(val) {
   return [];
 }
 async function loadConfig() {
-  const r = await fetch("/api/config", { cache: "no-store" }).catch(() => null);
+  // Cache config in memory for subsequent calls
+  if (CFG && CFG.BULK_PRICE) return CFG;
+  
+  const r = await fetch("/api/config", { cache: "force-cache" }).catch(() => null);
   if (!r || !r.ok) return null;
   CFG = await r.json();
   CFG.__SLABS_PARSED__ = parseSlabs(CFG.SLABS);
@@ -197,11 +228,12 @@ async function postJSON(url, data, btn) {
       spinner = document.createElement("span");
       spinner.className = "spinner";
       btn.prepend(spinner);
+      GlobalLoader.show();
     }
     
-    // Create AbortController with 10s timeout
+    // Create AbortController with 15s timeout for payment flow
     const abortController = new AbortController();
-    const timeoutId = setTimeout(() => abortController.abort(), 10000);
+    const timeoutId = setTimeout(() => abortController.abort(), 15000);
     
     let r;
     try {
@@ -237,6 +269,7 @@ async function postJSON(url, data, btn) {
     if (btn) {
       btn.disabled = false;
       if (spinner) spinner.remove();
+      GlobalLoader.hide();
     }
   }
 }
