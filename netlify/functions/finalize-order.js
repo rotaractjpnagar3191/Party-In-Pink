@@ -40,9 +40,51 @@ exports.handler = async (event) => {
       console.log('[finalize-order] Second lookup:', oc ? 'FOUND' : 'NOT FOUND');
     }
 
-    // If order not found, return helpful error (caller should have data)
+    // If order not found in GitHub, we can still finalize using Cashfree API data
+    // This is important for local dev or when GitHub integration fails
     if (!oc) {
-      console.warn(`finalize-order: Order ${order_id} not found in storage`);
+      console.log(`[finalize-order] Order not in storage, checking Cashfree API...`);
+      
+      try {
+        const cfEnv = (ENV.CASHFREE_ENV || 'sandbox').toLowerCase();
+        const cfBase = cfEnv === 'production' ? 'https://api.cashfree.com' : 'https://sandbox.cashfree.com';
+        const apiVersion = ENV.CASHFREE_API_VERSION || '2025-01-01';
+
+        const cfRes = await fetch(`${cfBase}/pg/orders/${order_id}`, {
+          method: 'GET',
+          headers: {
+            'x-client-id': ENV.CASHFREE_APP_ID,
+            'x-client-secret': ENV.CASHFREE_SECRET_KEY,
+            'x-api-version': apiVersion,
+            'content-type': 'application/json'
+          }
+        });
+
+        if (cfRes.ok) {
+          const cfOrder = await cfRes.json();
+          console.log('[finalize-order] Found order in Cashfree:', cfOrder.order_status);
+          
+          // Return success but note that we're working from Cashfree data, not storage
+          // This prevents duplicate processing and allows the success page to proceed
+          if (cfOrder.order_status === 'PAID') {
+            return {
+              statusCode: 200,
+              body: JSON.stringify({
+                ok: true,
+                order_id,
+                status: 'pending_issuance',
+                message: 'Order verified from Cashfree API (not in storage)',
+                note: 'Actual pass issuance will occur via webhook'
+              })
+            };
+          }
+        }
+      } catch (cfErr) {
+        console.error('[finalize-order] Cashfree API check failed:', cfErr.message);
+      }
+      
+      // Still not found - return error
+      console.warn(`finalize-order: Order ${order_id} not found in storage or Cashfree API`);
       return { 
         statusCode: 404, 
         body: JSON.stringify({ 
