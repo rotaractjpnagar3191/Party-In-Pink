@@ -15,13 +15,40 @@
 
 // ---------- NAV ----------
 (() => {
-  const t = document.getElementById("navToggle");
-  const m = document.querySelector(".main-nav");
-  if (!t || !m) return;
-  t.addEventListener("click", () => {
-    const open = m.classList.toggle("show");
-    t.setAttribute("aria-expanded", open ? "true" : "false");
-  });
+  function initNav() {
+    const t = document.getElementById("navToggle");
+    const m = document.querySelector(".main-nav");
+    if (!t || !m) return false;
+    
+    // Remove any existing listeners by cloning
+    const newT = t.cloneNode(true);
+    t.parentNode.replaceChild(newT, t);
+    
+    newT.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const open = m.classList.toggle("show");
+      newT.classList.toggle("active", open);
+      newT.setAttribute("aria-expanded", open ? "true" : "false");
+    });
+    
+    // Close menu when clicking nav links
+    m.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => {
+        m.classList.remove('show');
+        newT.classList.remove('active');
+        newT.setAttribute('aria-expanded', 'false');
+      });
+    });
+    
+    return true;
+  }
+  
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initNav);
+  } else {
+    initNav();
+  }
 })();
 
 // ---------- Helpers ----------

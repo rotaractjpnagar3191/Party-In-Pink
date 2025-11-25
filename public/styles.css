@@ -149,6 +149,13 @@ img {
 .brand img {
   height: 28px;
   width: auto;
+  max-width: 200px;
+}
+
+@media (max-width: 560px) {
+  .brand img {
+    height: 24px;
+  }
 }
 
 .main-nav {
