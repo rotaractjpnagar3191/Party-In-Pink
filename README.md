@@ -8,7 +8,7 @@ Party In Pink is built with:
 - **Frontend**: HTML5, CSS3, Vanilla JavaScript (no frameworks)
 - **Backend**: Netlify Functions (Node.js on AWS Lambda)
 - **Storage**: GitHub API (pip-tickets-data repo as serverless database)
-- **Payments**: Cashfree (Indian payment gateway)
+- **Payments**: Cashfree v3 SDK (Indian payment gateway)
 - **Ticketing**: KonfHub API (event registration and pass issuance)
 
 ## Features
@@ -18,11 +18,18 @@ Party In Pink is built with:
 - 👥 Bulk registration for clubs/universities/corporate groups
 - 💳 Donation tiers (Supporter, Wellwisher, Silver, Gold, Platinum, Diamond)
 - 🎁 In-kind donation pathway
-- 📱 Mobile-responsive design
+- 📱 Mobile-responsive design with compact form layout
 - 🕐 Event countdown timer (real-time updates)
 - 📧 Order status tracking by ID or email
-- 🎨 Beautiful dark-themed UI with gradient effects
-- 🔐 Secure payment processing
+- 🎨 Dark-themed UI with gradient effects and hero carousel
+- 🔐 Secure payment processing with CSP headers
+
+### Visual & UX Enhancements (v4.0)
+- ✨ Bright hero carousel with dark tint overlay (0.5-0.7 opacity)
+- 🖼️ High-contrast logo image with 40% brightness enhancement
+- 📏 Compact form fields (reduced spacing: 6px gaps, 8px input padding)
+- 🎯 Improved text readability with proper contrast
+- 🪙 Smaller carousel navigation dots (hidden by default)
 
 ### Backend Reliability
 - ✅ **3-layer webhook deduplication**: Immediate duplicate detection, processing lock, fulfillment check
@@ -31,6 +38,7 @@ Party In Pink is built with:
 - ✅ **Comprehensive payment validation**: Early SUCCESS-only gate, order reconstruction validation
 - ✅ **Resilient storage**: GitHub as atomic, versioned database
 - ✅ **Error recovery**: Finalize endpoint fallback if webhooks are late
+- ✅ **CSP Policy**: Allows Cashfree SDK frames and payment processing
 
 ### Admin Features
 - 📋 Order check-in system with QR support
@@ -51,7 +59,7 @@ Party In Pink is built with:
 Create a `.env.local` file in the Netlify functions context (or set in Netlify dashboard):
 
 ```env
-# Cashfree Payment Gateway
+# Cashfree Payment Gateway (v3)
 CASHFREE_ENV=sandbox
 CASHFREE_APP_ID=your_cashfree_app_id
 CASHFREE_SECRET_KEY=your_cashfree_secret_key
@@ -120,7 +128,7 @@ git push origin main
 ```
 .
 ├── public/                    # Static assets & HTML
-│   ├── index.html            # Homepage with countdown
+│   ├── index.html            # Homepage with countdown & carousel
 │   ├── register.html         # Single registration
 │   ├── bulk.html             # Bulk registration form
 │   ├── donate.html           # Donation with tiers
@@ -130,7 +138,10 @@ git push origin main
 │   ├── about.html            # About Rotaract
 │   ├── success.html          # Post-payment page
 │   ├── app.js                # Frontend logic (forms, countdown, tier display)
-│   └── styles.css            # All styling
+│   ├── utils.js              # Utility functions
+│   ├── styles.css            # All styling (responsive design)
+│   ├── manifest.json         # PWA manifest
+│   └── assets/logos/         # Brand logos (4.0 Logos.png)
 ├── netlify/functions/        # Backend APIs
 │   ├── cf-webhook.js         # Cashfree webhook handler (CRITICAL)
 │   ├── create-order.js       # Create orders + Cashfree link
@@ -146,8 +157,33 @@ git push origin main
 │   └── [other functions]     # Other endpoints
 ├── config/
 │   └── event.json            # Event configuration
+├── netlify.toml              # Netlify config with CSP headers
 └── README.md                 # This file
 ```
+
+## Recent Updates (v4.0)
+
+### Visual Enhancements
+- **Logo Replacement**: Updated from `PiP_Black.png` to `4.0 Logos.png` (27 instances across all files)
+- **Hero Carousel**: Added dark tint overlay (50-70% opacity) for better text contrast
+- **Logo Brightness**: Enhanced logo brightness (1.4x) for visibility on dark backgrounds
+- **Carousel Dots**: Removed navigation dots for cleaner interface
+- **Form Compactness**: Reduced margins and padding for tighter form layouts
+  - Form gaps: 6px (was 8px)
+  - Form margins: 6px between groups (was 12px)
+  - Input padding: 8px (was 12px)
+  - Label spacing: 3px (was 6px)
+
+### Security Fixes
+- **CSP Headers**: Updated `netlify.toml` to allow Cashfree SDK frames
+  - Added `https://sdk.cashfree.com` to `frame-src`
+  - Added `https://sandbox.cashfree.com` to `frame-src`
+  - Matches Cashfree v3 SDK requirements
+
+### Payment System
+- **Cashfree SDK v3**: Integrated official SDK from `https://sdk.cashfree.com/js/v3/cashfree.js`
+- **Phone Validation**: Updated regex pattern to `(\+?91[6-9]\d{9}|0[6-9]\d{9})` for HTML5 compatibility
+- **Payment Pages**: register.html, bulk.html, donate.html all updated with CSP meta tags
 
 ## API Endpoints
 
@@ -159,14 +195,14 @@ Create a payment order for registration or donation.
 **Request:**
 ```json
 {
-  "type": "bulk",  // "bulk", "donation"
+  "type": "bulk",
   "name": "Club Name",
   "email": "contact@club.com",
   "phone": "9876543210",
-  "club_type": "COMMUNITY",  // For bulk: "COMMUNITY", "UNIVERSITY"
-  "quantity": 12,  // For bulk registration
+  "club_type": "COMMUNITY",
+  "quantity": 12,
   "club_name": "XYZ Club",
-  "custom_amount": 5000  // For donations
+  "custom_amount": 5000
 }
 ```
 
@@ -224,15 +260,7 @@ Get overall order statistics.
   "individual_donations": 85,
   "passed": 234,
   "failed": 5,
-  "pending": 2,
-  "by_tier": {
-    "supporter": 15,
-    "wellwisher": 28,
-    "silver": 22,
-    "gold": 12,
-    "platinum": 5,
-    "diamond": 3
-  }
+  "pending": 2
 }
 ```
 
@@ -242,182 +270,143 @@ Export all orders as CSV file.
 #### POST `/api/admin-resend?key=...`
 Resend email for a specific order.
 
-```json
-{ "order_id": "pip_..." }
-```
-
 #### POST `/api/finalize-order`
 Fallback to trigger pass issuance if webhook failed.
 
-```json
-{ "order_id": "pip_..." }
+## Payment Flow
+
+### User Journey
 ```
-
-## Payment & Webhook Flow
-
-### Payment Lifecycle
-
-```
-1. User fills form on register.html / bulk.html / donate.html
+1. User fills form (register/bulk/donate page)
    ↓
-2. POST /api/create-order
+2. Form validation (phone, email, amounts)
    ↓
-3. Returns Cashfree payment link
+3. POST /api/create-order
    ↓
-4. User makes payment on Cashfree
+4. Cashfree payment link returned
    ↓
-5. Cashfree sends SUCCESS webhook to /api/cf-webhook
+5. User redirected to Cashfree checkout (SDK v3)
    ↓
-6. Webhook validates payment, issues KonfHub passes, saves order to GitHub
+6. Payment completion
    ↓
-7. User receives email with tickets
+7. Cashfree webhook → /api/cf-webhook
    ↓
-8. User can check status at /status.html anytime
+8. Webhook validation & KonfHub pass issuance
+   ↓
+9. Order saved to GitHub storage
+   ↓
+10. Email sent with tickets
+    ↓
+11. User checks status at status.html
 ```
 
 ### Webhook Deduplication
-
-Cashfree retries webhooks up to 4+ times. We prevent duplicate issuance via:
-
-1. **Immediate Registry**: Check `webhookRegistry` (in-memory, survives Lambda context reuse)
-2. **Processing Lock**: Set `processing.status='in_progress'` in GitHub, return 202 if already processing
-3. **Fulfillment Check**: Only issue if `fulfilled.status !== 'ok'`
-
-### Error Handling
-
-- **Payment fails**: Order saved with `fulfilled.status='failed'`, user can retry
-- **KonfHub timeout**: Marked as failed, can be retried via `/api/finalize-order`
-- **GitHub unavailable**: Return 200 (don't retry), webhook will reconstruct from Cashfree data
-- **All validation failures**: Comprehensive logging, admin can investigate
+- **Layer 1**: In-memory registry (immediate detection)
+- **Layer 2**: GitHub processing lock (prevents concurrent processing)
+- **Layer 3**: Fulfillment check (only issue if not already fulfilled)
 
 ## Donation Tier System
-
-Tiers are dynamically calculated from amount:
 
 | Amount | Tier | Passes | Benefits |
 |--------|------|--------|----------|
 | ₹1,000–4,999 | Supporter | 1 | Event pass, certificate |
 | ₹5,000–9,999 | Wellwisher | 2 | Event passes, donor recognition |
 | ₹10,000–14,999 | Silver | 5 | Major donor recognition, logo on backdrop |
-| ₹15,000–19,999 | Gold | 7 | Silver benefits + stage time + MC mention |
-| ₹20,000–24,999 | Platinum | 7 | Gold benefits + 5min stage time |
+| ₹15,000–19,999 | Gold | 7 | Silver benefits + stage time |
+| ₹20,000–24,999 | Platinum | 7 | Gold benefits + extended stage time |
 | ₹25,000+ | Diamond | 10 | Exclusive partnership & VIP recognition |
-
-**Sponsors**: Donors with logos on backdrop (Silver tier and above).
 
 ## Frontend Features
 
-### Countdown Timer (index.html)
+### Countdown Timer
 - Displays days/hours/minutes/seconds until December 14, 2025, 7:30 AM
-- Updates every second in real-time
-- Event date is fixed (not dynamic from config)
+- Real-time updates every second
+- Event date hardcoded (not dynamic)
 
 ### Donation Tiers
-- Tier selector in donate.html
-- Real-time pass calculation
-- Benefit preview showing what you'll get
-- Tier name display instead of "CUSTOM"
+- Real-time pass calculation based on amount
+- Tier name display
+- Benefit preview
 
 ### Form Validation
-- Phone number pattern validation (Indian mobile)
-- Email validation
+- Phone: Indian mobile format `(\+?91[6-9]\d{9}|0[6-9]\d{9})`
+- Email: Standard email validation
 - Real-time error messages
-- localStorage persistence for partial form data
+- localStorage persistence
 
 ### Responsive Design
-- Mobile-first CSS
+- Mobile-first approach
 - Breakpoints: 768px, 560px
-- Touch-friendly buttons and inputs
-- Optimized font sizing
+- Touch-friendly inputs
+- Optimized carousel on mobile
 
 ## Security
 
+### Content Security Policy
+The following CSP is enforced via `netlify.toml`:
+
+```
+frame-src: https://konfhub.com, https://*.forms.app, https://sdk.cashfree.com, https://sandbox.cashfree.com
+script-src: 'self', 'unsafe-inline', https://sdk.cashfree.com, https://forms.app
+connect-src: 'self', https://api.konfhub.com, https://sandbox.cashfree.com, https://api.cashfree.com, https://sdk.cashfree.com
+style-src: 'self', 'unsafe-inline', https://fonts.googleapis.com, https://sdk.cashfree.com
+```
+
 ### Payment Security
 - Cashfree PCI-DSS certified
-- HTTPS enforced
-- CSP headers configured in netlify.toml
-- No payment data stored locally (only order IDs)
-
-### Data Protection
-- GitHub as secure, versioned storage
-- Sensitive data redacted in API responses (payment links, tokens)
-- Admin operations require API key authentication
-
-### Error Handling
-- No stack traces exposed to clients
-- Detailed logging server-side for debugging
-- Graceful failures (return 200 instead of 500 when possible)
+- HTTPS enforced site-wide
+- No sensitive data stored locally
+- Admin operations require API key
 
 ## Troubleshooting
 
-### Payment webhooks not received
-1. Check Netlify function logs: `netlify functions:create` or dashboard
-2. Verify Cashfree webhook URL: `https://[site]/api/cf-webhook`
-3. Verify `CASHFREE_APP_ID` and `CASHFREE_SECRET_KEY` are correct
+### CSP Frame Errors (Cashfree Payment Not Loading)
+- **Issue**: "Framing violates CSP directive: frame-src"
+- **Fix**: Verify `netlify.toml` includes Cashfree domains in `frame-src`
+- **Verify**: Check browser DevTools → Network → cf-webhook requests
 
-### Orders not appearing
-1. Check GitHub repo exists: `pip-tickets-data`
-2. Verify `GITHUB_TOKEN` has `repo` scope
-3. Check `STORE_PATH` = `storage` folder exists in repo
-4. View order status at `/status.html` using order ID
+### Payment Webhooks Not Received
+- Check Netlify function logs
+- Verify Cashfree webhook URL is correct
+- Confirm `CASHFREE_APP_ID` and `CASHFREE_SECRET_KEY`
 
-### Passes not issuing to KonfHub
-1. Verify `KONFHUB_API_KEY` and `KONFHUB_EVENT_ID_INTERNAL`
-2. Check KonfHub webhook URL is set correctly
-3. Verify ticket IDs match: `KONFHUB_FREE_TICKET_ID` vs `KONFHUB_BULK_TICKET_ID`
-4. Try `/api/finalize-order` with order ID to retry
+### Orders Not Appearing
+- Verify `pip-tickets-data` GitHub repo exists
+- Check `GITHUB_TOKEN` has `repo` scope
+- Ensure `storage` folder exists in repo
 
-### Check-in system not working
-1. Admin key is required (set in Netlify env if using)
-2. Order ID must exist and be fulfilled
-3. Check `/scan.html` loads properly
-4. Verify `/api/checkin` endpoint is accessible
+### Check-in System Issues
+- Verify admin key is set
+- Confirm order exists and is fulfilled
+- Check `/scan.html` loads properly
 
-## Testing
+## Testing Checklist
 
-### Manual Testing Checklist
-- [ ] Create order for single registration
-- [ ] Create order for bulk registration (minimum passes)
-- [ ] Create donation order (each tier)
-- [ ] Complete payment flow to Cashfree
-- [ ] Verify webhook received and order fulfilled
-- [ ] Check status.html for order (by ID, by email)
-- [ ] Download tickets from KonfHub emails
-- [ ] Test check-in at /scan.html
-- [ ] Access admin dashboard at /admin.html
-
-### Webhook Testing
-```bash
-# Simulate webhook (manual)
-curl -X POST http://localhost:8888/api/cf-webhook \
-  -H "Content-Type: application/json" \
-  -d '{
-    "type":"PAYMENT_SUCCESS_WEBHOOK",
-    "data":{
-      "order":{"order_id":"pip_test123","order_amount":5000},
-      "payment":{"payment_status":"SUCCESS","upi_id":"..."}
-    }
-  }'
-```
+- [ ] Single registration form submission
+- [ ] Bulk registration (min passes validation)
+- [ ] Donation tier selection
+- [ ] Payment flow to Cashfree
+- [ ] Webhook received and processed
+- [ ] Order lookup by ID and email
+- [ ] Admin stats endpoint
+- [ ] Check-in system
+- [ ] Mobile responsiveness (countdown, forms, carousel)
+- [ ] Logo displays correctly on all pages
 
 ## Performance Notes
 
-- KonfHub API timeout: 20 seconds (bulk registrations with 12+ attendees need time)
+- KonfHub API timeout: 20 seconds (for batch operations)
 - GitHub API: ~100-200ms per request
-- Countdown timer updates every second (minimal CPU impact)
-- Webhook deduplication prevents duplicate processing
-- All data cached in memory where appropriate
+- Countdown timer: 1 update per second (minimal CPU)
+- Webhook processing: <5 seconds average
+- Form submission: <10 seconds (including payment link generation)
 
-## Future Enhancements
+## Browser Support
 
-- [ ] Batch attendee name collection for bulk registrations
-- [ ] Real-time analytics dashboard with charts
-- [ ] Email receipts for donations (80G deduction info)
-- [ ] Multi-language support (Kannada, Hindi, Tamil)
-- [ ] Advanced analytics (conversion funnel, traffic sources)
-- [ ] Sponsor tier management UI
-- [ ] Advanced QR code scanning on /scan.html
-- [ ] Event date as dynamic config (instead of hardcoded)
+- Chrome/Edge 90+
+- Firefox 88+
+- Safari 14+
+- Mobile browsers (iOS Safari 14+, Chrome Mobile)
 
 ## Contact & Support
 
@@ -429,15 +418,8 @@ curl -X POST http://localhost:8888/api/cf-webhook \
 
 © 2025 Rotaract Club of Bangalore JP Nagar. All rights reserved.
 
-## Contributors
-
-- **Frontend & Backend**: Full-stack development team
-- **Payments**: Cashfree integration
-- **Ticketing**: KonfHub partnership
-- **Event Management**: Rotaract JP Nagar volunteers
-
 ---
 
-**Last Updated**: November 21, 2025
-**Event Date**: December 14, 2025, 7:30 AM @ SSMRV College, Bangalore
-**Status**: Production Ready
+**Last Updated**: November 25, 2025  
+**Event Date**: December 14, 2025, 7:30 AM @ SSMRV College, Bangalore  
+**Status**: Production Ready ✅

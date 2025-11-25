@@ -20,10 +20,12 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
+  <meta http-equiv="Content-Security-Policy" content="frame-src https://konfhub.com https://*.forms.app https://sdk.cashfree.com https://sandbox.cashfree.com; default-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://sdk.cashfree.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
+  <script src="https://sdk.cashfree.com/js/v3/cashfree.js" defer></script>
   <link rel="stylesheet" href="styles.css?v=20251120-002" />
 </head>
 
@@ -35,7 +37,7 @@
   <header class="site-header">
     <div class="wrap">
       <a class="brand" href="index.html">
-        <img src="assets/logos/PiP_Black.png" alt="Party In Pink Logo" data-hide-onerror="1">
+        <img src="assets/logos/4.0 Logos.png" alt="Party In Pink Logo" data-hide-onerror="1">
         <!-- <span>Party In Pink</span> -->
       </a>
 
@@ -85,7 +87,7 @@
           </label>
           <label>Phone
             <input id="bulk_phone" type="tel" inputmode="numeric" autocomplete="tel"
-              pattern="^\+?91[\s-]?[6-9]\d{9}$|^0?[6-9]\d{9}$" placeholder="10-digit mobile" required />
+              pattern="(\+?91[6-9]\d{9}|0[6-9]\d{9})" placeholder="10-digit mobile" required />
           </label>
 
           <label class="form-section-label">Passes</label>
@@ -135,106 +137,6 @@
 
   <script src="utils.js?v=2025-11-23" defer></script>
   <script src="app.js?v=2025-11-20" defer></script>
-  <script>
-    // Phase 2: Bulk form initialization
-    document.addEventListener('DOMContentLoaded', function() {
-      const form = document.getElementById('bulkForm');
-      const qtyInput = document.getElementById('bulk_qty');
-      const minusBtn = document.getElementById('minus');
-      const plusBtn = document.getElementById('plus');
-      const amountDisplay = document.getElementById('bulk_amount');
-      const pricePerPass = 199;
-      
-      // Quantity controls
-      function updateAmount() {
-        const qty = parseInt(qtyInput.value) || 12;
-        const total = qty * pricePerPass;
-        amountDisplay.textContent = '₹' + total.toLocaleString('en-IN');
-      }
-      
-      minusBtn?.addEventListener('click', () => {
-        const min = parseInt(qtyInput.min) || 1;
-        qtyInput.value = Math.max(parseInt(qtyInput.value) - 1, min);
-        updateAmount();
-      });
-      
-      plusBtn?.addEventListener('click', () => {
-        qtyInput.value = parseInt(qtyInput.value) + 1;
-        updateAmount();
-      });
-      
-      qtyInput?.addEventListener('change', updateAmount);
-      
-      // Form validation
-      setupFormValidation(form, {
-        bulk_club: { required: true, minLength: 3 },
-        bulk_name: { required: true, minLength: 2 },
-        bulk_email: { required: true, type: 'email' },
-        bulk_phone: { required: true, pattern: /^(?:\+?91[-\s]?|0)?[6-9]\d{9}$/ },
-        bulk_qty: { required: true, min: 12 }
-      });
-      
-      // UTM tracking and form submission
-      form?.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        const utm = captureUTMParams();
-        const submitBtn = document.getElementById('bulk_submit');
-        showLoadingState(submitBtn, 'Processing...');
-        
-        try {
-          const formData = new FormData(form);
-          const orderData = {
-            type: 'bulk',
-            club: formData.get('bulk_club'),
-            name: formData.get('bulk_name'),
-            email: formData.get('bulk_email'),
-            phone: formData.get('bulk_phone'),
-            passes: parseInt(formData.get('bulk_qty')),
-            utm_source: utm.utm_source,
-            utm_medium: utm.utm_medium,
-            utm_campaign: utm.utm_campaign,
-            utm_content: utm.utm_content,
-            utm_term: utm.utm_term,
-            referrer: utm.referrer
-          };
-          
-          saveFormState('bulkOrder', orderData);
-          trackEvent('bulk_order_started', { passes: orderData.passes });
-          
-          // Submit to backend
-          const response = await fetch('/.netlify/functions/create-order', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(orderData)
-          });
-          
-          const result = await response.json();
-          if (result.payment_link) {
-            saveFormState('bulkOrder', null);
-            window.location.href = result.payment_link;
-          } else {
-            showToast(result.error || 'Failed to create order', 'error');
-            hideLoadingState(submitBtn);
-          }
-        } catch (err) {
-          showToast('Network error. Please try again.', 'error');
-          hideLoadingState(submitBtn);
-        }
-      });
-      
-      // Restore form if available
-      const saved = restoreFormState('bulkOrder');
-      if (saved) {
-        document.getElementById('bulk_club').value = saved.club || '';
-        document.getElementById('bulk_name').value = saved.name || '';
-        document.getElementById('bulk_email').value = saved.email || '';
-        document.getElementById('bulk_phone').value = saved.phone || '';
-        document.getElementById('bulk_qty').value = saved.passes || 12;
-        updateAmount();
-      }
-    });
-  </script>
 </body>
 
 </html>

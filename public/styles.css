@@ -384,7 +384,7 @@ button[disabled] {
   height: 72vh;
   display: grid;
   place-items: center;
-  background: linear-gradient(180deg, rgba(0, 0, 0, .45), rgba(0, 0, 0, .75)), var(--bg);
+  background: linear-gradient(180deg, rgba(0, 0, 0, .5), rgba(0, 0, 0, .7)), var(--bg);
   background-size: cover;
   background-position: center;
   --bg: linear-gradient(135deg, #3A0D28, #15141B);
@@ -434,7 +434,7 @@ button[disabled] {
   height: auto;
   display: block;
   margin: 0 auto 16px;
-  filter: drop-shadow(0 6px 18px rgba(0, 0, 0, .45));
+  filter: drop-shadow(0 6px 18px rgba(0, 0, 0, .45)) brightness(1.4);
   animation: heroFadeUp .6s ease both;
 }
 
@@ -477,13 +477,13 @@ button[disabled] {
   bottom: 14px;
   left: 50%;
   transform: translateX(-50%);
-  display: flex;
+  display: none;
   gap: 8px;
 }
 
 .carousel-dots button {
-  width: 10px;
-  height: 10px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: rgba(255, 255, 255, .4);
   border: 0;
@@ -614,8 +614,8 @@ button[disabled] {
 /* ---------- Forms ---------- */
 .form label {
   display: grid;
-  gap: 6px;
-  margin-bottom: 8px;
+  gap: 4px;
+  margin-bottom: 4px;
 }
 
 .form-section-label {
@@ -641,7 +641,7 @@ textarea {
   border: 1px solid var(--border);
   color: var(--text);
   border-radius: 12px;
-  padding: 12px 12px;
+  padding: 8px 10px;
   outline: none;
 }
 
@@ -2115,13 +2115,13 @@ form .actions button {
 
 /* Form Validation Feedback */
 .form-group {
-  margin-bottom: 12px;
+  margin-bottom: 6px;
   display: flex;
   flex-direction: column;
 }
 
 .form-group label {
-  margin-bottom: 6px;
+  margin-bottom: 3px;
   font-weight: 600;
   display: flex;
   align-items: center;

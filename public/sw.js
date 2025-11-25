@@ -23,7 +23,7 @@ const STATIC_ASSETS = [
   '/styles.css',
   '/app.js',
   '/manifest.json',
-  '/assets/logos/PiP_Black.png',
+  '/assets/logos/4.0 Logos.png',
   '/assets/images/IMG_7757.webp'
 ];
 
@@ -244,8 +244,8 @@ self.addEventListener('push', (event) => {
   const data = event.data.json();
   const options = {
     body: data.body || 'You have a new notification',
-    icon: '/assets/logos/PiP_Black.png',
-    badge: '/assets/logos/PiP_Black.png',
+    icon: '/assets/logos/4.0 Logos.png',
+    badge: '/assets/logos/4.0 Logos.png',
     tag: data.tag || 'general',
     data: data.data || {},
     actions: [

@@ -12,13 +12,13 @@
   "categories": ["entertainment", "health", "social"],
   "icons": [
     {
-      "src": "/assets/logos/PiP_Black.png",
+      "src": "/assets/logos/4.0 Logos.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/assets/logos/PiP_Black.png", 
+      "src": "/assets/logos/4.0 Logos.png", 
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
@@ -39,7 +39,7 @@
       "url": "/register.html",
       "icons": [
         {
-          "src": "/assets/logos/PiP_Black.png",
+          "src": "/assets/logos/4.0 Logos.png",
           "sizes": "96x96",
           "type": "image/png"
         }
@@ -51,7 +51,7 @@
       "url": "/bulk.html",
       "icons": [
         {
-          "src": "/assets/logos/PiP_Black.png",
+          "src": "/assets/logos/4.0 Logos.png",
           "sizes": "96x96",
           "type": "image/png"
         }
@@ -63,7 +63,7 @@
       "url": "/donate.html",
       "icons": [
         {
-          "src": "/assets/logos/PiP_Black.png",
+          "src": "/assets/logos/4.0 Logos.png",
           "sizes": "96x96",
           "type": "image/png"
         }

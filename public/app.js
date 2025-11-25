@@ -40,7 +40,7 @@ function isValidINMobile(s) {
   return /^[6-9]\d{9}$/.test(s);
 }
 function phonePattern() {
-  return "^(?:\\+?91[-\\s]?|0)?[6-9]\\d{9}$";
+  return "(\\+?91[6-9]\\d{9}|0[6-9]\\d{9})";
 }
 
 // read CSS var with fallback
@@ -118,30 +118,23 @@ async function loadConfig() {
 }
 
 // ---------- Cashfree ----------
-let CF_READY = false;
-function loadCashfree(env) {
-  return new Promise((resolve, reject) => {
-    if (CF_READY) return resolve();
-    const s = document.createElement("script");
-    s.id = "cf-sdk";
-    s.src =
-      env === "production"
-        ? "https://sdk.cashfree.com/js/ui/2.0.0/cashfree.prod.js"
-        : "https://sdk.cashfree.com/js/ui/2.0.0/cashfree.sandbox.js";
-    s.async = true;
-    s.onload = () => {
-      CF_READY = true;
-      resolve();
-    };
-    s.onerror = () => reject(new Error("Failed to load Cashfree SDK"));
-    document.head.appendChild(s);
-  });
-}
 async function openCashfreeCheckout(sessionId, env) {
   try {
-    await loadCashfree(env || "sandbox");
-    const cf = new Cashfree(sessionId);
-    cf.redirect();
+    const cashfreeFactory = window.Cashfree;
+    if (typeof cashfreeFactory !== "function") {
+      throw new Error("Cashfree SDK not loaded");
+    }
+    const mode = env === "production" ? "production" : "sandbox";
+    const cashfree = cashfreeFactory({ mode });
+    const checkoutOptions = {
+      paymentSessionId: sessionId,
+      redirectTarget: "_self",
+    };
+    console.log("[checkout] Opening Cashfree v3 checkout", {
+      mode,
+      sessionId: typeof sessionId === "string" ? `${sessionId.slice(0, 10)}...` : "<invalid>",
+    });
+    cashfree.checkout(checkoutOptions);
   } catch (err) {
     console.error("Cashfree checkout error:", err);
     alert("Payment initiation failed. Please try again or refresh the page.");
@@ -457,6 +450,10 @@ async function initBulk() {
       },
     };
 
+    if (typeof trackEvent === "function") {
+      trackEvent("bulk_order_started", { passes: quantity });
+    }
+
     try {
       const resp = await postJSON("/api/create-order", payload, btn);
       goToPayment(resp);
@@ -728,6 +725,10 @@ async function initDonate() {
       custom_amount: amt,
       amount: amt,
     };
+
+    if (typeof trackEvent === "function") {
+      trackEvent("donation_started", { amount: payload.amount });
+    }
 
     try {
       const resp = await postJSON("/api/create-order", payload, $("#donor_submit"));
