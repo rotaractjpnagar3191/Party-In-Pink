@@ -134,8 +134,52 @@ exports.handler = async (event) => {
     }
   }
 
-  if (!order || !orderId) {
-    console.log('[order-status] Order not found');
+  // If order not found in GitHub but we have an orderId, try Cashfree API directly
+  if (!order && orderId) {
+    console.log('[order-status] Order not in GitHub storage, querying Cashfree API directly');
+    const cfOrder = await getCashfreeOrderStatus(orderId, ENV);
+    
+    if (cfOrder) {
+      // ✅ Return order from Cashfree API even if not in GitHub storage
+      const latestPayment = await getLatestPaymentFromCashfree(orderId, ENV);
+      const orderStatus = cfOrder.order_status;
+      
+      console.log('[order-status] Found order in Cashfree API:', orderStatus);
+      
+      return {
+        statusCode: 200,
+        headers: {
+          'content-type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        },
+        body: JSON.stringify({
+          ok: true,
+          order: {
+            order_id: orderId,
+            order_status: orderStatus,
+            latest_payment: latestPayment,
+            note: 'Order data from Cashfree API (not yet in storage)'
+          }
+        })
+      };
+    }
+    
+    // Not found in GitHub or Cashfree
+    console.log('[order-status] Order not found in GitHub or Cashfree');
+    return {
+      statusCode: 404,
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        ok: false,
+        error: 'Order not found. Please check your Order ID or email address.'
+      })
+    };
+  }
+
+  if (!order && !orderId) {
+    console.log('[order-status] Order not found (no orderId)');
     return { 
       statusCode: 404, 
       headers: { 'content-type': 'application/json' }, 
