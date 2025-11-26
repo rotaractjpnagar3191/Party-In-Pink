@@ -411,17 +411,21 @@ button[disabled] {
   position: relative;
   border-radius: 0;
   isolation: isolate;
+  overflow: hidden;
 }
 
 .carousel-track {
   display: flex;
   transition: transform .6s cubic-bezier(.2, .8, .2, 1);
   max-width: 100%;
+  overflow: hidden;
+  width: 100%;
 }
 
 .slide {
   min-width: 100%;
   max-width: 100%;
+  flex-shrink: 0;
   height: 72vh;
   display: grid;
   place-items: center;
@@ -431,6 +435,18 @@ button[disabled] {
   --bg: linear-gradient(135deg, #3A0D28, #15141B);
   will-change: background;
   contain: layout style paint;
+}
+
+@media (max-width: 768px) {
+  .slide {
+    height: 60vh;
+  }
+}
+
+@media (max-width: 480px) {
+  .slide {
+    height: 55vh;
+  }
 }
 
 .slide-overlay {

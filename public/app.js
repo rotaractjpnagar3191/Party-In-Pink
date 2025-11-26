@@ -46,8 +46,12 @@ if (document.readyState === 'loading') {
   function initNav() {
     const t = document.getElementById("navToggle");
     const m = document.querySelector(".main-nav");
-    if (!t || !m) return false;
+    if (!t || !m) {
+      console.log('[nav] Toggle or menu element not found');
+      return false;
+    }
     
+    console.log('[nav] Initializing with toggle:', t, 'menu:', m);
     let isOpen = false;
     
     // Enhanced toggle handler
@@ -58,6 +62,7 @@ if (document.readyState === 'loading') {
       m.classList.toggle("show", isOpen);
       t.classList.toggle("active", isOpen);
       t.setAttribute("aria-expanded", isOpen ? "true" : "false");
+      console.log('[nav] Menu toggled:', isOpen);
     }
     
     // Click on toggle
@@ -74,6 +79,7 @@ if (document.readyState === 'loading') {
           m.classList.remove('show');
           t.classList.remove('active');
           t.setAttribute('aria-expanded', 'false');
+          console.log('[nav] Menu closed via link click');
         }
       });
     });
@@ -85,6 +91,7 @@ if (document.readyState === 'loading') {
         m.classList.remove('show');
         t.classList.remove('active');
         t.setAttribute('aria-expanded', 'false');
+        console.log('[nav] Menu closed via click outside');
       }
     });
     
@@ -95,9 +102,11 @@ if (document.readyState === 'loading') {
         m.classList.remove('show');
         t.classList.remove('active');
         t.setAttribute('aria-expanded', 'false');
+        console.log('[nav] Menu closed via Escape key');
       }
     });
     
+    console.log('[nav] Navigation initialized successfully');
     return true;
   }
   
@@ -371,12 +380,14 @@ async function initIndex() {
     partnersGrid.innerHTML = partnerLogos.map((name) => 
       `<div class="logo"><img src="assets/logos/partners/${name}" alt="Partner logo" loading="lazy" onerror="this.parentElement.style.opacity='0.3'" /></div>`
     ).join("");
+    console.log('[logos] Loaded', partnerLogos.length, 'partner logos');
   }
 
   if (clubsGrid) {
     clubsGrid.innerHTML = clubLogos.map((name) => 
       `<div class="logo"><img src="assets/logos/Clubs/${name}" alt="Club logo" loading="lazy" onerror="this.parentElement.style.opacity='0.3'" /></div>`
     ).join("");
+    console.log('[logos] Loaded', clubLogos.length, 'club logos');
   }
 }
 
@@ -1313,12 +1324,20 @@ document.addEventListener("DOMContentLoaded", () => {
   
   // Countdown timer (reads event date from config)
   (async function initCountdown() {
+    const countdownEl = document.getElementById('countdownTimer');
+    if (!countdownEl) {
+      console.log('[countdown] Element not found, skipping');
+      return;
+    }
+    
     try {
       // Fetch event config
       const response = await fetch('config/event.json');
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const config = await response.json();
       const eventDateStr = config?.event?.date || '2025-12-14T07:30:00+05:30';
       const eventDate = new Date(eventDateStr).getTime();
+      console.log('[countdown] Loaded from config:', eventDateStr, 'timestamp:', eventDate);
       
       function updateCountdown() {
         const now = new Date().getTime();
@@ -1351,8 +1370,9 @@ document.addEventListener("DOMContentLoaded", () => {
       // Update immediately and then every second
       updateCountdown();
       setInterval(updateCountdown, 1000);
+      console.log('[countdown] Timer initialized successfully');
     } catch (error) {
-      console.warn('Failed to load countdown config, using fallback date:', error);
+      console.warn('[countdown] Failed to load config, using fallback:', error.message);
       // Fallback to hardcoded date
       const eventDate = new Date('2025-12-14T07:30:00+05:30').getTime();
       setInterval(() => {
@@ -1371,6 +1391,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (minutesEl) minutesEl.textContent = String(minutes).padStart(2, '0');
         if (secondsEl) secondsEl.textContent = String(seconds).padStart(2, '0');
       }, 1000);
+      console.log('[countdown] Timer initialized with fallback date');
     }
   })();
   
