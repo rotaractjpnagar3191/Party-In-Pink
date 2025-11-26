@@ -1,9 +1,9 @@
 // Service Worker for Party In Pink 5.0 PWA - Comprehensive Cache Fix
 // Provides offline functionality and caching for better performance
 
-const CACHE_NAME = 'party-in-pink-v20-html-network-first';
-const STATIC_CACHE_NAME = 'party-in-pink-static-v20-html-network-first';
-const CURRENT_VERSION = '5.6';
+const CACHE_NAME = 'party-in-pink-v21-html-network-first';
+const STATIC_CACHE_NAME = 'party-in-pink-static-v21-html-network-first';
+const CURRENT_VERSION = '5.7';
 
 // Add timestamp to ensure cache busting
 const CACHE_TIMESTAMP = Date.now();
@@ -38,7 +38,7 @@ const DYNAMIC_APIS = [
 
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing service worker v20...');
+  console.log('[SW] Installing service worker v21...');
   
   event.waitUntil(
     Promise.all([
@@ -60,7 +60,7 @@ self.addEventListener('install', (event) => {
 
 // Activate event - clean up old caches aggressively
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating service worker v20...');
+  console.log('[SW] Activating service worker v21...');
   
   event.waitUntil(
     Promise.all([
@@ -83,7 +83,7 @@ self.addEventListener('activate', (event) => {
       // Claim all clients immediately
       self.clients.claim()
     ]).then(() => {
-      console.log('[SW] Service worker v20 activated - all old caches cleared!');
+      console.log('[SW] Service worker v21 activated - all old caches cleared!');
       // Force reload all clients
       self.clients.matchAll().then(clients => {
         clients.forEach(client => {

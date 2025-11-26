@@ -378,14 +378,14 @@ async function initIndex() {
 
   if (partnersGrid) {
     partnersGrid.innerHTML = partnerLogos.map((name) => 
-      `<div class="logo"><img src="assets/logos/partners/${name}" alt="Partner logo" loading="lazy" onerror="this.style.display='none'; this.parentElement.style.opacity='0.5'" /></div>`
+      `<div class="logo"><img src="assets/logos/partners/${name}?v=20251127" alt="Partner logo" loading="lazy" onerror="this.style.display='none'; this.parentElement.style.opacity='0.5'" /></div>`
     ).join("");
     console.log('[logos] Loaded', partnerLogos.length, 'partner logos');
   }
 
   if (clubsGrid) {
     clubsGrid.innerHTML = clubLogos.map((name) => 
-      `<div class="logo"><img src="assets/logos/Clubs/${name}" alt="Club logo" loading="lazy" onerror="this.style.display='none'; this.parentElement.style.opacity='0.5'" /></div>`
+      `<div class="logo"><img src="assets/logos/Clubs/${name}?v=20251127" alt="Club logo" loading="lazy" onerror="this.style.display='none'; this.parentElement.style.opacity='0.5'" /></div>`
     ).join("");
     console.log('[logos] Loaded', clubLogos.length, 'club logos');
   }
