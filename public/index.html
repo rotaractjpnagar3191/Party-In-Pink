@@ -121,7 +121,7 @@
   <section class="hero">
     <div class="carousel" data-autoplay="3000" id="heroCarousel" aria-label="Event photos carousel">
       <div class="carousel-track">
-        <div class="slide" style="--bg:url('assets/images/IMG_7757.webp'); background-image: url('assets/images/IMG_7757_thumb.jpg'); background-size: cover;">
+        <div class="slide" style="--bg:url('assets/images/IMG_7757.webp')">
           <div class="slide-overlay">
             <img src="assets/logos/4.0 Logos.png" alt="Party In Pink">
             <div class="cta-row">
@@ -139,7 +139,7 @@
             </div>
           </div>
         </div>
-        <div class="slide" style="--bg:url('assets/images/ADI05791.webp'); background-image: url('assets/images/ADI05791_thumb.jpg'); background-size: cover;">
+        <div class="slide" style="--bg:url('assets/images/ADI05791.webp')">
           <div class="slide-overlay">
             <img src="assets/logos/4.0 Logos.png" alt="Party In Pink">
             <div class="cta-row">
@@ -341,9 +341,9 @@
     </div>
   </footer>
 
-  <script src="app.js?v=2025-11-27-fix3" defer></script>
+  <script src="app.js?v=2025-11-27-fix4" defer></script>
 
-  <!-- Carousel wiring with lazy image loading -->
+  <!-- Carousel wiring -->
   <script>
     (function () {
       const root = document.getElementById('heroCarousel');
@@ -358,25 +358,6 @@
       let i = 0;
       const AUTOPLAY = Number(root.dataset.autoplay || 0);
       let timer = null;
-      const loadedImages = new Set();
-
-      // Lazy load images for current, previous, and next slides
-      function preloadImage(idx) {
-        const slide = slides[idx];
-        if (!slide || loadedImages.has(idx)) return;
-        
-        // Extract image URL from CSS variable
-        const bgUrl = slide.style.getPropertyValue('--bg');
-        if (bgUrl && bgUrl.includes('url')) {
-          const url = bgUrl.match(/url\(['"]?([^'")]+)['"]?\)/)?.[1];
-          if (url) {
-            const img = new Image();
-            img.src = url;
-            loadedImages.add(idx);
-            console.log('[carousel] Preloaded image:', idx, url);
-          }
-        }
-      }
 
       function renderDots() {
         dots.innerHTML = slides
@@ -389,11 +370,6 @@
         i = (n + slides.length) % slides.length;
         track.style.transform = `translateX(-${i * 100}%)`;
         dots.querySelectorAll('button').forEach((b, idx) => b.setAttribute('aria-selected', idx === i ? 'true' : 'false'));
-        
-        // Preload current, next, and previous slides
-        preloadImage(i);
-        preloadImage((i + 1) % slides.length);
-        preloadImage((i - 1 + slides.length) % slides.length);
       }
 
       function start() { if (AUTOPLAY) { stop(); timer = setInterval(() => go(i + 1), AUTOPLAY); } }
