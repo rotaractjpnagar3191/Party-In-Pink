@@ -432,6 +432,7 @@ button[disabled] {
   background: linear-gradient(180deg, rgba(0, 0, 0, .5), rgba(0, 0, 0, .7)), var(--bg);
   background-size: cover;
   background-position: center;
+  background-attachment: fixed;
   --bg: linear-gradient(135deg, #3A0D28, #15141B);
   will-change: background;
   contain: layout style paint;
@@ -440,12 +441,14 @@ button[disabled] {
 @media (max-width: 768px) {
   .slide {
     height: 60vh;
+    background-attachment: scroll;
   }
 }
 
 @media (max-width: 480px) {
   .slide {
     height: 55vh;
+    background-attachment: scroll;
   }
 }
 
