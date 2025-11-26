@@ -378,14 +378,14 @@ async function initIndex() {
 
   if (partnersGrid) {
     partnersGrid.innerHTML = partnerLogos.map((name) => 
-      `<div class="logo"><img src="assets/logos/partners/${name}" alt="Partner logo" loading="lazy" onerror="this.parentElement.style.opacity='0.3'" /></div>`
+      `<div class="logo"><img src="assets/logos/partners/${name}" alt="Partner logo" loading="lazy" onerror="this.style.display='none'; this.parentElement.style.opacity='0.5'" /></div>`
     ).join("");
     console.log('[logos] Loaded', partnerLogos.length, 'partner logos');
   }
 
   if (clubsGrid) {
     clubsGrid.innerHTML = clubLogos.map((name) => 
-      `<div class="logo"><img src="assets/logos/Clubs/${name}" alt="Club logo" loading="lazy" onerror="this.parentElement.style.opacity='0.3'" /></div>`
+      `<div class="logo"><img src="assets/logos/Clubs/${name}" alt="Club logo" loading="lazy" onerror="this.style.display='none'; this.parentElement.style.opacity='0.5'" /></div>`
     ).join("");
     console.log('[logos] Loaded', clubLogos.length, 'club logos');
   }
@@ -1272,10 +1272,15 @@ function initRegister() {
               : `Some passes could not be issued automatically. We’ll fix this manually.`;
           }
           ov.setAttribute("aria-busy", "false");
-          ov.remove();
           
           // Populate success card UI with order details
           populateSuccessCard(oc);
+          
+          // Delay overlay removal to ensure mobile browsers render success card
+          setTimeout(() => {
+            if (ov && ov.parentNode) ov.remove();
+            console.log('[success] Overlay removed after dispatch');
+          }, 300);
           return;
         }
       }
@@ -1298,10 +1303,15 @@ function initRegister() {
         detail.textContent =
           "Your passes are being prepared. Check your email within a few minutes. If they don't arrive soon, reply to the confirmation email or contact us at rotaractjpnagar@gmail.com.";
       ov.setAttribute("aria-busy", "false");
-      ov.remove();
       
       // Still populate the success card even if timeout
       populateSuccessCard(currentOrder);
+      
+      // Delay overlay removal to ensure mobile browsers render success card
+      setTimeout(() => {
+        if (ov && ov.parentNode) ov.remove();
+        console.log('[success] Overlay removed after timeout delay');
+      }, 300);
     }
     }
 
