@@ -48,25 +48,54 @@ if (document.readyState === 'loading') {
     const m = document.querySelector(".main-nav");
     if (!t || !m) return false;
     
-    // Remove any existing listeners by cloning
-    const newT = t.cloneNode(true);
-    t.parentNode.replaceChild(newT, t);
+    let isOpen = false;
     
-    newT.addEventListener("click", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const open = m.classList.toggle("show");
-      newT.classList.toggle("active", open);
-      newT.setAttribute("aria-expanded", open ? "true" : "false");
-    });
+    // Enhanced toggle handler
+    function toggleMenu(e) {
+      e?.preventDefault();
+      e?.stopPropagation();
+      isOpen = !isOpen;
+      m.classList.toggle("show", isOpen);
+      t.classList.toggle("active", isOpen);
+      t.setAttribute("aria-expanded", isOpen ? "true" : "false");
+    }
+    
+    // Click on toggle
+    t.addEventListener("click", toggleMenu);
+    
+    // Touch support for mobile
+    t.addEventListener("touchend", toggleMenu);
     
     // Close menu when clicking nav links
     m.querySelectorAll('a').forEach(link => {
       link.addEventListener('click', () => {
-        m.classList.remove('show');
-        newT.classList.remove('active');
-        newT.setAttribute('aria-expanded', 'false');
+        if (isOpen) {
+          isOpen = false;
+          m.classList.remove('show');
+          t.classList.remove('active');
+          t.setAttribute('aria-expanded', 'false');
+        }
       });
+    });
+    
+    // Close menu when clicking outside
+    document.addEventListener('click', (e) => {
+      if (isOpen && !t.contains(e.target) && !m.contains(e.target)) {
+        isOpen = false;
+        m.classList.remove('show');
+        t.classList.remove('active');
+        t.setAttribute('aria-expanded', 'false');
+      }
+    });
+    
+    // Close menu on escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && isOpen) {
+        isOpen = false;
+        m.classList.remove('show');
+        t.classList.remove('active');
+        t.setAttribute('aria-expanded', 'false');
+      }
     });
     
     return true;
@@ -1028,8 +1057,77 @@ function initRegister() {
     window.location.href = `error.html?order=${orderId}&type=${type}&reason=verification_timeout`;
   }
   
+  // ====== POPULATE SUCCESS CARD UI ======
+  function populateSuccessCard(orderData) {
+    try {
+      // Get booking ID from order data
+      const bookingId = orderData?.booking_id || orderId;
+      const amount = orderData?.amount || '';
+      const passes = orderData?.passes || orderData?.quantity || 0;
+      const recipients = orderData?.recipients || [];
+      
+      // Populate booking ID card
+      const bookingIdCard = document.getElementById('bookingIdCard');
+      const bookingIdEl = document.getElementById('bookingId');
+      const copyBookingBtn = document.getElementById('copyBookingBtn');
+      
+      if (bookingId && bookingIdCard && bookingIdEl) {
+        bookingIdCard.style.display = 'block';
+        bookingIdEl.textContent = bookingId;
+        
+        if (copyBookingBtn) {
+          copyBookingBtn.addEventListener('click', function() {
+            copyToClipboard(bookingId, this);
+          });
+        }
+        
+        // Setup share buttons
+        const shareUrl = `${window.location.origin}/status.html?order_id=${orderId}`;
+        const shareMsg = `I just registered for Party In Pink 4.0 🎉 Join me! Booking: ${bookingId}`;
+        
+        const shareWhatsApp = document.getElementById('shareWhatsApp');
+        const shareInstagram = document.getElementById('shareInstagram');
+        const shareCopy = document.getElementById('shareCopy');
+        
+        if (shareWhatsApp) shareWhatsApp.href = `https://wa.me/?text=${encodeURIComponent(shareMsg + ' ' + shareUrl)}`;
+        if (shareInstagram) shareInstagram.href = `https://instagram.com/rotaractjpnagar`;
+        if (shareCopy) {
+          shareCopy.addEventListener('click', (e) => {
+            e.preventDefault();
+            copyToClipboard(shareUrl, e.target);
+          });
+        }
+        
+        const shareSection = document.getElementById('shareSection');
+        if (shareSection) shareSection.style.display = 'block';
+      }
+      
+      // Populate order summary
+      const orderSummary = document.getElementById('orderSummary');
+      const amountPaidEl = document.getElementById('amountPaid');
+      const passCountEl = document.getElementById('passCount');
+      
+      if (orderSummary && (amount || passes)) {
+        orderSummary.style.display = 'block';
+        if (amount && amountPaidEl) amountPaidEl.textContent = '₹' + parseInt(amount).toLocaleString('en-IN');
+        if (passes && passCountEl) passCountEl.textContent = passes + ' pass' + (parseInt(passes) > 1 ? 'es' : '');
+      }
+      
+      // Show next steps
+      const nextSteps = document.getElementById('nextSteps');
+      if (nextSteps) nextSteps.style.display = 'block';
+      
+      console.log('[success] ✅ Success card populated with booking ID:', bookingId);
+    } catch (err) {
+      console.error('[success] Error populating success card:', err);
+    }
+  }
+  
   // ====== PROCEED WITH SUCCESS (AFTER VERIFICATION) ======
   function proceedWithSuccess(orderData) {
+    // Store order data for later use
+    const currentOrder = orderData;
+    
     // Update thank you message based on type
     if (thanks) {
       if (type === "bulk")
@@ -1164,6 +1262,9 @@ function initRegister() {
           }
           ov.setAttribute("aria-busy", "false");
           ov.remove();
+          
+          // Populate success card UI with order details
+          populateSuccessCard(oc);
           return;
         }
       }
@@ -1187,6 +1288,9 @@ function initRegister() {
           "Your passes are being prepared. Check your email within a few minutes. If they don't arrive soon, reply to the confirmation email or contact us at rotaractjpnagar@gmail.com.";
       ov.setAttribute("aria-busy", "false");
       ov.remove();
+      
+      // Still populate the success card even if timeout
+      populateSuccessCard(currentOrder);
     }
     }
 

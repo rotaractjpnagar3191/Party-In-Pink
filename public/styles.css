@@ -179,32 +179,51 @@ img {
   display: none;
   background: none;
   border: 0;
-  padding: 8px;
+  padding: 12px 8px;
   cursor: pointer;
-  z-index: 100;
+  z-index: 101;
   position: relative;
+  width: 48px;
+  height: 48px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-toggle:active {
+  opacity: 0.8;
 }
 
 .nav-toggle span {
   display: block;
-  width: 22px;
-  height: 2px;
+  width: 24px;
+  height: 3px;
   background: #fff;
-  margin: 4px 0;
   border-radius: 2px;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transform-origin: center;
+}
+
+.nav-toggle span:nth-child(2) {
+  width: 20px;
+  margin-left: 2px;
 }
 
 .nav-toggle.active span:nth-child(1) {
-  transform: rotate(45deg) translate(8px, 8px);
+  transform: translateY(9px) rotate(45deg);
 }
 
 .nav-toggle.active span:nth-child(2) {
   opacity: 0;
+  width: 24px;
+  margin-left: 0;
 }
 
 .nav-toggle.active span:nth-child(3) {
-  transform: rotate(-45deg) translate(7px, -7px);
+  transform: translateY(-9px) rotate(-45deg);
 }
 
 /* Mobile nav drawer (JS toggles .show) */
@@ -214,7 +233,7 @@ img {
   }
 
   .nav-toggle {
-    display: block;
+    display: flex;
   }
 
   .main-nav.show {
@@ -410,6 +429,8 @@ button[disabled] {
   background-size: cover;
   background-position: center;
   --bg: linear-gradient(135deg, #3A0D28, #15141B);
+  will-change: background;
+  contain: layout style paint;
 }
 
 .slide-overlay {
@@ -475,23 +496,50 @@ button[disabled] {
   border: 1px solid rgba(255, 255, 255, .18);
   color: #fff;
   border-radius: 999px;
-  width: 42px;
-  height: 42px;
+  width: 36px;
+  height: 36px;
   display: grid;
   place-items: center;
   cursor: pointer;
+  font-size: 1.2rem;
+  opacity: 0.6;
+  transition: all 0.3s ease;
+  z-index: 10;
 }
 
 .carousel-nav:hover {
-  background: rgba(0, 0, 0, .55);
+  background: rgba(0, 0, 0, .6);
+  opacity: 1;
 }
 
 .carousel-nav.prev {
-  left: 18px;
+  left: 12px;
 }
 
 .carousel-nav.next {
-  right: 18px;
+  right: 12px;
+}
+
+@media (max-width: 768px) {
+  .carousel-nav {
+    width: 32px;
+    height: 32px;
+    opacity: 0.4;
+  }
+  
+  .carousel-nav.prev {
+    left: 8px;
+  }
+  
+  .carousel-nav.next {
+    right: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .carousel-nav {
+    display: none;
+  }
 }
 
 .carousel-dots {
