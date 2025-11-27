@@ -587,8 +587,8 @@ async function initDonate() {
     5000:  { tier: "Wellwisher", perks: "Donor recognition • Event certificate" },
     10000: { tier: "Silver", perks: "Major Donor Recognition • Logo on Backdrop • Social Media & Certificate" },
     15000: { tier: "Gold", perks: "All Silver benefits • 3 Min Stage Time • Recognition & MC Shoutout • Deliverables/Pamphlets" },
-    20000: { tier: "Platinum", perks: "All Gold benefits • 5 Min Stage Time • Premium Recognition & Dedicated MC Mention" },
-    25000: { tier: "Diamond", perks: "Exclusive partnership • VIP recognition • Custom benefits" },
+    20000: { tier: "Platinum", perks: "All Gold benefits • 5 Min Stage Time • Enhanced Recognition & Dedicated MC Mention" },
+    25000: { tier: "Diamond", perks: "Exclusive partnership • Premium recognition • Custom benefits" },
     50000: { tier: "Platinum+", perks: "All benefits • Premier sponsorship • Dedicated support" },
   };
 
@@ -702,7 +702,7 @@ async function initDonate() {
       if (hit) {
         benefits.push(`🎟️ ${hit.passes} Pink Pass${hit.passes === 1 ? "" : "es"}`);
         benefits.push(`🎭 Entry to Party In Pink event`);
-        if (hit.passes >= 5) benefits.push(`📱 VIP WhatsApp channel access`);
+        if (hit.passes >= 5) benefits.push(`📱 Enhanced Recognition`);
         if (hit.passes >= 7) benefits.push(`🎯 Direct sponsor recognition`);
       }
       
