@@ -1554,9 +1554,11 @@ function initStatus() {
 function initCheckin() {
   try {
     const orderInput = document.getElementById('orderId');
-    if (!orderInput) return;
     const btn = document.getElementById('checkInBtn');
     const statusMsg = document.getElementById('statusMsg');
+    
+    // Only run if all elements exist (prevents error on pages without check-in form)
+    if (!orderInput || !btn || !statusMsg) return;
 
     btn.addEventListener('click', async () => {
       const orderId = orderInput.value.trim();
