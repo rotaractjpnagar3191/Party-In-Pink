@@ -700,10 +700,15 @@ async function initDonate() {
       }
       
       if (hit) {
+        // Donation meets a tier threshold
         benefits.push(`🎟️ ${hit.passes} Pink Pass${hit.passes === 1 ? "" : "es"}`);
         benefits.push(`🎭 Entry to Party In Pink event`);
         if (hit.passes >= 5) benefits.push(`📱 Enhanced Recognition`);
         if (hit.passes >= 7) benefits.push(`🎯 Direct sponsor recognition`);
+      } else if (v > 0) {
+        // Donation below first tier (no passes, but still appreciated)
+        benefits.push(`💝 Direct support to Sri Shankara Cancer Hospital`);
+        benefits.push(`🌟 Heartfelt gratitude from our community`);
       }
       
       benefitText.innerHTML = benefits.map(b => `<div>✓ ${b}</div>`).join("");
@@ -749,7 +754,7 @@ async function initDonate() {
     // Below first slab (₹1,000) → donation without passes
     if (v > 0 && v < FIRST_SLAB) {
       $("#slab_hint")?.replaceChildren(
-        document.createTextNode("Thank you for your donation! Reach ₹1,000 for event passes.")
+        document.createTextNode("🙏 Thank you for your donation! Your support makes a real difference.")
       );
       return;
     }

@@ -30,10 +30,25 @@ exports.handler = async (event) => {
       return { statusCode: 404, body: JSON.stringify({ error: 'Order not found' }) };
     }
 
+    // ✅ VALIDATION: Ensure order has a type
+    const orderType = (order.type || '').toLowerCase().trim();
+    if (!['single', 'bulk', 'donation'].includes(orderType)) {
+      console.warn(`[checkin] Invalid order type: ${orderType}`);
+      return { statusCode: 400, body: JSON.stringify({ error: `Invalid order type: ${orderType}` }) };
+    }
+
+    // ✅ PREVENTION: Check if already checked in (double check-in prevention)
+    if (order.checked_in_at) {
+      console.log(`[checkin] ⚠️ Order already checked in at ${order.checked_in_at}`);
+      return { statusCode: 409, body: JSON.stringify({ 
+        error: 'Already checked in',
+        first_checkin_at: order.checked_in_at,
+        message: 'This order has already been marked as checked in'
+      }) };
+    }
+
     // Determine event based on order type
-    const orderType = order.type || 'unknown';
     let eventName = 'Party In Pink';
-    let eventType = orderType;
 
     if (orderType === 'single') {
       eventName = 'Single Registration - Party In Pink';
@@ -60,6 +75,18 @@ exports.handler = async (event) => {
         tier: order.meta?.tier || null
       }
     };
+
+    // ✅ UPDATE ORDER: Mark check-in timestamp on order
+    order.checked_in_at = new Date().toISOString();
+    await getJson(ENV, orderPath).then(oc => {
+      if (oc) {
+        oc.checked_in_at = order.checked_in_at;
+        const { putJson } = require('../utils/githubStore');
+        return putJson(ENV, orderPath, oc);
+      }
+    }).catch(err => {
+      console.warn(`[checkin] Could not update order with check-in time: ${err.message}`);
+    });
 
     // Append to check-in log
     await appendJSONL('checkins.jsonl', checkinRecord);
