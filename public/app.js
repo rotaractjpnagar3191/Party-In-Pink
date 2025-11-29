@@ -1253,6 +1253,12 @@ function initRegister() {
         oc?.issued ?? (Array.isArray(oc?.delivered) ? oc.delivered.length : 0)
       );
 
+      // Handle 0-pass orders (donations below ₹1000)
+      if (total === 0) {
+        if (issueTitle) issueTitle.textContent = `Processing donation...`;
+        return;
+      }
+
       if (total > 0 && issueTitle) {
         issueTitle.textContent = `Dispatching passes… ${Math.min(issued, total)}/${total}`;
       }
@@ -1309,7 +1315,7 @@ function initRegister() {
           done = true;
           console.log('[success] Dispatch complete:', ok ? 'fully' : 'partially', 'issued');
           if (badge)
-            badge.textContent = ok ? "Tickets issued" : "Partially issued";
+            badge.textContent = (Number(oc?.passes ?? 0) === 0) ? "Donation received" : (ok ? "Tickets issued" : "Partially issued");
           if (detail) {
             detail.innerHTML = ok
               ? `All passes have been queued for delivery to: ${(

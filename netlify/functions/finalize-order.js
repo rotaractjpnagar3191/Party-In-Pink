@@ -165,7 +165,55 @@ exports.handler = async (event) => {
 
     // Not yet fulfilled - trigger issuance
     try {
-      console.log(`[finalize-order] Triggering issuance of ${oc.passes} passes`);
+      const passCount = Number(oc.passes || 0);
+      
+      // ✅ For donations/registrations with 0 passes, mark as fulfilled without issuance
+      if (passCount === 0) {
+        console.log(`[finalize-order] Order has 0 passes - no tickets to issue, marking as fulfilled`);
+        
+        oc.fulfilled = {
+          at: new Date().toISOString(),
+          status: 'ok',
+          count: 0,
+          triggered_by: 'finalize-order',
+          note: 'No passes to issue (donation below minimum or policy-based)'
+        };
+
+        await putJson(ENV, path, oc);
+        console.log('[finalize-order] Order updated with 0-pass fulfillment');
+
+        // Still send confirmation email
+        (async () => {
+          try {
+            console.log('[finalize-order] Sending confirmation email to:', oc.email);
+            const templates = emailTemplates();
+            const { subject, html, text } = templates.purchaser(oc);
+            await sendMail(ENV, {
+              to: oc.email,
+              subject,
+              html,
+              text
+            });
+            console.log('[finalize-order] ✓ Confirmation email sent to:', oc.email);
+          } catch (emailErr) {
+            console.warn('[finalize-order] ⚠️  Failed to send confirmation email:', emailErr?.message);
+          }
+        })();
+
+        return {
+          statusCode: 200,
+          body: JSON.stringify({
+            ok: true,
+            order_id,
+            status: 'fulfilled',
+            passes_issued: 0,
+            fulfilled: oc.fulfilled,
+            message: 'Order fulfilled (no passes to issue)'
+          })
+        };
+      }
+
+      console.log(`[finalize-order] Triggering issuance of ${passCount} passes`);
       
       const issued = await issueComplimentaryPasses(ENV, oc);
       console.log('[finalize-order] Issuance completed:', { total: issued.total, created: issued.created?.length, errors: issued.errors?.length });
