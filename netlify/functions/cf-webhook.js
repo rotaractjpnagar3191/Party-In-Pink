@@ -151,6 +151,27 @@ exports.handler = async (event) => {
       console.log(`[cf-webhook] ⚠️  PAYMENT FAILED OR PENDING: status=${status}`);
       console.log(`[cf-webhook] order_id=${order_id}, amount=${paidAmt}`);
       console.log('[cf-webhook] NOT issuing tickets for non-successful payment');
+      
+      // Try to mark the order with failed status so success page doesn't poll forever
+      try {
+        const oc = await getJson(ENV, path) || { order_id };
+        if (!oc.fulfilled) {
+          oc.fulfilled = {
+            at: new Date().toISOString(),
+            status: 'failed',
+            error: `Payment not successful: ${status}`,
+            triggered_by: 'cf-webhook'
+          };
+          // Store webhook data for reference
+          if (!oc.cashfree) oc.cashfree = {};
+          oc.cashfree.webhook = data;
+          await putJson(ENV, path, oc);
+          console.log(`[cf-webhook] ✓ Marked order as failed: ${order_id}`);
+        }
+      } catch (err) {
+        console.warn(`[cf-webhook] Could not mark order as failed: ${err.message}`);
+      }
+      
       console.log('[cf-webhook] Returning 200 to prevent Cashfree retries');
       return respond(200, `Payment not successful (status=${status}), no tickets issued`);
     }

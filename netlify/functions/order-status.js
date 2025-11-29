@@ -204,6 +204,11 @@ exports.handler = async (event) => {
     
     console.log('[order-status] Cashfree order_status:', orderStatus);
     console.log('[order-status] Payment status:', latestPayment?.payment_status);
+    
+    // If order is ACTIVE but has no payments, user may have abandoned checkout
+    if (orderStatus === 'ACTIVE' && !latestPayment) {
+      console.warn('[order-status] ⚠️  Order ACTIVE but NO payments - user may have abandoned checkout');
+    }
   } else {
     // Fallback to cached webhook data if Cashfree API unavailable
     console.warn('[order-status] Using cached webhook data (Cashfree API unavailable)');

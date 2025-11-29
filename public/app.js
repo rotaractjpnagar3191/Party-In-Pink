@@ -956,8 +956,21 @@ function initRegister() {
       const orderStatus = order.order_status; // PAID | ACTIVE | EXPIRED
       const latestPayment = order.latest_payment;
       const paymentStatus = latestPayment?.payment_status || 'PENDING';
+      const fulfilled = order.fulfilled; // Check if order was marked as failed by webhook
 
-      console.log('[success] Order status:', orderStatus, '| Payment status:', paymentStatus);
+      console.log('[success] Order status:', orderStatus, '| Payment status:', paymentStatus, '| Fulfilled:', fulfilled?.status);
+
+      // If order was marked as failed by webhook, report it
+      if (fulfilled && fulfilled.status === 'failed') {
+        console.error('[success] ❌ Order marked as FAILED by webhook:', fulfilled.error);
+        return {
+          found: true,
+          status: 'PAYMENT_FAILED_BY_WEBHOOK',
+          order: order,
+          payment: latestPayment,
+          definitive: true
+        };
+      }
 
       // If Cashfree says order is PAID, payment definitely succeeded
       if (orderStatus === 'PAID') {
@@ -978,6 +991,18 @@ function initRegister() {
           order: order,
           payment: latestPayment,
           definitive: paymentStatus === 'SUCCESS' || paymentStatus === 'FAILED'
+        };
+      }
+
+      // ⚠️ CRITICAL: If order is ACTIVE but NO payments exist, user abandoned checkout
+      if (orderStatus === 'ACTIVE' && !latestPayment) {
+        console.warn('[success] ⚠️  Order ACTIVE but NO payments found - user may have abandoned');
+        return {
+          found: true,
+          status: 'NO_PAYMENT_FOUND',
+          order: order,
+          payment: null,
+          definitive: true // This is definitive - no payment exists
         };
       }
 
@@ -1039,7 +1064,21 @@ function initRegister() {
         return;
       }
 
-      if (paymentStatus === 'PENDING') {
+      if (paymentStatus === 'PAYMENT_FAILED_BY_WEBHOOK') {
+        // ❌ Webhook marked order as failed
+        console.error('[success] ❌ PAYMENT FAILED (marked by webhook)');
+        window.location.href = `error.html?order=${orderId}&type=${type}&reason=payment_failed`;
+        return;
+      }
+
+      if (paymentStatus === 'NO_PAYMENT_FOUND') {
+        // ❌ Order exists but no payment attempts - user abandoned checkout
+        console.error('[success] ❌ NO PAYMENT FOUND: User abandoned checkout');
+        window.location.href = `error.html?order=${orderId}&type=${type}&reason=no_payment_found`;
+        return;
+      }
+
+      if (paymentStatus === 'PENDING' || paymentStatus === undefined || paymentStatus === null) {
         // Still waiting - keep polling
         const elapsed = Math.round((Date.now() - startTime) / 1000);
         console.log('[success] Payment still pending (' + elapsed + 's), continuing to wait...');
@@ -1061,6 +1100,13 @@ function initRegister() {
       console.log('[success] ✅ FINAL CHECK: Payment actually succeeded!');
       verifyOv.remove();
       proceedWithSuccess(finalCheck.order);
+      return;
+    }
+
+    // Check if order exists but has NO payments
+    if (finalCheck.found && !finalCheck.payment && !finalCheck.status) {
+      console.error('[success] ❌ FINAL: Order exists but NO payments found - user abandoned checkout');
+      window.location.href = `error.html?order=${orderId}&type=${type}&reason=no_payment_found`;
       return;
     }
 
