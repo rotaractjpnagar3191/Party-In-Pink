@@ -401,182 +401,120 @@ button[disabled] {
 
 
 
-/* ---------- Hero Carousel ---------- */
+/* ---------- Hero Section ---------- */
 .hero {
   position: relative;
   overflow: hidden;
-}
-
-.carousel {
-  position: relative;
-  border-radius: 0;
-  isolation: isolate;
-  overflow: hidden;
-}
-
-.carousel-track {
-  display: flex;
-  transition: transform .6s cubic-bezier(.2, .8, .2, 1);
-  max-width: 100%;
-  overflow: hidden;
   width: 100%;
+  height: 72vh;
 }
 
-.slide {
-  min-width: 100%;
-  max-width: 100%;
-  flex-shrink: 0;
-  height: 72vh;
-  display: grid;
-  place-items: center;
-  background: linear-gradient(180deg, rgba(0, 0, 0, .5), rgba(0, 0, 0, .7)), var(--bg);
+.hero-image {
+  position: relative;
+  width: 100%;
+  height: 100%;
   background-size: cover;
   background-position: center;
-  --bg: linear-gradient(135deg, #3A0D28, #15141B);
-  will-change: background;
-  contain: layout style paint;
+  background-repeat: no-repeat;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-image::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.6));
+  pointer-events: none;
+  z-index: 2;
 }
 
 @media (max-width: 768px) {
-  .slide {
+  .hero {
     height: 60vh;
   }
 }
 
 @media (max-width: 480px) {
-  .slide {
+  .hero {
     height: 55vh;
   }
 }
 
-.slide-overlay {
+.hero-overlay {
+  position: relative;
+  z-index: 10;
   text-align: center;
   padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
-.slide-overlay h1 {
+.hero-overlay h1 {
   font-size: clamp(2.1rem, 4vw, 3rem);
   margin: 0 0 8px;
 }
 
-.slide-overlay #editionBadge {
+.hero-overlay #editionBadge {
   background: var(--pink);
   color: #fff;
   border-radius: 999px;
   padding: 2px 10px;
-  font-size: .9rem;
+  font-size: 0.9rem;
   margin-left: 6px;
 }
 
 .lead {
-  opacity: .9;
+  opacity: 0.9;
   max-width: 60ch;
   margin: 0 auto 18px;
 }
 
 /* generic helpers (unchanged) */
-.num.rupee-lakh::before { content:"₹"; margin-right:2px; font-weight:800; }
-.num.rupee-lakh::after  { content:" Lakh"; margin-left:4px; font-weight:700; opacity:.95; }
-.num.plus::after        { content:"+"; margin-left:2px; font-weight:800; }
-
-/* when both classes are on the same .num, show " Lakh+" */
-.num.rupee-lakh.plus::after { 
-  content:" Lakh+";        /* overrides the two separate ::after rules */
-  margin-left:4px; 
-  font-weight:700; 
-  opacity:.95;
+.num.rupee-lakh::before {
+  content: "₹";
+  margin-right: 2px;
+  font-weight: 800;
 }
 
-/* Hero logo image */
-.slide-overlay>img {
+.num.rupee-lakh::after {
+  content: " Lakh";
+  margin-left: 4px;
+  font-weight: 700;
+  opacity: 0.95;
+}
+
+.num.plus::after {
+  content: "+";
+  margin-left: 2px;
+  font-weight: 800;
+}
+
+/* when both classes are on the same .num, show " Lakh+" */
+.num.rupee-lakh.plus::after {
+  content: " Lakh+";
+  margin-left: 4px;
+  font-weight: 700;
+  opacity: 0.95;
+}
+
+.hero-overlay > img {
   width: clamp(220px, 72vw, 560px);
   height: auto;
   display: block;
   margin: 0 auto 16px;
-  filter: drop-shadow(0 6px 18px rgba(0, 0, 0, .45)) brightness(1.4);
-  animation: heroFadeUp .6s ease both;
-}
-
-@media (max-width:480px) {
-  .slide-overlay>img {
-    width: clamp(200px, 84vw, 480px);
-    margin-bottom: 14px;
-  }
-}
-
-.carousel-nav {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  background: rgba(0, 0, 0, .35);
-  border: 1px solid rgba(255, 255, 255, .18);
-  color: #fff;
-  border-radius: 999px;
-  width: 36px;
-  height: 36px;
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-  font-size: 1.2rem;
-  opacity: 0.6;
-  transition: all 0.3s ease;
-  z-index: 10;
-}
-
-.carousel-nav:hover {
-  background: rgba(0, 0, 0, .6);
-  opacity: 1;
-}
-
-.carousel-nav.prev {
-  left: 12px;
-}
-
-.carousel-nav.next {
-  right: 12px;
-}
-
-@media (max-width: 768px) {
-  .carousel-nav {
-    width: 32px;
-    height: 32px;
-    opacity: 0.4;
-  }
-  
-  .carousel-nav.prev {
-    left: 8px;
-  }
-  
-  .carousel-nav.next {
-    right: 8px;
-  }
+  filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.45)) brightness(1.4);
+  animation: heroFadeUp 0.6s ease both;
 }
 
 @media (max-width: 480px) {
-  .carousel-nav {
-    display: none;
+  .hero-overlay > img {
+    width: clamp(200px, 84vw, 480px);
+    margin-bottom: 14px;
   }
-}
-
-.carousel-dots {
-  position: absolute;
-  bottom: 14px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: none;
-  gap: 8px;
-}
-
-.carousel-dots button {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, .4);
-  border: 0;
-}
-
-.carousel-dots button[aria-selected="true"] {
-  background: #fff;
 }
 
 /* ---------- Details ---------- */
@@ -960,18 +898,63 @@ textarea:focus {
 }
 
 /* Hero CTA row animation */
-.slide-overlay .cta-row {
+.hero-overlay .cta-row {
   animation: heroFadeUp .7s ease-out .2s both;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
-.slide-overlay .cta-row .btn {
+.hero-overlay .cta-row .btn {
   animation: heroFadeUp .7s ease-out .3s both;
   transition: all 0.3s ease;
+  min-width: auto;
 }
 
-.slide-overlay .cta-row .btn:hover {
+.hero-overlay .cta-row .btn:hover {
   transform: translateY(-4px) scale(1.05);
   box-shadow: 0 12px 24px rgba(233, 30, 99, 0.4);
+}
+
+/* Hero CTA Emphasis - Support the Cause */
+.hero-cta-emphasis {
+  background: linear-gradient(135deg, #E91E63, #D81B60) !important;
+  box-shadow: 0 8px 24px rgba(233, 30, 99, 0.45), inset 0 -2px 0 rgba(0, 0, 0, 0.2) !important;
+  font-weight: 700;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-cta-emphasis::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
+  animation: shine 3s infinite;
+  pointer-events: none;
+}
+
+@keyframes shine {
+  0% {
+    transform: rotate(0deg) translateX(-100%);
+  }
+  100% {
+    transform: rotate(0deg) translateX(100%);
+  }
+}
+
+.hero-cta-emphasis:hover {
+  background: linear-gradient(135deg, #D81B60, #C2185B) !important;
+  transform: translateY(-4px) scale(1.08) !important;
+  box-shadow: 0 12px 32px rgba(233, 30, 99, 0.6), inset 0 -2px 0 rgba(0, 0, 0, 0.3) !important;
+}
+
+.hero-cta-emphasis:active {
+  transform: translateY(-1px) scale(1.05) !important;
 }
 
 /* Footer CTA row animation */
@@ -1290,18 +1273,7 @@ body {
 
 /* -------- CAROUSEL SAFETY (keeps hero from widening the page) -------- */
 .hero,
-.carousel {
-  overflow: hidden;
-}
 
-.carousel-track {
-  max-width: 100%;
-}
-
-.slide {
-  min-width: 100%;
-  max-width: 100%;
-}
 
 /* 80G notice */
 .note80g {
