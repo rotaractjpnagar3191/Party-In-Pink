@@ -9,6 +9,7 @@
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <title>Check-In • Party In Pink</title>
   <link rel="stylesheet" href="/styles.css?v=20251121" />
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
   <style>
     body { background: #0F0F12; color: #ECEFF1; font-family: Inter, system-ui, sans-serif; }
     main { max-width: 600px; margin: 2rem auto; padding: 1rem; }
@@ -34,6 +35,16 @@
     .log-item .status { font-weight: 600; }
     .log-item.success .status { color: #00C853; }
     .log-item.error .status { color: #FF5252; }
+    
+    /* QR Scanner Styles */
+    .qr-scanner-container { margin-bottom: 2rem; }
+    .camera-feed { width: 100%; border: 3px solid #E91E63; border-radius: 12px; background: #000; display: none; }
+    #canvas { display: none; }
+    .scanner-controls { display: flex; gap: 12px; margin-bottom: 1rem; flex-wrap: wrap; }
+    .btn-secondary { padding: 10px 16px; background: #667085; border: none; border-radius: 8px; color: white; font-weight: 600; cursor: pointer; transition: all 0.3s; font-size: 0.9rem; }
+    .btn-secondary:hover { background: #7A8FA3; }
+    .btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .camera-status { font-size: 0.9rem; color: #bbb; }
   </style>
 </head>
 <body>
@@ -56,6 +67,17 @@
 
       <div id="statusMsg" style="display: none;"></div>
 
+      <!-- QR Scanner Section -->
+      <div class="qr-scanner-container">
+        <div class="scanner-controls">
+          <button id="startCameraBtn" class="btn-secondary">📷 Start Camera</button>
+          <button id="stopCameraBtn" class="btn-secondary" style="display: none;">❌ Stop Camera</button>
+          <span class="camera-status" id="cameraStatus"></span>
+        </div>
+        <video id="videoFeed" class="camera-feed" playsinline></video>
+        <canvas id="canvas" width="800" height="600"></canvas>
+      </div>
+
       <div class="form-group">
         <label class="form-label">Admin Key (for verification)</label>
         <input id="adminKey" type="password" class="form-input" placeholder="Enter admin key" />
@@ -69,7 +91,7 @@
       <button id="checkInBtn" class="btn-primary" style="width: 100%; font-size: 1.1rem; padding: 14px;">Mark Checked In</button>
 
       <div style="margin-top: 1rem; padding: 1rem; background: rgba(233, 30, 99, 0.08); border-left: 3px solid #E91E63; border-radius: 6px; color: #bbb; font-size: 0.9rem;">
-        <strong style="color: #E91E63;">Tip:</strong> Scan the QR code on the participant's ticket. The Order ID will appear automatically.
+        <strong style="color: #E91E63;">Tip:</strong> Click "Start Camera" to scan QR codes, or manually enter the Order ID.
       </div>
     </div>
 
@@ -81,9 +103,32 @@
     </div>
   </main>
 
+  <footer class="site-footer" style="margin-top: 4rem;">
+    <div class="wrap">
+      <div class="footer-cols">
+        <div>
+          <h4>Party In Pink</h4>
+          <p>Rotaract Club of Bangalore JP Nagar</p>
+          <p class="muted">© <span id="year"></span> All rights reserved.</p>
+        </div>
+        <nav>
+          <h4>Quick Links</h4>
+          <a href="index.html">Home</a>
+          <a href="status.html">Check Status</a>
+        </nav>
+        <div>
+          <h4>Contact</h4>
+          <p><a href="mailto:rotaractjpnagar@gmail.com">rotaractjpnagar@gmail.com</a></p>
+        </div>
+      </div>
+    </div>
+  </footer>
+
   <script>
     const logs = [];
     const maxLogs = 20;
+    let cameraStream = null;
+    let scanningActive = false;
 
     function formatTime(d) {
       return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -110,6 +155,100 @@
       `).join('');
     }
 
+    // QR Scanner Functions
+    async function startCamera() {
+      try {
+        const video = document.getElementById('videoFeed');
+        const startBtn = document.getElementById('startCameraBtn');
+        const stopBtn = document.getElementById('stopCameraBtn');
+        const statusEl = document.getElementById('cameraStatus');
+
+        statusEl.textContent = 'Requesting camera access...';
+
+        cameraStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment' }
+        });
+
+        video.srcObject = cameraStream;
+        video.play();
+        video.style.display = 'block';
+
+        startBtn.style.display = 'none';
+        stopBtn.style.display = 'inline-block';
+        statusEl.textContent = '✓ Camera active - Point at QR code';
+
+        scanningActive = true;
+        scanQRCode();
+      } catch (err) {
+        alert('Camera access denied or unavailable: ' + err.message);
+        console.error('Camera error:', err);
+        document.getElementById('cameraStatus').textContent = '✗ Camera unavailable';
+      }
+    }
+
+    function stopCamera() {
+      const video = document.getElementById('videoFeed');
+      const startBtn = document.getElementById('startCameraBtn');
+      const stopBtn = document.getElementById('stopCameraBtn');
+      const statusEl = document.getElementById('cameraStatus');
+
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        cameraStream = null;
+      }
+
+      video.style.display = 'none';
+      startBtn.style.display = 'inline-block';
+      stopBtn.style.display = 'none';
+      statusEl.textContent = '';
+      scanningActive = false;
+    }
+
+    function scanQRCode() {
+      const video = document.getElementById('videoFeed');
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
+      const orderId = document.getElementById('orderId');
+
+      function scanFrame() {
+        if (!scanningActive) return;
+
+        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const code = jsQR(imageData.data, imageData.width, imageData.height);
+
+          if (code) {
+            const qrData = code.data.trim();
+            console.log('[qr-scanner] QR code detected:', qrData);
+            
+            // If it looks like an order ID (pip_... format), populate the field
+            if (qrData.startsWith('pip_') || /^[A-Za-z0-9_-]+$/.test(qrData)) {
+              orderId.value = qrData;
+              orderId.focus();
+              
+              // Auto-submit if we have admin key
+              const adminKeyEl = document.getElementById('adminKey');
+              if (adminKeyEl.value.trim()) {
+                document.getElementById('checkInBtn').click();
+              }
+            }
+          }
+        }
+
+        requestAnimationFrame(scanFrame);
+      }
+
+      scanFrame();
+    }
+
+    // Event Listeners
+    document.getElementById('startCameraBtn').addEventListener('click', startCamera);
+    document.getElementById('stopCameraBtn').addEventListener('click', stopCamera);
+
     document.getElementById('checkInBtn').addEventListener('click', async () => {
       const orderId = document.getElementById('orderId').value.trim();
       const adminKey = document.getElementById('adminKey').value.trim();
@@ -133,16 +272,31 @@
         const data = await response.json().catch(() => ({}));
 
         if (data.ok) {
-          statusMsg.innerHTML = '<div class="status-message status-success">Check-in Successful!</div>';
+          // Format event type nicely
+          let eventBadge = '🎟';
+          if (data.order_type === 'single') eventBadge = '👤 Single Registration';
+          else if (data.order_type === 'bulk') eventBadge = '👥 Bulk Registration';
+          else if (data.order_type === 'donation') eventBadge = '💝 Donation';
+
+          statusMsg.innerHTML = `
+            <div class="status-message status-success">
+              <div>✓ Check-in Successful!</div>
+              <div style="font-size: 0.9rem; margin-top: 0.5rem;">
+                <div><strong>${data.attendee_name}</strong></div>
+                <div style="color: #b3e5fc; font-size: 0.85rem;">${eventBadge}</div>
+                <div style="color: #b3e5fc; font-size: 0.85rem; margin-top: 0.3rem;">${data.passes} pass${data.passes !== 1 ? 'es' : ''}</div>
+              </div>
+            </div>
+          `;
           addLog(orderId, 'success');
           document.getElementById('orderId').value = '';
           document.getElementById('orderId').focus();
         } else {
-          statusMsg.innerHTML = `<div class="status-message status-error">Check-in Failed: ${data.error || 'Unknown error'}</div>`;
+          statusMsg.innerHTML = `<div class="status-message status-error">✗ Check-in Failed: ${data.error || 'Unknown error'}</div>`;
           addLog(orderId, 'error');
         }
       } catch (e) {
-        statusMsg.innerHTML = `<div class="status-message status-error">Error: ${e.message}</div>`;
+        statusMsg.innerHTML = `<div class="status-message status-error">✗ Error: ${e.message}</div>`;
         addLog(orderId, 'error');
       } finally {
         btn.disabled = false;
@@ -154,30 +308,6 @@
     });
 
     document.getElementById('orderId').focus();
-  </script>
-
-  <footer class="site-footer" style="margin-top: 4rem;">
-    <div class="wrap">
-      <div class="footer-cols">
-        <div>
-          <h4>Party In Pink</h4>
-          <p>Rotaract Club of Bangalore JP Nagar</p>
-          <p class="muted">© <span id="year"></span> All rights reserved.</p>
-        </div>
-        <nav>
-          <h4>Quick Links</h4>
-          <a href="index.html">Home</a>
-          <a href="status.html">Check Status</a>
-        </nav>
-        <div>
-          <h4>Contact</h4>
-          <p><a href="mailto:rotaractjpnagar@gmail.com">rotaractjpnagar@gmail.com</a></p>
-        </div>
-      </div>
-    </div>
-  </footer>
-
-  <script>
     document.getElementById('year').textContent = new Date().getFullYear();
   </script>
 </body>
