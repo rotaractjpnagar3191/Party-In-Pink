@@ -376,11 +376,42 @@ exports.handler = async (event) => {
 
     // ⚠️  VALIDATION: Must have passes > 0 to issue tickets
     if (!oc.passes || Number(oc.passes) <= 0) {
-      console.error(`[cf-webhook] ❌ VALIDATION FAILED: passes must be > 0`);
-      console.error(`[cf-webhook] Computed passes: ${oc.passes}, Type: ${oc.type}, Amount: ${oc.amount}`);
-      oc.fulfilled = { at: new Date().toISOString(), status: 'failed', error: 'Invalid passes count' };
-      await putJson(ENV, path, oc);
-      return respond(400, `Invalid order: passes must be > 0 (got ${oc.passes})`);
+      // For donations with 0 passes, mark as fulfilled (not failed)
+      if (oc.type === 'donation') {
+        console.log(`[cf-webhook] Donation with 0 passes - marking as fulfilled, no tickets to issue`);
+        oc.fulfilled = {
+          at: new Date().toISOString(),
+          status: 'ok',
+          count: 0,
+          triggered_by: 'cf-webhook',
+          note: 'No passes to issue (donation below minimum or policy-based)'
+        };
+        await putJson(ENV, path, oc);
+        // Send confirmation email
+        (async () => {
+          try {
+            console.log('[cf-webhook] Sending confirmation email to:', oc.email);
+            const templates = require('./_mail').emailTemplates();
+            const { subject, html, text } = templates.purchaser(oc);
+            await require('./_mail').sendMail(ENV, {
+              to: oc.email,
+              subject,
+              html,
+              text
+            });
+            console.log('[cf-webhook] ✓ Confirmation email sent to:', oc.email);
+          } catch (emailErr) {
+            console.warn('[cf-webhook] ⚠️  Failed to send confirmation email:', emailErr?.message);
+          }
+        })();
+        return respond(200, 'Donation fulfilled (no passes to issue)');
+      } else {
+        console.error(`[cf-webhook] ❌ VALIDATION FAILED: passes must be > 0`);
+        console.error(`[cf-webhook] Computed passes: ${oc.passes}, Type: ${oc.type}, Amount: ${oc.amount}`);
+        oc.fulfilled = { at: new Date().toISOString(), status: 'failed', error: 'Invalid passes count' };
+        await putJson(ENV, path, oc);
+        return respond(400, `Invalid order: passes must be > 0 (got ${oc.passes})`);
+      }
     }
 
     // ⚠️  VALIDATION: Must have recipients to issue tickets
