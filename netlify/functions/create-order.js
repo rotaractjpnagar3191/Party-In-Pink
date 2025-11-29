@@ -345,7 +345,7 @@ exports.handler = async (event) => {
         passes = mapAmountToPasses(
           custom,
           CFG.public.SLABS,
-          1,  // below minimum gets 1 complimentary pass
+          0,  // below minimum gets 0 passes (NO complimentary passes for amounts < ₹1000)
           ENV.SLAB_ABOVE_MAX || 'TOP'
         );
         meta = { tier: getTierName(custom), amount: custom };

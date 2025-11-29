@@ -362,11 +362,11 @@ exports.handler = async (event) => {
       // amount usually pre-set during create-order; keep as-is
     } else {
       oc.amount = paidAmt;
-      // Below-minimum now grants 1 complimentary pass
+      // Below-minimum (₹1000) gets 0 passes - no complimentary passes for small donations
       oc.passes = mapAmountToPasses(
         paidAmt,
         CFG.public.SLABS,
-        1,
+        0,
         ENV.SLAB_ABOVE_MAX
       );
     }
