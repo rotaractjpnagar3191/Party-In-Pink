@@ -59,11 +59,24 @@ async function getLatestPaymentFromCashfree(orderId, ENV) {
 
     const payments = await paymentsRes.json();
     if (!Array.isArray(payments) || payments.length === 0) {
+      console.log('[order-status] ✓ Cashfree payments API returned: no payments (empty array)');
       return null;
     }
 
     // Return most recent payment
     const latest = payments[0];
+    
+    // CRITICAL: If payment is PENDING with no payment_time, user abandoned checkout
+    if (latest.payment_status === 'PENDING' && (!latest.payment_time || latest.payment_time === null)) {
+      console.log('[order-status] ✓ Cashfree returned PENDING payment with NO payment_time - treating as abandoned');
+      return null;
+    }
+    
+    console.log('[order-status] ✓ Cashfree payments API returned payment:', {
+      cf_payment_id: latest.cf_payment_id,
+      payment_status: latest.payment_status,
+      payment_time: latest.payment_time
+    });
     return {
       cf_payment_id: latest.cf_payment_id,
       payment_status: latest.payment_status,
@@ -213,15 +226,24 @@ exports.handler = async (event) => {
     // Fallback to cached webhook data if Cashfree API unavailable
     console.warn('[order-status] Using cached webhook data (Cashfree API unavailable)');
     const webhookData = order.cashfree?.webhook;
-    latestPayment = {
-      cf_payment_id: webhookData?.payment?.cf_payment_id,
-      payment_status: webhookData?.payment?.payment_status || 'PENDING',
-      payment_time: webhookData?.payment?.payment_time,
-      payment_message: webhookData?.payment?.payment_message,
-      payment_completion_time: webhookData?.payment?.payment_completion_time,
-      error_details: webhookData?.payment?.error_details || webhookData?.error_details
-    };
-    orderStatus = latestPayment?.payment_status === 'SUCCESS' ? 'PAID' : 'ACTIVE';
+    
+    // Only create latestPayment object if webhook has actual payment data
+    if (webhookData?.payment?.cf_payment_id) {
+      latestPayment = {
+        cf_payment_id: webhookData?.payment?.cf_payment_id,
+        payment_status: webhookData?.payment?.payment_status || 'PENDING',
+        payment_time: webhookData?.payment?.payment_time,
+        payment_message: webhookData?.payment?.payment_message,
+        payment_completion_time: webhookData?.payment?.payment_completion_time,
+        error_details: webhookData?.payment?.error_details || webhookData?.error_details
+      };
+      orderStatus = latestPayment?.payment_status === 'SUCCESS' ? 'PAID' : 'ACTIVE';
+    } else {
+      // No webhook data either - this is a pure abandoned checkout
+      console.warn('[order-status] ⚠️  No webhook data AND Cashfree API unavailable - treating as abandoned checkout');
+      latestPayment = null;
+      orderStatus = 'ACTIVE'; // Order is active but no payment attempt
+    }
   }
 
   // Payment session ID for checkout
