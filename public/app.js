@@ -350,30 +350,41 @@ async function initIndex() {
   const clubsGrid = $("#clubsGrid");
 
   const partnerLogos = [
-    "Akash.png",
+    "10.Vishwanath Vajramuni Trust.PNG",
+    "11.tixora.svg",
+    "13.AkashElectro.png",
+    "17.ViaMediaCommunications-SurendranUnni.png",
+    "19.Icon.png",
+    "21.HiPower.jpg",
+    "23.Vasan&Sampath.jpg",
+    "31.HypeExperts.png",
     "e-relax.png",
-    "HIPOWER - Logo  - SVG (1).svg",
-    "Hypeexperts2_optimized.png",
-    "ICON logo.png",
+    "Hoysala.jpeg",
     "Jusgrabs.png",
     "Keerti Technologies.jpeg",
     "NXT Power.jpeg",
     "Sasya_Shyamale-removebg-preview.png",
     "smartgenie.png",
-    "tag.png",
+    "Tag Unlimited logo.png",
     "tie.png",
-    "UK International.png",
-    "Vishwanath Vajramuni Trust (R).PNG"
+    "UK International.png"
   ];
 
   const clubLogos = [
+    "16.RotaryBangaloreLakeside-PrasannaKumari.png",
+    "20.RotaryBengaluruSouthEnd.png",
+    "25.RotaractBangaloreAagneya.png",
+    "9. RotaryBengaluruSouthSamarpane.jpg",
     "bmscm.png",
     "bmscw.png",
     "Innerwheel JP Nagar.jpeg",
     "Logo on White and Yellow Background_optimized.png",
     "Oriongateway.png",
     "Rac Jayanagar.jpeg",
-    "RCBSW Logo.png"
+    "RC Jayanagar.jpg",
+    "RCBSW Logo.png",
+    "RotaractNMIMS.jpg",
+    "RotaryBangaloreMidtown.png"
   ];
 
   if (partnersGrid) {
