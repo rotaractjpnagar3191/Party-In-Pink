@@ -647,59 +647,36 @@
             <h2>Your Donation</h2>
 
             <!-- 80G Notice - Enhanced -->
-            <div class="notice-80g compact" style="background: linear-gradient(135deg, rgba(233, 30, 99, 0.15) 0%, rgba(156, 39, 176, 0.08) 100%); border-left: 4px solid #E91E63; padding: 1.25rem; margin-bottom: 1.5rem; border-radius: 10px;">
-              <span class="notice-icon" style="font-size: 1.5rem;">📋</span>
-              <div class="notice-text" style="font-size: 0.95rem;">
-                <div style="margin-bottom: 0.75rem;">
-                  <strong style="color: #E91E63; display: block; margin-bottom: 0.3rem;">⚠️ No 80G via Direct Donation</strong>
-                  <div style="color: #bbb; line-height: 1.5;">Donations made directly on this site are <strong>not eligible for 80G deduction</strong>. For 80G tax benefit eligibility, contact us first.</div>
-                </div>
-                <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.75rem; border-top: 1px solid rgba(233, 30, 99, 0.2); padding-top: 0.75rem;">
-                  <a href="https://wa.me/918310398636?text=Hi%20I%20want%20to%20donate%20and%20need%20an%2080G%20receipt" target="_blank" rel="noopener noreferrer" style="color: #E91E63; text-decoration: none; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">💬 WhatsApp: 8310398636</a>
-                  <span style="color: #555;">•</span>
-                  <a href="tel:+918310398636" style="color: #E91E63; text-decoration: none; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">📞 Call Us</a>
-                </div>
+            <div style="background: linear-gradient(135deg, rgba(233, 30, 99, 0.2) 0%, rgba(156, 39, 176, 0.15) 100%); border: 2px solid #E91E63; border-radius: 16px; padding: 3rem 2rem; text-align: center; margin-bottom: 2rem;">
+              <div style="font-size: 3rem; margin-bottom: 1rem;">🎉</div>
+              <h2 style="color: #E91E63; font-size: 1.8rem; margin: 1rem 0;">Event Completed!</h2>
+              <p style="color: #bbb; font-size: 1.1rem; margin-bottom: 1.5rem; line-height: 1.6;">
+                Thank you for making <strong>Party In Pink 4.0</strong> a massive success! 
+                We're thrilled by the overwhelming response and support for breast cancer awareness and treatment.
+              </p>
+              <p style="color: #ddd; font-size: 1rem; margin-bottom: 2rem;">
+                💪 Together, we made a real difference in the lives of patients at Sri Shankara Cancer Hospital.
+              </p>
+              <div style="background: rgba(233, 30, 99, 0.1); border-left: 4px solid #E91E63; padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                <p style="color: #E91E63; font-weight: 600; margin: 0 0 0.75rem 0; font-size: 1.1rem;">See You Next Year! 🚀</p>
+                <p style="color: #bbb; margin: 0; line-height: 1.6;">
+                  Mark your calendars! <strong>Party In Pink 5.0</strong> is coming in 2026. 
+                  We'll be back with more impact, more fun, and more reason to celebrate the fighters! 💗
+                </p>
+              </div>
+              <div style="display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; margin-top: 2rem;">
+                <a href="https://wa.me/918310398636?text=Hi%20I%20want%20to%20stay%20updated%20on%20Party%20In%20Pink%202026" target="_blank" rel="noopener noreferrer" 
+                   style="padding: 12px 24px; background: #E91E63; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; transition: all 0.3s ease;"
+                   onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+                  💬 Get Updated
+                </a>
+                <a href="/" 
+                   style="padding: 12px 24px; background: rgba(233, 30, 99, 0.2); color: #E91E63; border: 2px solid #E91E63; text-decoration: none; border-radius: 8px; font-weight: 600; transition: all 0.3s ease;"
+                   onmouseover="this.style.background='rgba(233, 30, 99, 0.3)'" onmouseout="this.style.background='rgba(233, 30, 99, 0.2)'">
+                  🏠 Back to Home
+                </a>
               </div>
             </div>
-
-            <form id="donateForm" class="form" novalidate>
-              <div class="form-group">
-                <label class="form-label">Amount (₹)</label>
-                <input id="donor_amount" type="number" inputmode="numeric" class="form-input" placeholder="e.g., 5000" min="100" step="100" required autocomplete="off" />
-                <div class="help-text" id="slab_hint">💡 Tip: ₹1,000+ includes event passes</div>
-              </div>
-
-              <div class="donate-chips" id="slab_quick" role="group" aria-label="Suggested amounts"></div>
-
-              <div class="form-group">
-                <label class="form-label">Full Name</label>
-                <input id="donor_name" type="text" autocomplete="name" class="form-input" placeholder="Your name" required />
-              </div>
-
-              <div class="form-group">
-                <label class="form-label">Email</label>
-                <input id="donor_email" type="email" autocomplete="email" class="form-input" placeholder="your@email.com" required />
-              </div>
-
-              <div class="form-group">
-                <label class="form-label">Phone</label>
-                <input id="donor_phone" type="tel" inputmode="numeric" autocomplete="tel" class="form-input" pattern="(\+?91[6-9]\d{9}|0[6-9]\d{9})" placeholder="10-digit mobile" required />
-              </div>
-
-              <div class="benefit-preview" id="benefitPreview" style="display:none;">
-                <strong style="color: #E91E63;">✨ You'll Receive:</strong>
-                <div id="benefitText" style="margin-top: 0.5rem; font-size: 0.9rem; color: #ddd;"></div>
-              </div>
-
-              <div class="form-actions">
-                <button id="donor_submit" class="btn-primary-donate" type="submit">💳 Donate Now</button>
-                <button type="reset" class="btn-ghost-donate">↻ Clear</button>
-              </div>
-
-              <p style="text-align: center; font-size: 0.8rem; color: #999; margin-top: 1rem;">
-                🔒 Secure Cashfree | 100% to cause
-              </p>
-            </form>
           </div>
         </div>
 
