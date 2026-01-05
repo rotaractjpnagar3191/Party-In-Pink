@@ -622,7 +622,6 @@ button[disabled] {
   max-height: 75%;
   flex-shrink: 0;
 }
-
 @media (max-width:980px) {
   .logo-grid {
     grid-template-columns: repeat(3, 1fr);
